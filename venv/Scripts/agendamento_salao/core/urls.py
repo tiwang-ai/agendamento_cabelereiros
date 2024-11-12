@@ -1,6 +1,6 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
-from .views import EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp
+from .views import EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, onboarding_salao
 
 router = DefaultRouter()
 router.register(r'estabelecimentos', EstabelecimentoViewSet)
@@ -17,6 +17,7 @@ urlpatterns = [
     path("relatorios/servicos-populares/", relatorio_servicos_populares, name="relatorio_servicos_populares"),
     path("relatorios/horarios-pico/", relatorio_horarios_pico, name="relatorio_horarios_pico"),
     path("solicitar-relatorio/", solicitar_relatorio_whatsapp, name="solicitar_relatorio_whatsapp"),
+    path('onboarding/', onboarding_salao, name='onboarding_salao'),
 
 
 ]

@@ -14,6 +14,7 @@ from .models import Agendamento, Servico, Salão, Calendário
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from .llm_utils import processar_pergunta
+from .integrations.evolution import criar_instancia_evolution
 
 
 class EstabelecimentoViewSet(viewsets.ModelViewSet):
@@ -286,14 +287,33 @@ def onboarding(request):
         servicos=servicos,
         horario_funcionamento=horario_funcionamento
     )
-
-    # Configuração do calendário para o salão
+        # Configuração do calendário para o salão
     calendario = Calendário.objects.create(salao=salao)
 
     # Configuração do bot para o número de WhatsApp do salão
     configurar_bot_whatsapp(salao)
 
-    return Response({"status": "Onboarding concluído com sucesso!"})
+
+    # Criar a instância no Evolution
+    resposta_evolution = criar_instancia_evolution(dados_salao)
+
+    if resposta_evolution:
+        # Salvar o salão no banco de dados
+        salao = Estabelecimento.objects.create(
+            nome=dados_salao["nome"],
+            whatsapp=dados_salao["whatsapp"],
+            horario_funcionamento=dados_salao["horario_funcionamento"],
+            # Salve outros dados se necessário
+        )
+
+        # Adicione o ID da instância no Evolution ao salão
+        salao.evolution_instance_id = resposta_evolution.get("id")  # Exemplo de campo, ajuste conforme necessário
+        salao.save()
+
+        return Response({"message": "Onboarding concluído com sucesso!", "salao_id": salao.id})
+    else:
+        return Response({"error": "Erro ao criar instância no Evolution"}, status=500)
+
 
 
 def configurar_bot_whatsapp(salao):
