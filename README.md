@@ -124,6 +124,11 @@ Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para s
 
 ---
 
+### Estrutura do Banco de Dados 
+
+![image](https://github.com/user-attachments/assets/ef6d56a1-eea9-4d78-933e-d864b687c033)
+
+
 ### Exemplo de Código e Prompt Engineering
 
 Para cada bot, utilizamos **Prompt Engineering** para personalizar o comportamento. Exemplos de prompts para cada bot estão implementados em `llm_utils.py`.
@@ -184,20 +189,13 @@ Para a execução correta do projeto, algumas variáveis de ambiente devem estar
 4. Faça push para a branch (`git push origin feature/nova-feature`).
 5. Abra um Pull Request.
 
----
-
-### Licença
-
-Este projeto é licenciado sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
 
 ---
 
 ### Próximos Passos
-
-1. **Configuração Completa do WhatsApp API**: Finalizar a integração com o WhatsApp para os dois bots.
-2. **Refinamento do Prompt Engineering**: Ajustar os prompts com base no feedback do usuário.
-3. **Documentação dos Endpoints e Testes Automatizados**: Expandir a documentação da API e adicionar testes.
+1. **Frontend do Projeto**
+2. **Configuração Completa do WhatsApp API**: Finalizar a integração com o WhatsApp para os dois bots.
+3. **Refinamento do Prompt Engineering**: Ajustar os prompts com base no feedback do usuário.
+4. **Documentação dos Endpoints e Testes Automatizados**: Expandir a documentação da API e adicionar testes.
 
 ---
-
-Esse README fornece uma visão geral bem estruturada do projeto e pode ser ajustado conforme necessário. Me avise se precisar de mais detalhes em alguma seção!
