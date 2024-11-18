@@ -1,9 +1,43 @@
-### Estrutura do Projeto e Organização de Pastas
+# Sistema de Agendamento para Salão de Beleza
 
-Aqui está uma estrutura sugerida para organizar o projeto:
+## Descrição
+Sistema completo para gerenciamento de salões de beleza com integração WhatsApp e IA.
 
+## Configuração do Ambiente
+
+### Pré-requisitos
+- Python 3.8+
+- PostgreSQL
+- Redis
+- Node.js 16+
+
+### Backend
+1. Criar ambiente virtual:
 ```
-projeto-agendamento-salao/
+python -m venv venv
+source venv/bin/activate # Linux/Mac
+ou
+venv\Scripts\activate # Windows
+```
+2. Instalar dependências: `pip install -r requirements.txt`
+3. Configurar banco de dados:
+- Criar banco PostgreSQL chamado 'tiwang_db'
+- Ajustar credenciais em settings.py
+
+4. Aplicar migrações: `python manage.py makemigrations && python manage.py migrate`
+5. Iniciar serviços (em terminais separados):
+- Terminal 1 - Django: `python manage.py runserver`
+- Terminal 2 - Redis (necessário para Celery): `redis-server`
+- Terminal 3 - Celery Worker: `celery -A agendamento_salao worker -l info`
+- Terminal 4 - Celery Beat: `celery -A agendamento_salao beat -l info`
+
+### Frontend
+1. Instalar dependências: `cd frontend && npm install`
+2. Iniciar servidor de desenvolvimento: `npm run dev`
+
+## Estrutura do Projeto
+```
+Teste_Agendamento-TIWANG/
 ├── core/
 │   ├── views.py               # Views principais, incluindo o processamento de perguntas para os bots
 │   ├── models.py              # Modelos do banco de dados (Salão, Agendamento, etc.)
@@ -20,18 +54,148 @@ projeto-agendamento-salao/
 │   ├── urls.py                # URL principal do projeto
 │   ├── celery.py              # Configuração do Celery para tarefas assíncronas
 │   └── .env                   # Arquivo para variáveis de ambiente (não incluído no Git)
-├── frontend/                  # (Opcional) Arquivos para o frontend, se necessário
+├── frontend/
+│   ├── node_modules/
+│   │   └── ...
+│   ├── public/
+│   │   └── ...
+│   ├── src/
+│   │   ├── components/     # Componentes reutilizáveis
+│   │   │   ├── Navbar.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── PrivateRoute.tsx
+│   │   │   ├── AppointmentsTable.tsx
+│   │   │   ├── AdminNavbar.tsx
+│   │   │   ├── AdminLayout.tsx
+│   │   │   ├── AdminSidebar.tsx
+│   │   │   └── Layout.tsx
+│   │   ├── pages/         # Páginas principais
+│   │   │   ├── admin/
+│   │   │   │   ├── Dashboard.tsx
+│   │   │   │   └── Plans.tsx
+│   │   │   ├── auth/
+│   │   │   │   ├── Login.tsx
+│   │   │   │   └── Register.tsx
+│   │   │   ├── dashboard/
+│   │   │   │   └── SalonDashboard.tsx
+│   │   │   ├── management/
+│   │   │   │   ├── Professionals.tsx
+│   │   │   │   └── Services.tsx
+│   │   │   ├── calendar/
+│   │   │   │   └── Calendar.tsx
+│   │   │   ├── onboarding/
+│   │   │   │   └── OnboardingFlow.tsx
+│   │   │   ├── settings/
+│   │   │   │   └── Settings.tsx
+│   │   │   └── plans/
+│   │   │       └── PricingPage.tsx
+│   │   ├── services/      # Serviços de API
+│   │   │   ├── payment.ts
+│   │   │   ├── auth.ts
+│   │   │   ├── plans.ts
+│   │   │   └── api.ts
+│   │   ├── hooks/         # Custom hooks
+│   │   │   └── usePermissions.ts
+│   │   ├── contexts/      # Contextos React
+│   │   │   └── AuthContext.tsx
+│   │   ├── types/         # Tipos/Interfaces
+│   │   │   └── auth.ts
+│   │   ├── utils/         # Funções utilitárias
+│   │   ├── assets/        # Imagens, etc
+│   │   │   └── react.svg
+│   │   ├── theme.ts
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   └── main.tsx
+│   ├── .gitignore
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── vite.config.js
 ├── README.md                  # Documentação do projeto
-└── .gitignore                 # Arquivo para ignorar arquivos sensíveis
+├── requirements.txt           # Dependências do projeto
+├── node_modules/
+│   └── ...
+├── venv/
+│   ├── ...
+│   └── .gitignore                 # Arquivo para ignorar arquivos sensíveis
 ```
+## Estrutura do Banco de Dados
+![image](estrutura_bd.jpeg)
+### Transcrição do Banco de Dados
+-- Tabela Estabelecimentos
+Estabelecimentos {
+    id (PK)
+    nome
+    endereco
+    horario_funcionamento
+    telefone
+}
 
----
+-- Tabela Profissionais
+Profissionais {
+    id (PK)
+    estabelecimento_id (FK)
+    nome
+    especialidade
+}
 
-### Estrutura de um README Completo
+-- Tabela Servicos
+Servicos {
+    id (PK)
+    estabelecimento_id (FK)
+    nome_servico
+    duracao
+    preco
+}
 
-Aqui está um modelo de README que podemos ajustar conforme a necessidade.
+-- Tabela Horarios_Disponiveis
+Horarios_Disponiveis {
+    id (PK)
+    profissional_id (FK)
+    dia_semana
+    horario_inicio
+    horario_fim
+}
 
----
+-- Tabela Calendario_Estabelecimento
+Calendario_Estabelecimento {
+    id (PK)
+    estabelecimento_id (FK)
+    dia_semana
+    horario_abertura
+    horario_fechamento
+}
+
+-- Tabela Clientes
+Clientes {
+    id (PK)
+    nome
+    whatsapp
+    historico_agendamentos
+}
+
+-- Tabela Agendamentos
+Agendamentos {
+    id (PK)
+    cliente_id (FK)
+    profissional_id (FK)
+    servico_id (FK)
+    data_agendamento
+    horario
+    status
+}
+
+Relacionamentos:
+- Estabelecimentos 1:N Profissionais
+- Estabelecimentos 1:N Servicos
+- Estabelecimentos 1:1 Calendario_Estabelecimento
+- Profissionais 1:N Horarios_Disponiveis
+- Profissionais 1:N Agendamentos
+- Servicos 1:N Agendamentos
+- Clientes 1:N Agendamentos
 
 ## Projeto de Agendamento para Salões de Beleza e Barbearias
 
@@ -61,10 +225,10 @@ Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para s
 
 - **Backend**: Django, Django REST Framework
 - **Tarefas Assíncronas**: Celery, Redis
-- **Banco de Dados**: PostgreSQL
+- **Banco de Dados**: PostgreSQL (se possível, DigitalOcean)
 - **Integração com LLM**: DeepInfra (usando Meta-Llama)
 - **API de Mensagens**: WhatsApp API para comunicação
-- **Deploy**: Digital Ocean com Docker e EasyPanel
+- **Deploy**: Digital Ocean com Docker e EasyPanel e/ou App Platform
 
 ---
 
@@ -79,7 +243,8 @@ Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para s
 2. **Crie um Ambiente Virtual e Instale as Dependências**:
    ```bash
    python -m venv venv
-   source venv/bin/activate
+   source venv/bin/activate  # Linux/Mac
+   venv\Scripts\activate     # Windows
    pip install -r requirements.txt
    ```
 
@@ -172,15 +337,6 @@ Para a execução correta do projeto, algumas variáveis de ambiente devem estar
 
 ---
 
-### Estrutura das Pastas e Arquivos Principais
-
-- `core/`: Lógica do projeto, incluindo views, modelos, filtros e integração com a LLM.
-- `agendamento_salao/`: Configurações e arquivos principais do Django.
-- `frontend/`: Diretório opcional para arquivos frontend (se houver).
-- `README.md`: Documentação principal do projeto.
-
----
-
 ### Como Contribuir
 
 1. Faça um fork do repositório.
@@ -199,3 +355,40 @@ Para a execução correta do projeto, algumas variáveis de ambiente devem estar
 4. **Documentação dos Endpoints e Testes Automatizados**: Expandir a documentação da API e adicionar testes.
 
 ---
+### Área Administrativa (Staff)
+- [x] Dashboard Administrativo
+- [x] Gerenciamento de Usuários
+- [x] Gerenciamento de Salões
+- [x] Detalhes do Salão
+- [x] Gerenciamento de Planos
+- [ ] Financeiro (pendente)
+
+### Área do Salão (Owner)
+- [x] Dashboard do Salão
+- [x] Calendário de Agendamentos
+- [x] Gerenciamento de Profissionais
+- [x] Gerenciamento de Serviços
+- [x] Configurações
+- [ ] Relatórios (pendente)
+
+### Autenticação e Onboarding
+- [x] Login
+- [x] Registro
+- [x] Onboarding Flow
+- [x] Página de Planos
+
+## Funcionalidades implementadas
+- [x] Autenticação (Email, Telefone, Google, Facebook)
+- [x] Dashboard com estatísticas
+- [x] Calendário de Agendamentos
+- [x] Gestão de Serviços
+- [x] Gestão de Profissionais
+- [x] Integração WhatsApp
+- [x] Tarefas automáticas (lembretes, mensagens pós-atendimento)
+
+## Próximos Passos
+1. Implementar página de Financeiro (admin)
+2. Implementar página de Relatórios (owner)
+3. Melhorar integração com WhatsApp
+4. Implementar sistema de notificações
+5. Adicionar mais métricas no dashboard
