@@ -15,7 +15,11 @@ from .views import (
     solicitar_relatorio_whatsapp,
     register,
     finance_stats,
-    finance_transactions
+    finance_transactions,
+    UserViewSet,
+    admin_stats,
+    create_payment_preference,
+    process_payment
 )
 
 router = DefaultRouter()
@@ -24,6 +28,7 @@ router.register(r'profissionais', ProfissionalViewSet)
 router.register(r'clientes', ClienteViewSet)
 router.register(r'servicos', ServicoViewSet)
 router.register(r'agendamentos', AgendamentoViewSet)
+router.register(r'users', UserViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -37,6 +42,9 @@ urlpatterns = [
     path('auth/register/', register, name='register'),
     path('admin/finance/stats/', finance_stats, name='finance_stats'),
     path('admin/finance/transactions/', finance_transactions, name='finance_transactions'),
+    path('admin/stats/', admin_stats, name='admin_stats'),
+    path('payments/preference/', create_payment_preference, name='create_payment_preference'),
+    path('payments/process/', process_payment, name='process_payment'),
 ]
 
 

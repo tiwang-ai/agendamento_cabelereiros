@@ -21,34 +21,56 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
-interface Service {
+interface SystemService {
   id: number;
-  nome_servico: string;
-  duracao: number;
-  preco: number;
+  name: string;
+  defaultDuration?: number;
+  defaultPrice?: number;
+}
+
+interface SalonService {
+  id: number;
+  systemServiceId: number;
+  salonId: number;
+  duration?: number;
+  price?: number;
+  active: boolean;
 }
 
 const ServicesManagement = () => {
-  const [services, setServices] = useState<Service[]>([]);
+  const [systemServices, setSystemServices] = useState<SystemService[]>([]);
+  const [salonServices, setSalonServices] = useState<SalonService[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [selectedService, setSelectedService] = useState<SystemService | null>(null);
   const [formData, setFormData] = useState({
     nome_servico: '',
     duracao: '',
     preco: ''
   });
+  const currentSalonId = useAuth().user?.salonId;
 
   useEffect(() => {
-    loadServices();
+    loadSystemServices();
+    loadSalonServices();
   }, []);
 
-  const loadServices = async () => {
+  const loadSystemServices = async () => {
     try {
-      const response = await api.get('/api/servicos/');
-      setServices(response.data);
+      const response = await api.get('/system-services/');
+      setSystemServices(response.data);
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error);
+      console.error('Erro ao carregar serviços do sistema:', error);
+    }
+  };
+
+  const loadSalonServices = async () => {
+    try {
+      const response = await api.get('/salon-services/');
+      setSalonServices(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar serviços do salão:', error);
     }
   };
 
@@ -61,11 +83,12 @@ const ServicesManagement = () => {
       };
 
       if (selectedService) {
-        await api.put(`/api/servicos/${selectedService.id}/`, data);
+        await api.put(`/servicos/${selectedService.id}/`, data);
       } else {
-        await api.post('/api/servicos/', data);
+        await api.post('/servicos/', data);
       }
-      loadServices();
+      loadSystemServices();
+      loadSalonServices();
       handleCloseDialog();
     } catch (error) {
       console.error('Erro ao salvar serviço:', error);
@@ -75,21 +98,22 @@ const ServicesManagement = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
       try {
-        await api.delete(`/api/servicos/${id}/`);
-        loadServices();
+        await api.delete(`/servicos/${id}/`);
+        loadSystemServices();
+        loadSalonServices();
       } catch (error) {
         console.error('Erro ao excluir serviço:', error);
       }
     }
   };
 
-  const handleOpenDialog = (service?: Service) => {
+  const handleOpenDialog = (service?: SystemService) => {
     if (service) {
       setSelectedService(service);
       setFormData({
-        nome_servico: service.nome_servico,
-        duracao: service.duracao.toString(),
-        preco: service.preco.toString()
+        nome_servico: service.name,
+        duracao: service.defaultDuration?.toString() || '',
+        preco: service.defaultPrice?.toString() || ''
       });
     } else {
       setSelectedService(null);
@@ -130,11 +154,11 @@ const ServicesManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {services.map((service) => (
+              {systemServices.map((service) => (
                 <TableRow key={service.id}>
-                  <TableCell>{service.nome_servico}</TableCell>
-                  <TableCell>{service.duracao} min</TableCell>
-                  <TableCell>R$ {service.preco.toFixed(2)}</TableCell>
+                  <TableCell>{service.name}</TableCell>
+                  <TableCell>{service.defaultDuration} min</TableCell>
+                  <TableCell>R$ {service.defaultPrice?.toFixed(2) || '0.00'}</TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => handleOpenDialog(service)}>
                       <EditIcon />

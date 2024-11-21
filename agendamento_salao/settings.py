@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django_filters',
     'rest_framework',
     'core.apps.CoreConfig',
     'corsheaders',
@@ -147,7 +148,7 @@ EVOLUTION_API_URL = "https://evo-evolution.vaekfu.easypanel.io:8080/api/"
 EVOLUTION_API_TOKEN = "seu_token_de_autenticacao"
 
 # Configurações da API do Deep Infra
-DEEP_INFRA_API_URL = "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct"
+DEEP_INFRA_API_URL = "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3.1-8B-Instruct"
 DEEP_INFRA_API_TOKEN = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 DEEPINFRA_API_KEY = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 DEEPINFRA_API_KEY = os.getenv("4h47LHC10VwzA5DR6vjHD9gnqZOSaK0")
@@ -170,3 +171,7 @@ AUTH_USER_MODEL = 'core.User'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
+
+MERCADOPAGO_ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
+MERCADOPAGO_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'
+FRONTEND_URL = 'http://localhost:5173'  # URL do frontend

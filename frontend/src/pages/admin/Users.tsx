@@ -27,6 +27,7 @@ import {
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Lock as LockIcon } from '@mui/icons-material';
 import api from '../../services/api';
+import { UserService } from '../../services/users';
 import { UserRole } from '../../types/auth';
 
 interface User {
@@ -63,8 +64,8 @@ const UsersManagement = () => {
 
   const loadUsers = async () => {
     try {
-      const response = await api.get('/api/users/');
-      setUsers(response.data);
+      const data = await UserService.getAll();
+      setUsers(data);
     } catch (error) {
       console.error('Erro ao carregar usuários:', error);
       setError('Erro ao carregar usuários');
@@ -75,7 +76,7 @@ const UsersManagement = () => {
 
   const loadEstablishments = async () => {
     try {
-      const response = await api.get('/api/estabelecimentos/');
+      const response = await api.get('/estabelecimentos/');
       setEstablishments(response.data);
     } catch (error) {
       console.error('Erro ao carregar estabelecimentos:', error);
@@ -94,20 +95,32 @@ const UsersManagement = () => {
         email: formData.email,
         phone: formData.phone,
         role: formData.role,
-        estabelecimento_id: formData.estabelecimento_id || null,
+        estabelecimento: formData.estabelecimento_id ? parseInt(formData.estabelecimento_id) : null,
         password: formData.password
       };
 
       if (selectedUser) {
-        await api.put(`/api/users/${selectedUser.id}/`, userData);
+        await api.put(`/users/${selectedUser.id}/`, userData);
       } else {
-        await api.post('/api/users/', userData);
+        await api.post('/users/', userData);
       }
 
       loadUsers();
       handleCloseDialog();
     } catch (error: any) {
-      setError(error.response?.data?.detail || 'Erro ao salvar usuário');
+      const errorData = error.response?.data;
+      let errorMessage = 'Erro ao salvar usuário';
+      
+      if (typeof errorData === 'object') {
+        const firstError = Object.values(errorData)[0];
+        if (Array.isArray(firstError)) {
+          errorMessage = firstError[0];
+        } else if (typeof firstError === 'string') {
+          errorMessage = firstError;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 

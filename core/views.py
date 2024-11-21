@@ -1,5 +1,6 @@
 import requests
 from rest_framework import viewsets, status, serializers
+from django.contrib.auth import get_user_model
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento
 from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer
 from django.conf import settings
@@ -33,6 +34,10 @@ from .integrations.evolution import criar_instancia_evolution
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
+
+import mercadopago
+
+User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -507,3 +512,103 @@ def finance_transactions(request):
         })
     
     return Response(transaction_list)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_stats(request):
+    """
+    Retorna estatísticas para o dashboard administrativo
+    """
+    total_salons = Estabelecimento.objects.count()
+    active_salons = Estabelecimento.objects.filter(is_active=True).count()
+    total_revenue = Agendamento.objects.filter(status='completed').aggregate(
+        total=Sum('servico__preco'))['total'] or 0
+    active_subscriptions = User.objects.filter(role='OWNER', is_active=True).count()
+    
+    # Atividades recentes
+    recent_activities = []
+    recent_appointments = Agendamento.objects.order_by('-data_agendamento')[:5]
+    for appointment in recent_appointments:
+        recent_activities.append({
+            'id': appointment.id,
+            'type': 'appointment',
+            'description': f'Novo agendamento - {appointment.cliente.nome}',
+            'date': appointment.data_agendamento
+        })
+    
+    return Response({
+        'totalSalons': total_salons,
+        'activeSalons': active_salons,
+        'totalRevenue': float(total_revenue),
+        'activeSubscriptions': active_subscriptions,
+        'recentActivities': recent_activities
+    })
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+        return User.objects.all().select_related('estabelecimento')
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+@api_view(['POST'])
+def create_payment_preference(request):
+    plan_id = request.data.get('planId')
+    plan = Plan.objects.get(id=plan_id)
+    
+    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+    
+    preference_data = {
+        "items": [
+            {
+                "title": plan.name,
+                "quantity": 1,
+                "currency_id": "BRL",
+                "unit_price": float(plan.price)
+            }
+        ],
+        "back_urls": {
+            "success": f"{settings.FRONTEND_URL}/payment/success",
+            "failure": f"{settings.FRONTEND_URL}/payment/failure",
+            "pending": f"{settings.FRONTEND_URL}/payment/pending"
+        },
+        "auto_return": "approved",
+    }
+    
+    preference_response = sdk.preference().create(preference_data)
+    
+    return Response(preference_response["response"])
+
+@api_view(['POST'])
+def process_payment(request):
+    payment_id = request.data.get('payment_id')
+    salon_id = request.data.get('salon_id')
+    
+    sdk = mercadopago.SDK(settings.MERCADOPAGO_ACCESS_TOKEN)
+    payment = sdk.payment().get(payment_id)
+    
+    if payment["status"] == "approved":
+        # Ativar o salão
+        salon = Estabelecimento.objects.get(id=salon_id)
+        salon.is_active = True
+        salon.save()
+        
+        return Response({"status": "approved"})
+    
+    return Response({"status": payment["status"]}, status=400)

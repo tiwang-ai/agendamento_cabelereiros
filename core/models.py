@@ -9,6 +9,7 @@ class Estabelecimento(models.Model):
     telefone = models.CharField(max_length=15)
     whatsapp = models.CharField(max_length=15)
     evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return self.nome
@@ -109,3 +110,49 @@ class Calendario_Estabelecimento(models.Model):
     dia_semana = models.IntegerField()
     horario_abertura = models.TimeField()
     horario_fechamento = models.TimeField()
+
+class Transaction(models.Model):
+    TYPES = (
+        ('income', 'Receita'),
+        ('expense', 'Despesa')
+    )
+    
+    STATUS = (
+        ('completed', 'Concluído'),
+        ('pending', 'Pendente'),
+        ('cancelled', 'Cancelado')
+    )
+    
+    date = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    type = models.CharField(max_length=10, choices=TYPES)
+    status = models.CharField(max_length=10, choices=STATUS)
+    category = models.CharField(max_length=50)
+    salon = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-date']
+
+class SystemService(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    default_duration = models.IntegerField(help_text="Duração padrão em minutos")
+    default_price = models.DecimalField(max_digits=8, decimal_places=2)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class SalonService(models.Model):
+    system_service = models.ForeignKey(SystemService, on_delete=models.CASCADE)
+    estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
+    duration = models.IntegerField(null=True, blank=True)
+    price = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ['system_service', 'estabelecimento']
+
+    def __str__(self):
+        return f"{self.system_service.name} - {self.estabelecimento.nome}"

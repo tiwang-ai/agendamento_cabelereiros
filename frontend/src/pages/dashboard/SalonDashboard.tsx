@@ -53,11 +53,11 @@ const SalonDashboard = () => {
   const loadDashboardData = async () => {
     try {
       // Carregar estatísticas
-      const statsResponse = await api.get('/api/dashboard/stats/');
+      const statsResponse = await api.get('/dashboard/stats/');
       setStats(statsResponse.data);
 
       // Carregar agendamentos
-      const appointmentsResponse = await api.get('/api/agendamentos/');
+      const appointmentsResponse = await api.get('/agendamentos/');
       setAppointments(appointmentsResponse.data);
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error);
@@ -69,7 +69,7 @@ const SalonDashboard = () => {
   const handleEditAppointment = async (id: string) => {
     try {
       // Implementar edição de agendamento
-      await api.put(`/api/agendamentos/${id}/`);
+      await api.put(`/agendamentos/${id}/`);
       loadDashboardData(); // Recarregar dados
     } catch (error) {
       console.error('Erro ao editar agendamento:', error);
@@ -79,7 +79,7 @@ const SalonDashboard = () => {
   const handleDeleteAppointment = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       try {
-        await api.delete(`/api/agendamentos/${id}/`);
+        await api.delete(`/agendamentos/${id}/`);
         loadDashboardData(); // Recarregar dados
       } catch (error) {
         console.error('Erro ao excluir agendamento:', error);

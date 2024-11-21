@@ -20,7 +20,7 @@ interface LoginResponse {
 export const AuthService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      const response = await api.post<LoginResponse>('/api/auth/login/', credentials);
+      const response = await api.post<LoginResponse>('/auth/login/', credentials);
       
       if (response.data.access) {
         // Salva os tokens

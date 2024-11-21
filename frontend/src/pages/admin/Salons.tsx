@@ -4,6 +4,7 @@ import {
   Container,
   Paper,
   Typography,
+  Button,
   Table,
   TableBody,
   TableCell,
@@ -11,8 +12,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Button,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,8 +19,8 @@ import {
   TextField,
   Box
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import api from '../../services/api';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { SalonService } from '../../services/salons';
 
 interface Salon {
   id: number;
@@ -30,14 +29,19 @@ interface Salon {
   telefone: string;
   whatsapp: string;
   horario_funcionamento: string;
-  status: 'active' | 'inactive' | 'pending';
 }
 
 const SalonsManagement = () => {
   const [salons, setSalons] = useState<Salon[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedSalon, setSelectedSalon] = useState<Salon | null>(null);
+  const [formData, setFormData] = useState({
+    nome: '',
+    endereco: '',
+    telefone: '',
+    whatsapp: '',
+    horario_funcionamento: ''
+  });
 
   useEffect(() => {
     loadSalons();
@@ -45,52 +49,67 @@ const SalonsManagement = () => {
 
   const loadSalons = async () => {
     try {
-      const response = await api.get('/api/estabelecimentos/');
-      setSalons(response.data);
+      const data = await SalonService.getAll();
+      setSalons(data);
     } catch (error) {
       console.error('Erro ao carregar salões:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleStatusChange = async (salonId: number, newStatus: string) => {
-    try {
-      await api.patch(`/api/estabelecimentos/${salonId}/`, {
-        status: newStatus
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleOpenDialog = (salon?: any) => {
+    if (salon) {
+      setSelectedSalon(salon);
+      setFormData({
+        nome: salon.nome,
+        endereco: salon.endereco,
+        telefone: salon.telefone,
+        whatsapp: salon.whatsapp,
+        horario_funcionamento: salon.horario_funcionamento
       });
+    } else {
+      setSelectedSalon(null);
+      setFormData({
+        nome: '',
+        endereco: '',
+        telefone: '',
+        whatsapp: '',
+        horario_funcionamento: ''
+      });
+    }
+    setOpenDialog(true);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      if (selectedSalon) {
+        await SalonService.update(selectedSalon.id, formData);
+      } else {
+        await SalonService.create(formData);
+      }
       loadSalons();
+      setOpenDialog(false);
     } catch (error) {
-      console.error('Erro ao atualizar status:', error);
+      console.error('Erro ao salvar salão:', error);
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este salão?')) {
       try {
-        await api.delete(`/api/estabelecimentos/${id}/`);
+        await SalonService.delete(id);
         loadSalons();
       } catch (error) {
         console.error('Erro ao excluir salão:', error);
       }
     }
-  };
-
-  const getStatusChip = (status: string) => {
-    const statusConfig = {
-      active: { color: 'success', label: 'Ativo' },
-      inactive: { color: 'error', label: 'Inativo' },
-      pending: { color: 'warning', label: 'Pendente' }
-    };
-    const config = statusConfig[status as keyof typeof statusConfig];
-    
-    return (
-      <Chip 
-        label={config.label}
-        color={config.color as any}
-        size="small"
-      />
-    );
   };
 
   return (
@@ -102,7 +121,7 @@ const SalonsManagement = () => {
           </Typography>
           <Button 
             variant="contained"
-            onClick={() => setOpenDialog(true)}
+            onClick={() => handleOpenDialog()}
           >
             Adicionar Salão
           </Button>
@@ -116,28 +135,18 @@ const SalonsManagement = () => {
                 <TableCell>Endereço</TableCell>
                 <TableCell>Telefone</TableCell>
                 <TableCell>WhatsApp</TableCell>
-                <TableCell>Status</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {salons.map((salon) => (
+              {salons.map((salon: any) => (
                 <TableRow key={salon.id}>
                   <TableCell>{salon.nome}</TableCell>
                   <TableCell>{salon.endereco}</TableCell>
                   <TableCell>{salon.telefone}</TableCell>
                   <TableCell>{salon.whatsapp}</TableCell>
-                  <TableCell>
-                    {getStatusChip(salon.status)}
-                  </TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => window.location.href = `/admin/salons/${salon.id}`}>
-                      <ViewIcon />
-                    </IconButton>
-                    <IconButton onClick={() => {
-                      setSelectedSalon(salon);
-                      setOpenDialog(true);
-                    }}>
+                    <IconButton onClick={() => handleOpenDialog(salon)}>
                       <EditIcon />
                     </IconButton>
                     <IconButton onClick={() => handleDelete(salon.id)}>
@@ -153,7 +162,7 @@ const SalonsManagement = () => {
         <Dialog 
           open={openDialog} 
           onClose={() => setOpenDialog(false)}
-          maxWidth="md"
+          maxWidth="sm"
           fullWidth
         >
           <DialogTitle>
@@ -165,31 +174,36 @@ const SalonsManagement = () => {
                 fullWidth
                 label="Nome do Salão"
                 name="nome"
-                value={selectedSalon?.nome || ''}
+                value={formData.nome}
+                onChange={handleInputChange}
               />
               <TextField
                 fullWidth
                 label="Endereço"
                 name="endereco"
-                value={selectedSalon?.endereco || ''}
+                value={formData.endereco}
+                onChange={handleInputChange}
               />
               <TextField
                 fullWidth
                 label="Telefone"
                 name="telefone"
-                value={selectedSalon?.telefone || ''}
+                value={formData.telefone}
+                onChange={handleInputChange}
               />
               <TextField
                 fullWidth
                 label="WhatsApp"
                 name="whatsapp"
-                value={selectedSalon?.whatsapp || ''}
+                value={formData.whatsapp}
+                onChange={handleInputChange}
               />
               <TextField
                 fullWidth
                 label="Horário de Funcionamento"
                 name="horario_funcionamento"
-                value={selectedSalon?.horario_funcionamento || ''}
+                value={formData.horario_funcionamento}
+                onChange={handleInputChange}
               />
             </Box>
           </DialogContent>
@@ -197,10 +211,7 @@ const SalonsManagement = () => {
             <Button onClick={() => setOpenDialog(false)}>
               Cancelar
             </Button>
-            <Button variant="contained" onClick={() => {
-              // Implementar lógica de salvar
-              setOpenDialog(false);
-            }}>
+            <Button variant="contained" onClick={handleSubmit}>
               Salvar
             </Button>
           </DialogActions>

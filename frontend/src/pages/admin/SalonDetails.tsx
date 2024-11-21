@@ -68,10 +68,10 @@ const SalonDetails = () => {
   const loadSalonData = async () => {
     try {
       const [salonRes, profRes, appRes, servRes] = await Promise.all([
-        api.get(`/api/estabelecimentos/${id}/`),
-        api.get(`/api/profissionais/?estabelecimento_id=${id}`),
-        api.get(`/api/agendamentos/?estabelecimento_id=${id}`),
-        api.get(`/api/servicos/?estabelecimento_id=${id}`)
+        api.get(`/estabelecimentos/${id}/`),
+        api.get(`/profissionais/?estabelecimento_id=${id}`),
+        api.get(`/agendamentos/?estabelecimento_id=${id}`),
+        api.get(`/servicos/?estabelecimento_id=${id}`)
       ]);
 
       setSalon(salonRes.data);

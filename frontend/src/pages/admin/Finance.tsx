@@ -30,7 +30,7 @@ import {
   AccountBalance as AccountIcon,
   Receipt as ReceiptIcon
 } from '@mui/icons-material';
-import api from '../../services/api';
+import { FinanceService } from '../../services/finance';
 
 interface Transaction {
   id: number;
@@ -72,20 +72,17 @@ const Finance = () => {
   const loadFinanceData = async () => {
     try {
       const [statsRes, transactionsRes] = await Promise.all([
-        api.get('/api/admin/finance/stats/'),
-        api.get('/api/admin/finance/transactions/', {
-          params: {
-            start_date: dateRange.start.toISOString(),
-            end_date: dateRange.end.toISOString(),
-            type: filters.type !== 'all' ? filters.type : undefined,
-            status: filters.status !== 'all' ? filters.status : undefined,
-            category: filters.category !== 'all' ? filters.category : undefined
-          }
+        FinanceService.getStats(),
+        FinanceService.getTransactions({
+          start_date: dateRange.start.toISOString(),
+          end_date: dateRange.end.toISOString(),
+          type: filters.type !== 'all' ? filters.type : undefined,
+          status: filters.status !== 'all' ? filters.status : undefined
         })
       ]);
 
-      setStats(statsRes.data);
-      setTransactions(transactionsRes.data);
+      setStats(statsRes);
+      setTransactions(transactionsRes);
     } catch (error) {
       console.error('Erro ao carregar dados financeiros:', error);
     } finally {

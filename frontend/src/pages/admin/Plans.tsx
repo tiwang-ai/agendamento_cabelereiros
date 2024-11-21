@@ -8,13 +8,14 @@ import {
   Button,
   Dialog,
   TextField,
-  Box
+  Box,
+  CircularProgress
 } from '@mui/material';
 import { DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import { PlansService } from '../../services/plans';
 
 interface Plan {
-  id: string;
+  id: number;
   name: string;
   price: number;
   features: string[];
@@ -40,6 +41,7 @@ const PlansManagement = () => {
 
   const loadPlans = async () => {
     try {
+      setLoading(true);
       const data = await PlansService.getAll();
       setPlans(data);
     } catch (error) {
@@ -78,47 +80,55 @@ const PlansManagement = () => {
         Gerenciamento de Planos
       </Typography>
       
-      <Button 
-        variant="contained" 
-        onClick={() => setOpenDialog(true)}
-        sx={{ mb: 3 }}
-      >
-        Adicionar Novo Plano
-      </Button>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Button 
+            variant="contained" 
+            onClick={() => setOpenDialog(true)}
+            sx={{ mb: 3 }}
+          >
+            Adicionar Novo Plano
+          </Button>
 
-      <Grid container spacing={3}>
-        {plans.map((plan) => (
-          <Grid item xs={12} md={4} key={plan.id}>
-            <Card sx={{ p: 3 }}>
-              <Typography variant="h5">{plan.name}</Typography>
-              <Typography variant="h4" sx={{ my: 2 }}>
-                R$ {plan.price}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Até {plan.maxProfessionals} profissionais
-              </Typography>
-              <Box sx={{ mt: 2 }}>
-                {plan.features.map((feature, index) => (
-                  <Typography key={index} variant="body2">
-                    • {feature}
+          <Grid container spacing={3}>
+            {plans.map((plan) => (
+              <Grid item xs={12} md={4} key={plan.id}>
+                <Card sx={{ p: 3 }}>
+                  <Typography variant="h5">{plan.name}</Typography>
+                  <Typography variant="h4" sx={{ my: 2 }}>
+                    R$ {plan.price}
                   </Typography>
-                ))}
-              </Box>
-              <Button 
-                variant="outlined" 
-                fullWidth 
-                sx={{ mt: 2 }}
-                onClick={() => {
-                  setSelectedPlan(plan);
-                  setOpenDialog(true);
-                }}
-              >
-                Editar
-              </Button>
-            </Card>
+                  <Typography variant="body2" color="text.secondary">
+                    Até {plan.maxProfessionals} profissionais
+                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    {plan.features.map((feature, index) => (
+                      <Typography key={index} variant="body2">
+                        • {feature}
+                      </Typography>
+                    ))}
+                  </Box>
+                  <Button 
+                    variant="outlined" 
+                    fullWidth 
+                    sx={{ mt: 2 }}
+                    onClick={() => {
+                      setSelectedPlan(plan);
+                      setOpenDialog(true);
+                    }}
+                  >
+                    Editar
+                  </Button>
+                </Card>
+              </Grid>
+            ))}
           </Grid>
-        ))}
-      </Grid>
+        </>
+      )}
 
       <Dialog 
         open={openDialog} 

@@ -17,11 +17,15 @@ import PlansManagement from './pages/admin/Plans'
 import SalonsManagement from './pages/admin/Salons'
 import SalonDetails from './pages/admin/SalonDetails'
 import UsersManagement from './pages/admin/Users'
+import Finance from './pages/admin/Finance'
+import LandingPage from '../landing/pages/index'
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* Landing Page */}
+        <Route path="/" element={<LandingPage />} />
         {/* Rotas públicas */}
         <Route path="/login" element={<Login />} />
         <Route path="/pricing" element={<PricingPage />} />
@@ -46,6 +50,7 @@ function App() {
             <Route path="/admin/users" element={<UsersManagement />} />
             <Route path="/admin/salons" element={<SalonsManagement />} />
             <Route path="/admin/salons/:id" element={<SalonDetails />} />
+            <Route path="/admin/finance" element={<Finance />} />
           </Route>
         </Route>
       </Routes>

@@ -12,17 +12,17 @@ export interface Plan {
 
 export const PlansService = {
   getAll: async () => {
-    const response = await api.get('/api/plans/');
+    const response = await api.get('/plans/');
     return response.data;
   },
 
   create: async (planData: Omit<Plan, 'id'>) => {
-    const response = await api.post('/api/plans/', planData);
+    const response = await api.post('/plans/', planData);
     return response.data;
   },
 
   update: async (id: number, planData: Partial<Plan>) => {
-    const response = await api.put(`/api/plans/${id}/`, planData);
+    const response = await api.put(`/plans/${id}/`, planData);
     return response.data;
   },
 
