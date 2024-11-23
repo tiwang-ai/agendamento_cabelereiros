@@ -6,7 +6,8 @@ import {
   People as PeopleIcon,
   Settings as SettingsIcon,
   ListAlt as ListAltIcon,
-  Money as MoneyIcon
+  Money as MoneyIcon,
+  WhatsApp as WhatsAppIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '../hooks/usePermissions';
@@ -25,7 +26,13 @@ const Sidebar = () => {
     { text: 'Profissionais', icon: <PeopleIcon />, path: '/professionals', show: permissions.canManageProfessionals },
     { text: 'Serviços', icon: <ListAltIcon />, path: '/services', show: permissions.canManageServices },
     { text: 'Financeiro', icon: <MoneyIcon />, path: '/financials', show: permissions.canViewFinancials },
-    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings', show: true }
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings', show: true },
+    {
+      text: 'WhatsApp',
+      icon: <WhatsAppIcon />,
+      path: '/settings/whatsapp',
+      show: permissions.canManageWhatsApp
+    },
   ];
 
   return (

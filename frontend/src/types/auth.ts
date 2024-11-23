@@ -65,7 +65,10 @@ export const defaultPermissions: Record<UserRole, RolePermissions> = {
 export interface User {
   id: string;
   name: string;
-  email: string;
+  email?: string;
+  phone?: string;
+  whatsappNumber?: string;
   role: UserRole;
-  salonId?: string; // ID do salão associado
+  salonId?: string; // ID do salão associado;
+  isActive: boolean;
 }

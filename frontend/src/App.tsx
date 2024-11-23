@@ -19,6 +19,9 @@ import SalonDetails from './pages/admin/SalonDetails'
 import UsersManagement from './pages/admin/Users'
 import Finance from './pages/admin/Finance'
 import LandingPage from '../landing/pages/index'
+import WhatsAppConnection from './pages/settings/WhatsAppConnection'
+import TechSupport from './pages/admin/TechSupport'
+import WhatsAppStatus from './pages/admin/WhatsAppStatus'
 
 function App() {
   return (
@@ -39,6 +42,8 @@ function App() {
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/professionals" element={<ProfessionalsManagement />} />
             <Route path="/services" element={<ServicesManagement />} />
+            <Route path="/whatsapp-connection" element={<WhatsAppConnection />} />
+            <Route path="/settings/whatsapp" element={<WhatsAppConnection />} />
           </Route>
         </Route>
         {/* Rotas Administrativas */}
@@ -51,6 +56,8 @@ function App() {
             <Route path="/admin/salons" element={<SalonsManagement />} />
             <Route path="/admin/salons/:id" element={<SalonDetails />} />
             <Route path="/admin/finance" element={<Finance />} />
+            <Route path="/admin/tech-support" element={<TechSupport />} />
+            <Route path="/admin/whatsapp-status" element={<WhatsAppStatus />} />
           </Route>
         </Route>
       </Routes>

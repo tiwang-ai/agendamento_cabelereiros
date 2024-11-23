@@ -39,7 +39,13 @@ venv\Scripts\activate # Windows
 ```
 Teste_Agendamento-TIWANG/
 ├── core/
+│   ├── integrations/
+│   │   └── evolution.py       # Integração com a Evolution API
+│   ├── migrations/
+│   │   └── ...
 │   ├── views.py               # Views principais, incluindo o processamento de perguntas para os bots
+│   ├── admin.py               # Configuração do painel administrativo
+│   ├── apps.py                # Configuração dos apps do projeto
 │   ├── models.py              # Modelos do banco de dados (Salão, Agendamento, etc.)
 │   ├── urls.py                # Definição das rotas da API
 │   ├── filters.py             # Filtros específicos para cada bot
@@ -62,10 +68,9 @@ Teste_Agendamento-TIWANG/
 │   ├── landing/
 │   │   ├── components/
 │   │   │   └── Demo/
-│   │   │   │   ├── BookingFlow.tsx
 │   │   │   │   ├── CalendarPreview.tsx
-│   │   │   │   ├── ServiceSelection.tsx
-│   │   │   │   └── BookingConfirmation.tsx
+│   │   │   │   ├── ProfessionalsView.tsx
+│   │   │   │   ├── BookingConfirmation.tsx
 │   │   │   │   └── WhatsAppDemo.tsx
 │   │   │   └── Hero.tsx
 │   │   ├── pages/
@@ -83,6 +88,13 @@ Teste_Agendamento-TIWANG/
 │   │   ├── pages/         # Páginas principais
 │   │   │   ├── admin/
 │   │   │   │   ├── Dashboard.tsx
+│   │   │   │   ├── Finance.tsx
+│   │   │   │   ├── SalonDetails.tsx
+│   │   │   │   ├── Salons.tsx
+│   │   │   │   ├── Users.tsx
+│   │   │   │   ├── WhatsAppStatus.tsx
+│   │   │   │   ├── Services.tsx
+│   │   │   │   ├── TechSupport.tsx
 │   │   │   │   └── Plans.tsx
 │   │   │   ├── auth/
 │   │   │   │   ├── Login.tsx
@@ -102,7 +114,8 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   │   └── ServicesStep.tsx
 │   │   │   │   └── OnboardingFlow.tsx
 │   │   │   ├── settings/
-│   │   │   │   └── Settings.tsx
+│   │   │   │   ├── Settings.tsx
+│   │   │   │   └── WhatsAppConnection.tsx
 │   │   │   └── plans/
 │   │   │       └── PricingPage.tsx
 │   │   ├── services/      # Serviços de API
@@ -112,7 +125,8 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── finance.ts
 │   │   │   ├── salons.ts
 │   │   │   ├── users.ts
-│   │   │   └── api.ts
+│   │   │   ├── whatsapp.ts
+│   │   │   └── ai.ts
 │   │   ├── hooks/         # Custom hooks
 │   │   │   └── usePermissions.ts
 │   │   ├── contexts/      # Contextos React
@@ -251,7 +265,11 @@ Relacionamentos:
 - [x] Gerenciamento de Salões
 - [x] Detalhes do Salão
 - [x] Gerenciamento de Planos
-- [ ] Financeiro (pendente)
+- [x] Monitoramento WhatsApp
+- [x] Suporte Técnico
+- [x] Status WhatsApp
+- [ ] Financeiro (em desenvolvimento)
+- [ ] Gerenciamento de Equipe Staff
 
 ### Área do Salão (Owner)
 - [x] Dashboard do Salão
@@ -276,9 +294,86 @@ Relacionamentos:
 - [x] Integração WhatsApp
 - [x] Tarefas automáticas (lembretes, mensagens pós-atendimento)
 
-## Próximos Passos
-1. [ ] Implementar página de conexão WhatsApp
-2. [ ] Desenvolver área de relatórios
-3. [ ] Finalizar gestão de equipe staff
-4. [ ] Melhorar UX do onboarding
-5. [ ] Implementar testes E2E
+## Integrações
+
+### Evolution API
+- Versão: v2
+- Documentação: https://doc.evolution-api.com/v2/pt/get-started/introduction
+- Status: Parcialmente implementada
+  - [x] Configuração básica
+  - [x] Envio de mensagens
+  - [x] QR Code e conexão de instância
+  - [x] Webhooks para status da conexão
+
+### Deep Infra (LLM)
+- Modelo: Meta-Llama-3-8B-Instruct
+- Status: Implementado
+  - [x] Bot 1 (Atendimento ao Salão)
+  - [x] Bot 2 (Atendimento ao Cliente)
+  - [ ] Testes e ajustes de prompts
+
+## Páginas do Sistema
+
+### Área Pública
+- [x] Landing Page
+- [x] Página de Planos
+- [x] Login
+- [x] Registro
+
+### Área do Salão (Owner)
+- [x] Dashboard
+- [x] Calendário
+- [x] Gerenciamento de Profissionais
+- [x] Gerenciamento de Serviços
+- [x] Configurações
+- [ ] Conexão WhatsApp (Prioritário)
+- [ ] Gerenciamento de Clientes
+- [ ] Relatórios
+- [ ] Perfil e Plano
+
+### Área Administrativa (Staff)
+- [x] Dashboard
+- [x] Gerenciamento de Salões
+- [x] Gerenciamento de Planos
+- [ ] Gerenciamento de Equipe Staff
+- [ ] Financeiro
+- [ ] Relatórios Administrativos
+
+## Próximos Passos (Priorizado)
+
+1. Implementar página de conexão WhatsApp
+   - Interface para leitura do QR Code
+   - Monitoramento do status da conexão
+   - Logs de eventos
+
+2. Desenvolver área de relatórios
+   - Dashboard analítico
+   - Exportação de dados
+   - Agendamentos por período
+
+3. Implementar gerenciamento de clientes
+   - Listagem e busca
+   - Histórico de agendamentos
+   - Preferências e notas
+
+4. Finalizar gestão de equipe staff
+   - Permissões personalizadas
+   - Logs de atividades
+   - Métricas de desempenho
+
+## Funcionalidades Principais
+
+### Integração WhatsApp
+- Conexão via QR Code ou código (em desenvolvimento)
+- Integração com Evolution API
+- Status de conexão em tempo real
+- Envio automático de mensagens
+- Bots de atendimento personalizados
+
+### Gerenciamento de Salão
+- Cadastro de profissionais
+- Agenda de serviços
+- Relatórios automáticos
+- Gestão de clientes
+
+## Estrutura de Arquivos Atualizada

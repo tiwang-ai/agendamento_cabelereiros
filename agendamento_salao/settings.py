@@ -175,3 +175,13 @@ AUTHENTICATION_BACKENDS = [
 MERCADOPAGO_ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
 MERCADOPAGO_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'
 FRONTEND_URL = 'http://localhost:5173'  # URL do frontend
+
+# Configurações da Evolution API
+EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL', 'https://evo-evolution.vaekfu.easypanel.host')
+EVOLUTION_API_KEY = os.getenv('EVOLUTION_API_KEY', '429683C4C977415CAAFCCE10F7D57E11')
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
+
+# Configurações específicas do WhatsApp
+WHATSAPP_INSTANCE_URL = f"{EVOLUTION_API_URL}/instance"
+WHATSAPP_MESSAGE_URL = f"{EVOLUTION_API_URL}/message"
+WHATSAPP_STATUS_URL = f"{EVOLUTION_API_URL}/status"

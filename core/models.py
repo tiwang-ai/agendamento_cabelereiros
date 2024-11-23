@@ -3,13 +3,17 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
 
 class Estabelecimento(models.Model): 
-    nome = models.CharField(max_length=100)
-    endereco = models.CharField(max_length=200)
-    horario_funcionamento = models.CharField(max_length=100)
-    telefone = models.CharField(max_length=15)
-    whatsapp = models.CharField(max_length=15)
+    nome = models.CharField(max_length=200)
+    endereco = models.CharField(max_length=500)
+    telefone = models.CharField(max_length=20)
+    whatsapp = models.CharField(max_length=20)
+    horario_funcionamento = models.CharField(max_length=200, null=True, blank=True)
     evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(max_length=50, default='disconnected')
     is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'estabelecimento'
 
     def __str__(self):
         return self.nome

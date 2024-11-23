@@ -54,7 +54,44 @@ const WhatsAppDemo = () => {
   const [selectedSlot, setSelectedSlot] = useState<any>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null);
 
+  const processUserMessage = (message: string) => {
+    const keywords = message.toLowerCase();
+    
+    if (keywords.includes('agendar') || keywords.includes('marcar') || keywords.includes('horário')) {
+      return {
+        response: 'Claro! Temos horários disponíveis para terça às 15h e quarta às 13h. Qual você prefere?',
+        action: () => setShowCalendar(true)
+      };
+    }
+    
+    if (keywords.includes('terça') || keywords.includes('quarta') || keywords.includes('hora')) {
+      return {
+        response: 'Ótimo! Temos dois profissionais especializados disponíveis. Gostaria de conhecê-los?',
+        action: () => {
+          setShowCalendar(false);
+          setShowProfessionals(true);
+        }
+      };
+    }
+    
+    if (keywords.includes('júlio') || keywords.includes('carlos')) {
+      return {
+        response: 'Perfeito! Vou confirmar seu agendamento.',
+        action: () => {
+          setShowProfessionals(false);
+          setShowConfirmation(true);
+        }
+      };
+    }
+
+    return {
+      response: 'Como posso ajudar com seu agendamento hoje?',
+      action: () => null
+    };
+  };
+
   const simulateResponse = async (userMessage: string) => {
+    // Adiciona mensagem do usuário
     const newMessage: Message = {
       type: 'user',
       text: userMessage,
@@ -64,53 +101,31 @@ const WhatsAppDemo = () => {
     
     setMessages(prev => [...prev, newMessage]);
 
-    // Simula status de entregue e lido
-    setTimeout(() => {
-      setMessages(prev => prev.map(msg => 
-        msg === newMessage ? { ...msg, status: 'delivered' } : msg
-      ));
-    }, 500);
+    // Processa a mensagem e obtém resposta
+    const { response, action } = processUserMessage(userMessage);
 
-    setTimeout(() => {
-      setMessages(prev => prev.map(msg => 
-        msg === newMessage ? { ...msg, status: 'read' } : msg
-      ));
-    }, 1000);
+    // Simula delay de digitação
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Simula resposta do bot com elementos visuais
-    setTimeout(() => {
-      let botResponse = '';
-      switch (step) {
-        case 0:
-          botResponse = 'Claro! Temos horários disponíveis para terça às 15h e quarta às 13h. Qual você prefere?';
-          setShowCalendar(true);
-          setShowProfessionals(false);
-          break;
-        case 1:
-          botResponse = 'Ótimo! Temos dois profissionais disponíveis: Júlio e Carlos. Com qual você prefere agendar?';
-          setShowProfessionals(true);
-          break;
-        case 2:
-          botResponse = 'Perfeito! Agendamento confirmado com Carlos para terça às 15h.';
-          setShowConfirmation(true);
-          setShowProfessionals(false);
-          break;
-        default:
-          botResponse = 'Como posso ajudar?';
-      }
-      
-      setMessages(prev => [...prev, {
-        type: 'bot',
-        text: botResponse,
-        time: format(new Date(), 'HH:mm')
-      }]);
-      
-      setStep(prev => prev + 1);
-    }, 1500);
+    // Adiciona resposta do bot
+    setMessages(prev => [...prev, {
+      type: 'bot',
+      text: response,
+      time: format(new Date(), 'HH:mm')
+    }]);
+
+    // Executa ação visual
+    action();
+  };
+
+  const handleSendMessage = () => {
+    if (!userInput.trim()) return;
+    simulateResponse(userInput);
+    setUserInput('');
   };
 
   return (
-    <Box sx={{ display: 'flex', gap: 4 }}>
+    <Box sx={{ display: 'flex', gap: 4, position: 'relative' }}>
       {/* WhatsApp Chat */}
       <Paper
         sx={{

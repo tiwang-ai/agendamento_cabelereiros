@@ -6,7 +6,9 @@ import {
   AttachMoney as MoneyIcon,
   Business as BusinessIcon,
   Settings as SettingsIcon,
-  ViewList as PlansIcon
+  ViewList as PlansIcon,
+  Support as SupportIcon,
+  WhatsApp as WhatsAppIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -18,6 +20,8 @@ const menuItems = [
   { text: 'Usuários', icon: <PeopleIcon />, path: '/admin/users' },
   { text: 'Planos', icon: <PlansIcon />, path: '/admin/plans' },
   { text: 'Financeiro', icon: <MoneyIcon />, path: '/admin/finance' },
+  { text: 'Suporte Técnico', icon: <SupportIcon />, path: '/admin/tech-support' },
+  { text: 'Status WhatsApp', icon: <WhatsAppIcon />, path: '/admin/whatsapp-status' },
   { text: 'Configurações', icon: <SettingsIcon />, path: '/admin/settings' }
 ];
 

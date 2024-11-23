@@ -13,6 +13,7 @@ export const usePermissions = () => {
     canManageServices: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
     canManageProfessionals: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
     canViewCalendar: [UserRole.ADMIN, UserRole.OWNER, UserRole.PROFESSIONAL, UserRole.RECEPTIONIST].includes(user?.role as UserRole),
+    canManageWhatsApp: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
   };
 
   return permissions;

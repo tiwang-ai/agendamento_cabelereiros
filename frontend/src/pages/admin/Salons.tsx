@@ -17,10 +17,15 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Box
+  Box,
+  Chip,
+  Alert
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { SalonService } from '../../services/salons';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { WhatsAppService } from '../../services/whatsapp';
 
 interface Salon {
   id: number;
@@ -29,6 +34,7 @@ interface Salon {
   telefone: string;
   whatsapp: string;
   horario_funcionamento: string;
+  status: string;
 }
 
 const SalonsManagement = () => {
@@ -42,6 +48,8 @@ const SalonsManagement = () => {
     whatsapp: '',
     horario_funcionamento: ''
   });
+  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadSalons();
@@ -89,14 +97,19 @@ const SalonsManagement = () => {
 
   const handleSubmit = async () => {
     try {
-      if (selectedSalon) {
-        await SalonService.update(selectedSalon.id, formData);
-      } else {
-        await SalonService.create(formData);
-      }
-      loadSalons();
+      setError(null);
+      const response = await SalonService.create(formData);
+      setSalons([...salons, response]);
       setOpenDialog(false);
-    } catch (error) {
+      setFormData({
+        nome: '',
+        endereco: '',
+        telefone: '',
+        whatsapp: '',
+        horario_funcionamento: ''
+      });
+    } catch (error: any) {
+      setError(error.response?.data?.error || 'Erro ao salvar salão');
       console.error('Erro ao salvar salão:', error);
     }
   };
@@ -104,17 +117,33 @@ const SalonsManagement = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este salão?')) {
       try {
-        await SalonService.delete(id);
-        loadSalons();
-      } catch (error) {
+        setError(null);
+        await SalonService.delete(id.toString());
+        setSalons(salons.filter(salon => salon.id !== id));
+      } catch (error: any) {
+        setError(error.response?.data?.error || 'Erro ao excluir salão');
         console.error('Erro ao excluir salão:', error);
       }
+    }
+  };
+
+  const handleReconnect = async (salonId: string) => {
+    try {
+      await WhatsAppService.reconnect(salonId);
+      loadSalons();
+    } catch (error) {
+      console.error('Erro ao reconectar:', error);
     }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
           <Typography variant="h5">
             Gerenciamento de Salões
@@ -135,16 +164,34 @@ const SalonsManagement = () => {
                 <TableCell>Endereço</TableCell>
                 <TableCell>Telefone</TableCell>
                 <TableCell>WhatsApp</TableCell>
+                <TableCell>Status</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {salons.map((salon: any) => (
+              {salons.map((salon) => (
                 <TableRow key={salon.id}>
-                  <TableCell>{salon.nome}</TableCell>
+                  <TableCell>
+                    <Link 
+                      to={`/admin/salons/${salon.id}`}
+                      style={{ 
+                        textDecoration: 'none', 
+                        color: 'primary.main',
+                        '&:hover': { textDecoration: 'underline' }
+                      } as React.CSSProperties}
+                    >
+                      {salon.nome}
+                    </Link>
+                  </TableCell>
                   <TableCell>{salon.endereco}</TableCell>
                   <TableCell>{salon.telefone}</TableCell>
                   <TableCell>{salon.whatsapp}</TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={salon.status || 'Desconectado'}
+                      color={salon.status === 'connected' ? 'success' : 'error'}
+                    />
+                  </TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => handleOpenDialog(salon)}>
                       <EditIcon />

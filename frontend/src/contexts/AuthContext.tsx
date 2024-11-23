@@ -40,12 +40,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     const response = await api.post('/api/auth/login/', { email, password });
-    const { access, email: userEmail, role: userRole, name } = response.data;
+    const { 
+      access, 
+      email: userEmail, 
+      role: userRole, 
+      name,
+      estabelecimento_id,
+      phone,
+      id,
+      is_active 
+    } = response.data;
     
-    const userData = { email: userEmail, role: userRole, name };
+    const userData: User = { 
+      id,
+      email: userEmail, 
+      role: userRole, 
+      name,
+      salonId: estabelecimento_id?.toString(),
+      phone,
+      whatsappNumber: phone,
+      isActive: is_active
+    };
     localStorage.setItem('token', access);
     localStorage.setItem('userData', JSON.stringify(userData));
     
+    setUser(userData);
     setRole(userRole as UserRole);
   };
 

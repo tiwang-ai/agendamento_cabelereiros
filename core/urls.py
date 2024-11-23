@@ -19,7 +19,16 @@ from .views import (
     UserViewSet,
     admin_stats,
     create_payment_preference,
-    process_payment
+    process_payment,
+    bot_responder,
+    whatsapp_status,
+    generate_qr_code,
+    check_connection_status,
+    dashboard_stats,
+    create_professional,
+    whatsapp_instances_status,
+    system_logs,
+    reconnect_whatsapp
 )
 
 router = DefaultRouter()
@@ -45,6 +54,15 @@ urlpatterns = [
     path('admin/stats/', admin_stats, name='admin_stats'),
     path('payments/preference/', create_payment_preference, name='create_payment_preference'),
     path('payments/process/', process_payment, name='process_payment'),
+    path('bot/process/', bot_responder, name='bot_responder'),
+    path('whatsapp/status/<str:salon_id>/', whatsapp_status, name='whatsapp_status'),
+    path('whatsapp/qr-code/<str:salon_id>/', generate_qr_code),
+    path('whatsapp/connection-status/<str:salon_id>/', check_connection_status),
+    path('dashboard/stats/', dashboard_stats, name='dashboard-stats'),
+    path('profissionais/', create_professional, name='create-professional'),
+    path('admin/whatsapp/instances/', whatsapp_instances_status, name='whatsapp-instances-status'),
+    path('admin/system-logs/', system_logs, name='system-logs'),
+    path('whatsapp/reconnect/<str:salon_id>/', reconnect_whatsapp, name='reconnect-whatsapp'),
 ]
 
 

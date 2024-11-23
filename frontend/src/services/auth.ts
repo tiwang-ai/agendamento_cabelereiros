@@ -46,6 +46,11 @@ export const AuthService = {
     }
   },
 
+  loginWithPhone: async (credentials: { phone: string; password: string }) => {
+    const response = await api.post('/auth/login/phone/', credentials);
+    return response.data;
+  },
+
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
