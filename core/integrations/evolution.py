@@ -8,7 +8,7 @@ class EvolutionAPI:
     def __init__(self):
         self.base_url = settings.EVOLUTION_API_URL
         self.headers = {
-            "Authorization": f"Bearer {settings.EVOLUTION_API_KEY}",
+            "apikey": f"{settings.EVOLUTION_API_KEY}",
             "Content-Type": "application/json"
         }
 
@@ -20,19 +20,23 @@ class EvolutionAPI:
         payload = {
             "instanceName": f"salon_{salon_id}",
             "token": settings.EVOLUTION_API_KEY,
-            "number": phone,
+            "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
             "qrcode": True,
             "integration": "WHATSAPP-BAILEYS",
             "reject_call": True,
             "readMessages": True,
             "readStatus": True,
-            "alwaysOnline": False
+            "alwaysOnline": False,
+            "webhookBase64": False,
         }
         
         try:
             response = requests.post(url, json=payload, headers=self.headers)
-            response.raise_for_status()
-            print(f"Resposta da Evolution: {response.text}")
+            if response.status_code != 201 and response.status_code != 200:
+                print(f"Erro Evolution API: {response.text}")
+                print(f"Headers enviados: {self.headers}")
+                print(f"Payload enviado: {payload}")
+                return None
             return response.json()
         except Exception as e:
             print(f"Erro detalhado ao criar instância: {str(e)}")
@@ -127,6 +131,18 @@ class EvolutionAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             return {"status": "error", "message": str(e)}
+
+    def delete_instance(self, instance_id: str) -> bool:
+        """
+        Deleta uma instância do WhatsApp
+        """
+        url = f"{self.base_url}/instance/delete/{instance_id}"
+        try:
+            response = requests.delete(url, headers=self.headers)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException:
+            return False
 
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:

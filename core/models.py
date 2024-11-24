@@ -71,7 +71,12 @@ class Profissional(models.Model):
         return f"{self.nome} - {self.estabelecimento.nome}"
 
 class Cliente(models.Model):
-    estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, related_name="clientes")
+    estabelecimento = models.ForeignKey(
+        'Estabelecimento', 
+        on_delete=models.CASCADE,
+        related_name="clientes",
+        db_column='estabelecimento_id'
+    )
     profissional_responsavel = models.ForeignKey(Profissional, on_delete=models.SET_NULL, null=True, blank=True, related_name="clientes")
     nome = models.CharField(max_length=100)
     whatsapp = models.CharField(max_length=15)

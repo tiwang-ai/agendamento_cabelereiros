@@ -113,6 +113,9 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
                 estabelecimento.evolution_instance_id = instance_response.get('instanceId')
                 estabelecimento.status = 'pending_connection'
                 estabelecimento.save()
+            else:
+                print("Falha ao criar instância WhatsApp")
+                # Não retornamos erro para não impedir a criação do salão
 
             return Response(serializer.data, status=201)
         except Exception as e:
@@ -129,10 +132,17 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
             if estabelecimento.evolution_instance_id:
                 try:
                     api = EvolutionAPI()
+                    # Primeiro desconecta
                     api.disconnect_instance(estabelecimento.evolution_instance_id)
+                    # Depois deleta a instância
+                    url = f"{api.base_url}/instance/delete/{estabelecimento.evolution_instance_id}"
+                    response = requests.delete(url, headers=api.headers)
+                    if response.status_code not in [200, 204]:
+                        print(f"Erro ao deletar instância: {response.text}")
                 except Exception as e:
-                    print(f"Erro ao desconectar instância WhatsApp: {str(e)}")
+                    print(f"Erro ao desconectar/deletar instância WhatsApp: {str(e)}")
             
+            # Deletar estabelecimento e todos os registros relacionados
             estabelecimento.delete()
             return Response(status=204)
         except Exception as e:

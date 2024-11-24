@@ -177,8 +177,9 @@ MERCADOPAGO_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'
 FRONTEND_URL = 'http://localhost:5173'  # URL do frontend
 
 # Configurações da Evolution API
-EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL', 'https://evo-evolution.vaekfu.easypanel.host')
+EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL', 'https://api.agendacabelereiro.com.br')
 EVOLUTION_API_KEY = os.getenv('EVOLUTION_API_KEY', '429683C4C977415CAAFCCE10F7D57E11')
+EVOLUTION_API_TOKEN = EVOLUTION_API_KEY
 BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
 
 # Configurações específicas do WhatsApp
