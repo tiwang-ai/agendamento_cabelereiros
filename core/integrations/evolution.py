@@ -75,16 +75,20 @@ class EvolutionAPI:
         except requests.exceptions.RequestException:
             return False
 
-    def send_message(self, instance_id: str, phone: str, message: str) -> Dict:
+    def send_message(self, instance_id: str, phone: str, message: str, options: dict = None) -> Dict:
         """
-        Envia uma mensagem via WhatsApp
+        Envia uma mensagem via WhatsApp com opções avançadas
         """
-        url = f"{self.base_url}/message/text"
+        url = f"{self.base_url}/message/send"
         payload = {
             "instanceId": instance_id,
             "to": phone,
-            "text": message
+            "type": "text",
+            "body": message
         }
+        
+        if options:
+            payload.update(options)
         
         try:
             response = requests.post(url, json=payload, headers=self.headers)
@@ -101,6 +105,28 @@ class EvolutionAPI:
             return any(inst.get('instanceName') == instance_id for inst in instances)
         except:
             return False
+
+    def configurar_webhooks(self, instance_id: str) -> Dict:
+        """
+        Configura os webhooks para a instância
+        """
+        url = f"{self.base_url}/webhook/set"
+        payload = {
+            "instanceId": instance_id,
+            "webhookUrl": f"{settings.BACKEND_URL}/api/whatsapp/webhook/",
+            "events": [
+                "connection",
+                "messages",
+                "status"
+            ]
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "message": str(e)}
 
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:

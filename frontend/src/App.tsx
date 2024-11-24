@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Outlet } from 'react-router-dom'
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import SalonDashboard from './pages/dashboard/SalonDashboard'
@@ -22,6 +22,10 @@ import LandingPage from '../landing/pages/index'
 import WhatsAppConnection from './pages/settings/WhatsAppConnection'
 import TechSupport from './pages/admin/TechSupport'
 import WhatsAppStatus from './pages/admin/WhatsAppStatus'
+import Agenda from './pages/professional/Agenda'
+import History from './pages/professional/History'
+import Clients from './pages/management/Clients'
+import ProfessionalClients from './pages/professional/Clients'
 
 function App() {
   return (
@@ -36,9 +40,10 @@ function App() {
         <Route path="/onboarding" element={<OnboardingFlow />} />
         {/* Rotas do Salão */}
         <Route element={<PrivateRoute roles={[UserRole.OWNER]} />}>
-          <Route element={<Layout />}>
+          <Route element={<Layout>
+            <Outlet />
+          </Layout>}>
             <Route path="/" element={<SalonDashboard />} />
-            <Route path="/dashboard" element={<SalonDashboard />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/professionals" element={<ProfessionalsManagement />} />
             <Route path="/services" element={<ServicesManagement />} />
@@ -48,7 +53,9 @@ function App() {
         </Route>
         {/* Rotas Administrativas */}
         <Route element={<PrivateRoute roles={[UserRole.ADMIN]} />}>
-          <Route element={<AdminLayout />}>
+          <Route element={<AdminLayout>
+            <Outlet />
+          </AdminLayout>}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/plans" element={<PlansManagement />} />
@@ -58,6 +65,24 @@ function App() {
             <Route path="/admin/finance" element={<Finance />} />
             <Route path="/admin/tech-support" element={<TechSupport />} />
             <Route path="/admin/whatsapp-status" element={<WhatsAppStatus />} />
+          </Route>
+        </Route>
+        {/* Rotas do Profissional */}
+        <Route element={<PrivateRoute role={UserRole.PROFESSIONAL} />}>
+          <Route element={<Layout>
+            <Outlet />
+          </Layout>}>
+            <Route path="/professional/agenda" element={<Agenda />} />
+            <Route path="/professional/historico" element={<History />} />
+            <Route path="/professional/clients" element={<ProfessionalClients />} />
+          </Route>
+        </Route>
+        {/* Rota de Gerenciamento de Clientes */}
+        <Route element={<PrivateRoute roles={[UserRole.OWNER, UserRole.PROFESSIONAL]} />}>
+          <Route element={<Layout>
+            <Outlet />
+          </Layout>}>
+            <Route path="/clients" element={<Clients />} />
           </Route>
         </Route>
       </Routes>

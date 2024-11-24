@@ -1,7 +1,7 @@
 import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
-from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento
+from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan
 from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer
 from django.conf import settings
 from rest_framework.views import APIView
@@ -9,15 +9,17 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from datetime import datetime, timedelta
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from .services.system_logs import SystemMonitor
 from django.http import JsonResponse
 from .integrations.evolution import (
     get_whatsapp_status, 
     generate_qr_code, 
     check_connection,
-    criar_instancia_evolution
+    criar_instancia_evolution,
+    EvolutionAPI
 )
 
 from .models import (
@@ -25,8 +27,12 @@ from .models import (
     Profissional, 
     Cliente, 
     Servico, 
-    Agendamento
+    Agendamento,
+    Calendario_Estabelecimento,
+    Interacao,
+    Plan
 )
+
 from .serializers import (
     EstabelecimentoSerializer,
     ProfissionalSerializer,
@@ -97,15 +103,16 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
             serializer.is_valid(raise_exception=True)
             estabelecimento = serializer.save()
 
-            # Criar instância WhatsApp se solicitado
-            if request.data.get('create_instance'):
-                instance_response = criar_instancia_evolution(
-                    salon_id=str(estabelecimento.id),
-                    phone=estabelecimento.whatsapp
-                )
-                if instance_response:
-                    estabelecimento.evolution_instance_id = instance_response.get('instanceId')
-                    estabelecimento.save()
+            # Criar instância WhatsApp automaticamente
+            instance_response = criar_instancia_evolution(
+                salon_id=str(estabelecimento.id),
+                phone=estabelecimento.whatsapp
+            )
+            
+            if instance_response:
+                estabelecimento.evolution_instance_id = instance_response.get('instanceId')
+                estabelecimento.status = 'pending_connection'
+                estabelecimento.save()
 
             return Response(serializer.data, status=201)
         except Exception as e:
@@ -340,7 +347,7 @@ def enviar_relatorio_whatsapp(tipo_relatorio, numero_destino, periodo_inicio=Non
     # Gera o relatório baseado no tipo solicitado
     if tipo_relatorio == "frequencia_clientes":
         if not periodo_inicio or not periodo_fim:
-            return {"erro": "Período de início e fim s��o necessários para o relatório de frequência de clientes."}
+            return {"erro": "Período de início e fim são necessários para o relatório de frequência de clientes."}
         url = f"{base_url}frequencia-clientes/?inicio={periodo_inicio}&fim={periodo_fim}"
         titulo_relatorio = "Relatório de Frequência de Clientes"
     elif tipo_relatorio == "servicos_populares":
@@ -390,42 +397,44 @@ def enviar_relatorio_whatsapp(tipo_relatorio, numero_destino, periodo_inicio=Non
 @api_view(['POST'])
 def onboarding(request):
     dados_salao = request.data
-    numero_whatsapp = dados_salao.get("numero_whatsapp")
-    servicos = dados_salao.get("servicos")
-    horario_funcionamento = dados_salao.get("horario_funcionamento")
-
-    # Criação e configuração do salão
-    salao = Salão.objects.create(
-        numero_whatsapp=numero_whatsapp,
-        servicos=servicos,
-        horario_funcionamento=horario_funcionamento
-    )
-        # Configuração do calendário para o salão
-    calendario = Calendário.objects.create(salao=salao)
-
-    # Configuração do bot para o número de WhatsApp do salão
-    configurar_bot_whatsapp(salao)
-
-
-    # Criar a instância no Evolution
-    resposta_evolution = criar_instancia_evolution(dados_salao)
-
-    if resposta_evolution:
-        # Salvar o salão no banco de dados
-        salao = Estabelecimento.objects.create(
+    try:
+        # 1. Criar o estabelecimento
+        estabelecimento = Estabelecimento.objects.create(
             nome=dados_salao["nome"],
             whatsapp=dados_salao["whatsapp"],
             horario_funcionamento=dados_salao["horario_funcionamento"],
-            # Salve outros dados se necessário
+            endereco=dados_salao["endereco"],
+            telefone=dados_salao["telefone"]
         )
 
-        # Adicione o ID da instância no Evolution ao salão
-        salao.evolution_instance_id = resposta_evolution.get("id")  # Exemplo de campo, ajuste conforme necessário
-        salao.save()
+        # 2. Criar instância WhatsApp
+        instance_response = criar_instancia_evolution(
+            salon_id=str(estabelecimento.id),
+            phone=estabelecimento.whatsapp
+        )
 
-        return Response({"message": "Onboarding concluído com sucesso!", "salao_id": salao.id})
-    else:
-        return Response({"error": "Erro ao criar instância no Evolution"}, status=500)
+        if instance_response:
+            estabelecimento.evolution_instance_id = instance_response.get('instanceId')
+            estabelecimento.status = 'pending_connection'
+            estabelecimento.save()
+
+        # 3. Configurar calendário
+        Calendario_Estabelecimento.objects.create(
+            estabelecimento=estabelecimento,
+            dia_semana=0,  # Domingo
+            horario_abertura='09:00',
+            horario_fechamento='18:00'
+        )
+
+        return Response({
+            "message": "Onboarding concluído com sucesso!", 
+            "salao_id": estabelecimento.id,
+            "whatsapp_instance": instance_response.get('instanceId')
+        })
+    except Exception as e:
+        return Response({
+            "error": f"Erro durante onboarding: {str(e)}"
+        }, status=500)
 
 
 
@@ -844,3 +853,77 @@ def reconnect_whatsapp(request, salon_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+class ClienteProfissionalViewSet(viewsets.ModelViewSet):
+    serializer_class = ClienteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        profissional = Profissional.objects.get(user=self.request.user)
+        return Cliente.objects.filter(
+            Q(profissional_responsavel=profissional) | 
+            Q(agendamentos__profissional=profissional)
+        ).distinct()
+
+    def perform_create(self, serializer):
+        profissional = Profissional.objects.get(user=self.request.user)
+        serializer.save(
+            estabelecimento=profissional.estabelecimento,
+            profissional_responsavel=profissional
+        )
+
+@api_view(['POST'])
+def whatsapp_webhook(request):
+    """
+    Endpoint para receber webhooks da Evolution API
+    """
+    data = request.data
+    event_type = data.get('event')
+    instance_id = data.get('instanceId')
+    
+    try:
+        estabelecimento = Estabelecimento.objects.get(evolution_instance_id=instance_id)
+        
+        if event_type == 'connection':
+            estabelecimento.status = data.get('status', 'disconnected')
+            estabelecimento.save()
+        
+        elif event_type == 'messages':
+            # Processar mensagens recebidas
+            mensagem = data.get('message', {})
+            if mensagem.get('fromMe') == False:
+                resposta = processar_pergunta(mensagem.get('body', ''), bot_tipo=2)
+                enviar_mensagem_whatsapp(mensagem.get('from'), resposta)
+        
+        # Registrar log do evento
+        Interacao.objects.create(
+            salao=estabelecimento,
+            tipo=event_type,
+            descricao=str(data)
+        )
+        
+        return Response({"status": "success"})
+    except Estabelecimento.DoesNotExist:
+        return Response(
+            {"error": "Estabelecimento não encontrado"},
+            status=404
+        )
+    except Exception as e:
+        return Response(
+            {"error": str(e)},
+            status=500
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def system_metrics(request):
+    monitor = SystemMonitor()
+    
+    metrics = {
+        'system': monitor.get_system_metrics(),
+        'docker': monitor.get_docker_metrics(),
+        'salons': monitor.get_salon_metrics(),
+        'bot': monitor.get_bot_metrics()
+    }
+    
+    return Response(metrics)

@@ -28,7 +28,9 @@ from .views import (
     create_professional,
     whatsapp_instances_status,
     system_logs,
-    reconnect_whatsapp
+    reconnect_whatsapp,
+    ClienteProfissionalViewSet,
+    whatsapp_webhook
 )
 
 router = DefaultRouter()
@@ -38,6 +40,7 @@ router.register(r'clientes', ClienteViewSet)
 router.register(r'servicos', ServicoViewSet)
 router.register(r'agendamentos', AgendamentoViewSet)
 router.register(r'users', UserViewSet)
+router.register(r'profissional/clientes', ClienteProfissionalViewSet, basename='profissional-clientes')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -63,6 +66,7 @@ urlpatterns = [
     path('admin/whatsapp/instances/', whatsapp_instances_status, name='whatsapp-instances-status'),
     path('admin/system-logs/', system_logs, name='system-logs'),
     path('whatsapp/reconnect/<str:salon_id>/', reconnect_whatsapp, name='reconnect-whatsapp'),
+    path('whatsapp/webhook/', whatsapp_webhook, name='whatsapp-webhook'),
 ]
 
 

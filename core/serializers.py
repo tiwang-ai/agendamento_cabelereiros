@@ -24,9 +24,21 @@ class ProfissionalSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ClienteSerializer(serializers.ModelSerializer):
+    profissional_responsavel = ProfissionalSerializer(read_only=True)
+    profissional_id = serializers.IntegerField(write_only=True, required=False)
+
     class Meta:
         model = Cliente
         fields = '__all__'
+
+    def create(self, validated_data):
+        profissional_id = validated_data.pop('profissional_id', None)
+        cliente = Cliente.objects.create(**validated_data)
+        if profissional_id:
+            profissional = Profissional.objects.get(id=profissional_id)
+            cliente.profissional_responsavel = profissional
+            cliente.save()
+        return cliente
 
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:

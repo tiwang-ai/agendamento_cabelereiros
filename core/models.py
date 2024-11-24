@@ -2,6 +2,46 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
 
+class UserManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('O email é obrigatório')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save()
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self.create_user(email, password, **extra_fields)
+    
+class User(AbstractBaseUser, PermissionsMixin):
+    ROLES = (
+        ('ADMIN', 'Administrador'),
+        ('OWNER', 'Dono do Salão'),
+        ('PROFESSIONAL', 'Profissional'),
+        ('RECEPTIONIST', 'Recepcionista')
+    )
+    
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=15, blank=True)
+    name = models.CharField(max_length=255)
+    role = models.CharField(max_length=20, choices=ROLES, default='OWNER')
+    estabelecimento = models.ForeignKey('Estabelecimento', on_delete=models.SET_NULL, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    
+    objects = UserManager()
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['name']
+
+    class Meta:
+        verbose_name = 'user'
+        verbose_name_plural = 'users'
+
 class Estabelecimento(models.Model): 
     nome = models.CharField(max_length=200)
     endereco = models.CharField(max_length=500)
@@ -19,20 +59,33 @@ class Estabelecimento(models.Model):
         return self.nome
 
 class Profissional(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, null=True, blank=True)
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, related_name="profissionais")
     nome = models.CharField(max_length=100)
     especialidade = models.CharField(max_length=100)
+    foto = models.ImageField(upload_to='profissionais/', null=True, blank=True)
+    bio = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} - {self.estabelecimento.nome}"
 
 class Cliente(models.Model):
+    estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, related_name="clientes")
+    profissional_responsavel = models.ForeignKey(Profissional, on_delete=models.SET_NULL, null=True, blank=True, related_name="clientes")
     nome = models.CharField(max_length=100)
     whatsapp = models.CharField(max_length=15)
+    email = models.EmailField(blank=True, null=True)
+    data_cadastro = models.DateTimeField(auto_now_add=True)
+    observacoes = models.TextField(blank=True, null=True)
     historico_agendamentos = models.TextField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ['estabelecimento', 'whatsapp']
 
     def __str__(self):
-        return self.nome
+        return f"{self.nome} - {self.estabelecimento.nome}"
 
 class Servico(models.Model):
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, related_name="servicos")
@@ -62,46 +115,6 @@ class Interacao(models.Model):
 
     def __str__(self):
         return f"{self.salao.nome} - {self.tipo} - {self.data}"
-
-class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('O email é obrigatório')
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save()
-        return user
-
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, password, **extra_fields)
-
-class User(AbstractBaseUser, PermissionsMixin):
-    ROLES = (
-        ('ADMIN', 'Administrador'),
-        ('OWNER', 'Dono do Salão'),
-        ('PROFESSIONAL', 'Profissional'),
-        ('RECEPTIONIST', 'Recepcionista')
-    )
-    
-    email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=15, blank=True)
-    name = models.CharField(max_length=255)
-    role = models.CharField(max_length=20, choices=ROLES, default='OWNER')
-    estabelecimento = models.ForeignKey('Estabelecimento', on_delete=models.SET_NULL, null=True, blank=True)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    
-    objects = UserManager()
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['name']
-
-    class Meta:
-        verbose_name = 'user'
-        verbose_name_plural = 'users'
 
 class Horarios_Disponiveis(models.Model):
     profissional = models.ForeignKey(Profissional, on_delete=models.CASCADE, related_name="horarios")
@@ -160,3 +173,14 @@ class SalonService(models.Model):
 
     def __str__(self):
         return f"{self.system_service.name} - {self.estabelecimento.nome}"
+
+class Plan(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    max_professionals = models.IntegerField()
+    features = models.JSONField(default=list)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name

@@ -4,14 +4,16 @@ import { useAuth } from '../contexts/AuthContext'
 import { UserRole } from '../types/auth'
 
 interface PrivateRouteProps {
-  roles?: UserRole[]
+  children?: React.ReactNode;
+  roles?: UserRole[];
+  role?: UserRole;
 }
 
-const PrivateRoute = ({ roles }: PrivateRouteProps) => {
+const PrivateRoute = ({ children, roles, role }: PrivateRouteProps) => {
   const { isAuthenticated, loading, user } = useAuth()
   
   if (loading) {
-    return <div>Carregando...</div> // Você pode criar um componente de loading mais elaborado
+    return <div>Carregando...</div>
   }
   
   if (!isAuthenticated) {
@@ -19,7 +21,6 @@ const PrivateRoute = ({ roles }: PrivateRouteProps) => {
   }
 
   if (roles && !roles.includes(user?.role as UserRole)) {
-    // Redirecionar para página apropriada baseado no role
     if (user?.role === UserRole.OWNER) {
       return <Navigate to="/dashboard" replace />
     }
@@ -29,7 +30,11 @@ const PrivateRoute = ({ roles }: PrivateRouteProps) => {
     return <Navigate to="/" replace />
   }
 
-  return <Outlet />
+  if (role && user?.role !== role) {
+    return <Navigate to="/" replace />
+  }
+
+  return <>{children || <Outlet />}</>
 }
 
 export default PrivateRoute

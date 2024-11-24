@@ -1,7 +1,7 @@
 # Sistema de Agendamento para Salão de Beleza
 
 ## Descrição
-Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para salões de beleza e barbearias, com integração de uma LLM para comunicação automatizada. Ele permite a configuração de dois bots: um para atender o salão cliente (Bot 1) e outro para atender os clientes finais do salão (Bot 2).
+Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para salões de beleza e barbearias, com integração de uma LLM para comunicação automatizada. Ele permite a configuração de dois bots: um para nós atendermos os salões (nossos clientes) (Bot 1); e outro para atender os clientes finais dos salões (Bot 2).
 
 ## Configuração do Ambiente
 
@@ -43,6 +43,8 @@ Teste_Agendamento-TIWANG/
 │   │   └── evolution.py       # Integração com a Evolution API
 │   ├── migrations/
 │   │   └── ...
+│   ├── services/
+│   │   └── system_logs.py     # Serviços para monitoramento e logs do sistema
 │   ├── views.py               # Views principais, incluindo o processamento de perguntas para os bots
 │   ├── admin.py               # Configuração do painel administrativo
 │   ├── apps.py                # Configuração dos apps do projeto
@@ -103,6 +105,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   └── SalonDashboard.tsx
 │   │   │   ├── management/
 │   │   │   │   ├── Professionals.tsx
+│   │   │   │   ├── Clients.tsx
 │   │   │   │   └── Services.tsx
 │   │   │   ├── calendar/
 │   │   │   │   └── Calendar.tsx
@@ -113,11 +116,15 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   │   ├── SalonInfoStep.tsx
 │   │   │   │   │   └── ServicesStep.tsx
 │   │   │   │   └── OnboardingFlow.tsx
-│   │   │   ├── settings/
-│   │   │   │   ├── Settings.tsx
-│   │   │   │   └── WhatsAppConnection.tsx
-│   │   │   └── plans/
-│   │   │       └── PricingPage.tsx
+│   │   │   ├── plans/
+│   │   │   │   └── PricingPage.tsx
+│   │   │   ├── professional/
+│   │   │   │   ├── Agenda.tsx
+│   │   │   │   ├── Clients.tsx
+│   │   │   │   └── History.tsx
+│   │   │   └── settings/
+│   │   │       ├── Settings.tsx
+│   │   │       └── WhatsAppConnection.tsx
 │   │   ├── services/      # Serviços de API
 │   │   │   ├── payment.ts
 │   │   │   ├── auth.ts
@@ -126,6 +133,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── salons.ts
 │   │   │   ├── users.ts
 │   │   │   ├── whatsapp.ts
+│   │   │   ├── system_logs.ts
 │   │   │   └── ai.ts
 │   │   ├── hooks/         # Custom hooks
 │   │   │   └── usePermissions.ts
@@ -146,9 +154,15 @@ Teste_Agendamento-TIWANG/
 │   ├── index.html
 │   ├── package-lock.json
 │   ├── package.json
-│   ├── vite.config.js
+│   ├── tsconfig.json
+│   ├── tsconfig.node.json
+│   └── vite.config.ts
 ├── README.md                  # Documentação do projeto
 ├── requirements.txt           # Dependências do projeto
+├── manage.py
+├── celerybeat-schedule.bak
+├── celerybeat-schedule.dat
+├── celerybeat-schedule.dir
 ├── node_modules/
 │   └── ...
 ├── venv/
@@ -161,16 +175,24 @@ Estabelecimentos {
     id (PK)
     nome
     endereco
-    horario_funcionamento
     telefone
+    whatsapp
+    horario_funcionamento
+    evolution_instance_id
+    status
+    is_active
 }
 
 -- Tabela Profissionais
 Profissionais {
     id (PK)
+    user_id (FK)
     estabelecimento_id (FK)
     nome
     especialidade
+    foto
+    bio
+    is_active
 }
 
 -- Tabela Servicos
@@ -203,9 +225,14 @@ Calendario_Estabelecimento {
 -- Tabela Clientes
 Clientes {
     id (PK)
+    estabelecimento_id (FK)
     nome
     whatsapp
+    email
+    data_cadastro
+    observacoes
     historico_agendamentos
+    is_active
 }
 
 -- Tabela Agendamentos
@@ -219,10 +246,24 @@ Agendamentos {
     status
 }
 
+-- Tabela Users
+Users {
+    id (PK)
+    email
+    phone
+    name
+    role (ADMIN/OWNER/PROFESSIONAL/RECEPTIONIST)
+    estabelecimento_id (FK)
+    is_active
+    is_staff
+}
+
 Relacionamentos:
 - Estabelecimentos 1:N Profissionais
 - Estabelecimentos 1:N Servicos
+- Estabelecimentos 1:N Clientes
 - Estabelecimentos 1:1 Calendario_Estabelecimento
+- Profissionais 1:1 Users
 - Profissionais 1:N Horarios_Disponiveis
 - Profissionais 1:N Agendamentos
 - Servicos 1:N Agendamentos
@@ -270,6 +311,12 @@ Relacionamentos:
 - [x] Status WhatsApp
 - [ ] Financeiro (em desenvolvimento)
 - [ ] Gerenciamento de Equipe Staff
+- [ ] Monitoramento de Infraestrutura
+  - Métricas de VMs/Droplets
+  - Consumo por salão
+  - Métricas do Bot 1 (IA Suporte/Vendas)
+  - Status dos serviços
+  - Logs do sistema
 
 ### Área do Salão (Owner)
 - [x] Dashboard do Salão
@@ -277,10 +324,19 @@ Relacionamentos:
 - [x] Gerenciamento de Profissionais
 - [x] Gerenciamento de Serviços
 - [x] Configurações
+- [x] Configurações WhatsApp
+- [x] Gerenciamento de Clientes
 - [ ] Relatórios (pendente)
 
+### Área do Profissional (Professional) - Em Desenvolvimento
+- [x] Login por telefone (integrado na página de login principal)
+- [x] Agenda Pessoal
+- [x] Gerenciamento de Clientes
+- [x] Histórico de Atendimentos
+- [ ] Perfil e Configurações
+
 ### Autenticação e Onboarding
-- [x] Login
+- [x] Login (Email/Telefone - só para os profissionais)
 - [x] Registro
 - [x] Onboarding Flow
 - [x] Página de Planos
@@ -301,9 +357,9 @@ Relacionamentos:
 - Documentação: https://doc.evolution-api.com/v2/pt/get-started/introduction
 - Status: Parcialmente implementada
   - [x] Configuração básica
-  - [x] Envio de mensagens
+  - [] Envio de mensagens
   - [x] QR Code e conexão de instância
-  - [x] Webhooks para status da conexão
+  - [ ] Webhooks para status da conexão
 
 ### Deep Infra (LLM)
 - Modelo: Meta-Llama-3-8B-Instruct
@@ -313,7 +369,6 @@ Relacionamentos:
   - [ ] Testes e ajustes de prompts
 
 ## Páginas do Sistema
-
 ### Área Pública
 - [x] Landing Page
 - [x] Página de Planos
@@ -340,26 +395,49 @@ Relacionamentos:
 - [ ] Relatórios Administrativos
 
 ## Próximos Passos (Priorizado)
+1. ~~Área do Profissional (Prioridade atual)~~
+   ~~- Implementar login por telefone ~~
+   ~~- Criar visualização de agenda pessoal~~
+  ~~- Desenvolver gerenciamento de clientes próprios~~
+   ~~- Sistema de histórico de atendimentos~~
 
-1. Implementar página de conexão WhatsApp
-   - Interface para leitura do QR Code
-   - Monitoramento do status da conexão
+2. ~~Gerenciamento de Clientes~~
+   ~~- Cadastro e edição de clientes~~
+   ~~- Criar CRUD completo~~
+   ~~- Implementar ajustes no modelo~~
+   ~~- Histórico de agendamentos por cliente~~
+   ~~- Preferências e observações~~
+   ~~- Integração com WhatsApp~~
+
+3. Implementar página de conexão WhatsApp
+   - Interface para leitura do QR Code gerado pela Evolution Api
+   - Criar instância na Evolution Api ao criar o salão (tanto via painel da staff quanto via registro e pagamento)
+   - Monitoramento do status da conexão (está com falha)
    - Logs de eventos
 
-2. Desenvolver área de relatórios
-   - Dashboard analítico
-   - Exportação de dados
-   - Agendamentos por período
+4. Desenvolver área de relatórios
+   Para Staff e Salões:
+      - Dashboard analítico
+      - Exportação de dados
+      - Métricas por período
+   Para Staff:
+      - Monitoramento de recursos (VMs/Droplets)
+      - Métricas de uso do Bot 1
+      - Status dos serviços
+      - Logs centralizados (a depender do log, vale mais a pena na página do TI (TechSupport))
 
-3. Implementar gerenciamento de clientes
-   - Listagem e busca
-   - Histórico de agendamentos
-   - Preferências e notas
-
-4. Finalizar gestão de equipe staff
+5. Finalizar gestão de equipe staff
    - Permissões personalizadas
    - Logs de atividades
    - Métricas de desempenho
+
+6. Melhorias Gerais
+   - Tratar erros
+   - Internacionalização e tradução com os arquivos Locales
+      - Atualizar arquivos locales
+   - Aprimorar sistema de permissões
+   - Refinar interface do usuário
+   - Otimizar fluxos de navegação
 
 ## Funcionalidades Principais
 
@@ -375,5 +453,3 @@ Relacionamentos:
 - Agenda de serviços
 - Relatórios automáticos
 - Gestão de clientes
-
-## Estrutura de Arquivos Atualizada

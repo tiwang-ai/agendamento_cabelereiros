@@ -15,6 +15,7 @@ interface LoginResponse {
   name: string;
   role: UserRole;
   estabelecimento_id?: number;
+  phone?: string;
 }
 
 export const AuthService = {
@@ -47,8 +48,29 @@ export const AuthService = {
   },
 
   loginWithPhone: async (credentials: { phone: string; password: string }) => {
-    const response = await api.post('/auth/login/phone/', credentials);
-    return response.data;
+    try {
+      const response = await api.post<LoginResponse>('/auth/login/', {
+        phone: credentials.phone,
+        password: credentials.password
+      });
+      
+      if (response.data.access) {
+        localStorage.setItem('token', response.data.access);
+        localStorage.setItem('refreshToken', response.data.refresh);
+        localStorage.setItem('userData', JSON.stringify({
+          name: response.data.name,
+          role: response.data.role,
+          estabelecimento_id: response.data.estabelecimento_id,
+          phone: credentials.phone
+        }));
+        
+        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+      }
+      
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.detail || 'Erro ao fazer login');
+    }
   },
 
   logout: () => {

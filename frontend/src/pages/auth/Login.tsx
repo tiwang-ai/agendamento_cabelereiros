@@ -8,16 +8,18 @@ import {
   Typography,
   Alert,
   useTheme,
-  useMediaQuery,
-  Stack
+  Stack,
+  ToggleButtonGroup,
+  ToggleButton,
+  InputAdornment
 } from '@mui/material';
+import { Email as EmailIcon, Phone as PhoneIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../../services/auth';
 import { UserRole } from '../../types/auth';
 
 const Login = () => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState({
@@ -27,35 +29,38 @@ const Login = () => {
   });
   const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleMethodChange = (_: React.MouseEvent<HTMLElement>, newMethod: 'email' | 'phone') => {
+    if (newMethod !== null) {
+      setLoginMethod(newMethod);
+      setFormData({ ...formData, email: '', phone: '' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const credentials = {
-        email: formData.email,
-        password: formData.password
-      };
+      const credentials = loginMethod === 'email' 
+        ? { email: formData.email, password: formData.password }
+        : { phone: formData.phone, password: formData.password };
       
       const data = await AuthService.login(credentials);
       
-      if (data.role === UserRole.ADMIN) {
-        navigate('/admin/dashboard');
-      } else if (data.role === UserRole.OWNER) {
-        navigate('/dashboard');
-      } else {
-        navigate('/calendar');
+      // Redireciona baseado no papel do usuário
+      switch (data.role) {
+        case UserRole.ADMIN:
+          navigate('/admin/dashboard');
+          break;
+        case UserRole.OWNER:
+          navigate('/dashboard');
+          break;
+        case UserRole.PROFESSIONAL:
+          navigate('/professional/agenda');
+          break;
+        default:
+          navigate('/calendar');
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.detail || 
-                          err.response?.data?.email?.[0] ||
-                          'Erro ao fazer login. Verifique suas credenciais.';
-      setError(errorMessage);
+      setError(err.response?.data?.detail || 'Erro ao fazer login');
     }
   };
 
@@ -108,28 +113,59 @@ const Login = () => {
             </Alert>
           )}
 
+          <ToggleButtonGroup
+            value={loginMethod}
+            exclusive
+            onChange={handleMethodChange}
+            sx={{ mb: 3, width: '100%' }}
+          >
+            <ToggleButton value="email" sx={{ width: '50%' }}>
+              Email
+            </ToggleButton>
+            <ToggleButton value="phone" sx={{ width: '50%' }}>
+              Telefone
+            </ToggleButton>
+          </ToggleButtonGroup>
+
           <Stack
             component="form"
             onSubmit={handleSubmit}
             spacing={2}
             sx={{ width: '100%' }}
           >
-            <TextField
-              required
-              fullWidth
-              id="email"
-              label="Email"
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={formData.email}
-              onChange={handleInputChange}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
+            {loginMethod === 'email' ? (
+              <TextField
+                required
+                fullWidth
+                label="Email"
+                name="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            ) : (
+              <TextField
+                required
+                fullWidth
+                label="Telefone"
+                name="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
 
             <TextField
               required
@@ -140,7 +176,7 @@ const Login = () => {
               id="password"
               autoComplete="current-password"
               value={formData.password}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,

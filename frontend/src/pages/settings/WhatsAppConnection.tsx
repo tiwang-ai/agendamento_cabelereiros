@@ -13,7 +13,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { WhatsAppService } from '../../services/whatsapp';
 import { useAuth } from '../../contexts/AuthContext';
-import { User } from '../../types/auth';
+import { DataGrid } from '@mui/x-data-grid';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -36,6 +36,7 @@ const WhatsAppConnection = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -63,6 +64,23 @@ const WhatsAppConnection = () => {
     return () => clearInterval(interval);
   }, [user?.salonId]);
 
+  useEffect(() => {
+    const loadLogs = async () => {
+      if (user?.salonId) {
+        try {
+          const logsData = await WhatsAppService.getInstanceLogs(user.salonId);
+          setLogs(logsData);
+        } catch (err) {
+          console.error('Erro ao carregar logs:', err);
+        }
+      }
+    };
+
+    loadLogs();
+    const logsInterval = setInterval(loadLogs, 30000);
+    return () => clearInterval(logsInterval);
+  }, [user?.salonId]);
+
   const handleConnect = async () => {
     try {
       if (!user?.salonId) {
@@ -84,7 +102,7 @@ const WhatsAppConnection = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 4 }}>
+    <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
           Conexão WhatsApp
@@ -99,6 +117,7 @@ const WhatsAppConnection = () => {
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label="QR Code" />
           <Tab label="Código" disabled />
+          <Tab label="Logs" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
@@ -139,6 +158,28 @@ const WhatsAppConnection = () => {
               Conexão por código temporariamente indisponível
             </Typography>
           </Box>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <Typography variant="h6" gutterBottom>
+            Logs de Conexão
+          </Typography>
+          <DataGrid
+            rows={logs}
+            columns={[
+              { field: 'timestamp', headerName: 'Data/Hora', width: 200 },
+              { field: 'event', headerName: 'Evento', width: 200 },
+              { field: 'status', headerName: 'Status', width: 150 },
+              { field: 'details', headerName: 'Detalhes', width: 400 }
+            ]}
+            autoHeight
+            initialState={{
+              pagination: {
+                paginationModel: { pageSize: 10, page: 0 },
+              },
+            }}
+            pageSizeOptions={[5, 10, 25]}
+          />
         </TabPanel>
       </Paper>
     </Box>
