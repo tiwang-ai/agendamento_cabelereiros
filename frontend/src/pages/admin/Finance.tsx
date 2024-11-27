@@ -72,8 +72,8 @@ const Finance = () => {
   const loadFinanceData = async () => {
     try {
       const [statsRes, transactionsRes] = await Promise.all([
-        FinanceService.getStats(),
-        FinanceService.getTransactions({
+        FinanceService.getAdminStats(),
+        FinanceService.getAdminTransactions({
           start_date: dateRange.start.toISOString(),
           end_date: dateRange.end.toISOString(),
           type: filters.type !== 'all' ? filters.type : undefined,
@@ -81,8 +81,8 @@ const Finance = () => {
         })
       ]);
 
-      setStats(statsRes);
-      setTransactions(transactionsRes);
+      setStats(statsRes as FinanceStats);
+      setTransactions(transactionsRes as Transaction[]);
     } catch (error) {
       console.error('Erro ao carregar dados financeiros:', error);
     } finally {

@@ -5,6 +5,13 @@ export interface FinanceStats {
   totalRevenue: number;
   monthlyRevenue: number;
   pendingPayments: number;
+  activeSubscriptions: number;
+}
+
+export interface SalonStats {
+  totalRevenue: number;
+  monthlyRevenue: number;
+  pendingPayments: number;
   totalAppointments: number;
 }
 
@@ -15,38 +22,29 @@ export interface Transaction {
   amount: number;
   type: 'income' | 'expense';
   status: 'completed' | 'pending' | 'cancelled';
-  category: string;
+  category?: string;
 }
 
 export const FinanceService = {
-  getSalonStats: async (): Promise<FinanceStats> => {
-    const response = await api.get('/finance/salon/stats/');
-    return response.data;
-  },
-
-  getSalonTransactions: async (params?: {
-    start_date?: string;
-    end_date?: string;
-    type?: string;
-    status?: string;
-  }): Promise<Transaction[]> => {
-    const response = await api.get('/finance/salon/transactions/', { params });
-    return response.data;
-  },
-
-  // Para o painel administrativo
+  // Admin/Staff endpoints
   getAdminStats: async (): Promise<FinanceStats> => {
     const response = await api.get('/admin/finance/stats/');
     return response.data;
   },
 
-  getAdminTransactions: async (params?: {
-    start_date?: string;
-    end_date?: string;
-    type?: string;
-    status?: string;
-  }): Promise<Transaction[]> => {
-    const response = await api.get('/admin/finance/transactions/', { params });
+  getAdminTransactions: async (filters?: any): Promise<Transaction[]> => {
+    const response = await api.get('/admin/finance/transactions/', { params: filters });
+    return response.data;
+  },
+
+  // Salon endpoints
+  getSalonStats: async (): Promise<SalonStats> => {
+    const response = await api.get('/finance/salon/stats/');
+    return response.data;
+  },
+
+  getSalonTransactions: async (filters?: any): Promise<Transaction[]> => {
+    const response = await api.get('/finance/salon/transactions/', { params: filters });
     return response.data;
   }
 };

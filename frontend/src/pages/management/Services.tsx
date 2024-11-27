@@ -17,7 +17,8 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  InputAdornment
+  Alert,
+  Box
 } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import api from '../../services/api';
@@ -32,92 +33,52 @@ interface SystemService {
 
 interface SalonService {
   id: number;
-  systemServiceId: number;
-  salonId: number;
-  duration?: number;
-  price?: number;
-  active: boolean;
+  nome_servico: string;
+  duracao: number;
+  preco: string | number;
 }
 
 const ServicesManagement = () => {
-  const [systemServices, setSystemServices] = useState<SystemService[]>([]);
-  const [salonServices, setSalonServices] = useState<SalonService[]>([]);
+  const { user } = useAuth();
+  const [services, setServices] = useState<SalonService[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
-  const [selectedService, setSelectedService] = useState<SystemService | null>(null);
+  const [selectedService, setSelectedService] = useState<SalonService | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     nome_servico: '',
     duracao: '',
     preco: ''
   });
-  const currentSalonId = useAuth().user?.salonId;
 
   useEffect(() => {
-    loadSystemServices();
-    loadSalonServices();
+    loadServices();
   }, []);
 
-  const loadSystemServices = async () => {
+  const loadServices = async () => {
     try {
-      const response = await api.get('/system-services/');
-      setSystemServices(response.data);
+      const response = await api.get('/servicos/');
+      setServices(response.data);
     } catch (error) {
-      console.error('Erro ao carregar serviços do sistema:', error);
+      console.error('Erro ao carregar serviços:', error);
+      setError('Erro ao carregar serviços do sistema');
     }
   };
 
-  const loadSalonServices = async () => {
-    try {
-      const response = await api.get('/salon-services/');
-      setSalonServices(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar serviços do salão:', error);
-    }
-  };
-
-  const handleSubmit = async () => {
-    try {
-      const data = {
-        ...formData,
-        duracao: parseInt(formData.duracao),
-        preco: parseFloat(formData.preco)
-      };
-
-      if (selectedService) {
-        await api.put(`/servicos/${selectedService.id}/`, data);
-      } else {
-        await api.post('/servicos/', data);
-      }
-      loadSystemServices();
-      loadSalonServices();
-      handleCloseDialog();
-    } catch (error) {
-      console.error('Erro ao salvar serviço:', error);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
-      try {
-        await api.delete(`/servicos/${id}/`);
-        loadSystemServices();
-        loadSalonServices();
-      } catch (error) {
-        console.error('Erro ao excluir serviço:', error);
-      }
-    }
-  };
-
-  const handleOpenDialog = (service?: SystemService) => {
+  const handleOpenDialog = (service?: SalonService) => {
     if (service) {
-      setSelectedService(service);
       setFormData({
-        nome_servico: service.name,
-        duracao: service.defaultDuration?.toString() || '',
-        preco: service.defaultPrice?.toString() || ''
+        nome_servico: service.nome_servico,
+        duracao: service.duracao.toString(),
+        preco: service.preco.toString()
       });
+      setSelectedService(service);
     } else {
+      setFormData({
+        nome_servico: '',
+        duracao: '',
+        preco: ''
+      });
       setSelectedService(null);
-      setFormData({ nome_servico: '', duracao: '', preco: '' });
     }
     setOpenDialog(true);
   };
@@ -125,23 +86,63 @@ const ServicesManagement = () => {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setSelectedService(null);
-    setFormData({ nome_servico: '', duracao: '', preco: '' });
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const serviceData = {
+        nome_servico: formData.nome_servico,
+        duracao: parseInt(formData.duracao),
+        preco: parseFloat(formData.preco)
+      };
+
+      if (selectedService) {
+        await api.patch(`/servicos/${selectedService.id}/`, serviceData);
+      } else {
+        await api.post('/servicos/', serviceData);
+      }
+      loadServices();
+      handleCloseDialog();
+    } catch (error: any) {
+      console.error('Erro ao salvar serviço:', error);
+      setError(error.response?.data?.message || 'Erro ao salvar serviço');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
+      try {
+        await api.delete(`/servicos/${id}/`);
+        loadServices();
+      } catch (error) {
+        console.error('Erro ao excluir serviço:', error);
+        setError('Erro ao excluir serviço');
+      }
+    }
   };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Gerenciamento de Serviços
-        </Typography>
-        
-        <Button 
-          variant="contained" 
-          onClick={() => handleOpenDialog()}
-          sx={{ mb: 3 }}
-        >
-          Adicionar Serviço
-        </Button>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h5">
+            Gerenciamento de Serviços
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => handleOpenDialog()}
+          >
+            Adicionar Serviço
+          </Button>
+        </Box>
 
         <TableContainer>
           <Table>
@@ -154,11 +155,15 @@ const ServicesManagement = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {systemServices.map((service) => (
+              {services.map((service) => (
                 <TableRow key={service.id}>
-                  <TableCell>{service.name}</TableCell>
-                  <TableCell>{service.defaultDuration} min</TableCell>
-                  <TableCell>R$ {service.defaultPrice?.toFixed(2) || '0.00'}</TableCell>
+                  <TableCell>{service.nome_servico}</TableCell>
+                  <TableCell>{service.duracao} min</TableCell>
+                  <TableCell>
+                    R$ {typeof service.preco === 'number' 
+                      ? service.preco.toFixed(2) 
+                      : parseFloat(service.preco).toFixed(2)}
+                  </TableCell>
                   <TableCell align="right">
                     <IconButton onClick={() => handleOpenDialog(service)}>
                       <EditIcon />
@@ -177,41 +182,43 @@ const ServicesManagement = () => {
           <DialogTitle>
             {selectedService ? 'Editar Serviço' : 'Novo Serviço'}
           </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Nome do Serviço"
-              fullWidth
-              value={formData.nome_servico}
-              onChange={(e) => setFormData({ ...formData, nome_servico: e.target.value })}
-            />
-            <TextField
-              margin="dense"
-              label="Duração (minutos)"
-              fullWidth
-              type="number"
-              value={formData.duracao}
-              onChange={(e) => setFormData({ ...formData, duracao: e.target.value })}
-            />
-            <TextField
-              margin="dense"
-              label="Preço"
-              fullWidth
-              type="number"
-              value={formData.preco}
-              onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-              }}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button onClick={handleSubmit} variant="contained">
-              Salvar
-            </Button>
-          </DialogActions>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              <TextField
+                autoFocus
+                margin="dense"
+                label="Nome do Serviço"
+                fullWidth
+                value={formData.nome_servico}
+                onChange={(e) => setFormData({ ...formData, nome_servico: e.target.value })}
+                required
+              />
+              <TextField
+                margin="dense"
+                label="Duração (minutos)"
+                fullWidth
+                type="number"
+                value={formData.duracao}
+                onChange={(e) => setFormData({ ...formData, duracao: e.target.value })}
+                required
+              />
+              <TextField
+                margin="dense"
+                label="Preço"
+                fullWidth
+                type="number"
+                value={formData.preco}
+                onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                required
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Cancelar</Button>
+              <Button type="submit" variant="contained">
+                Salvar
+              </Button>
+            </DialogActions>
+          </form>
         </Dialog>
       </Paper>
     </Container>

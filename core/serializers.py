@@ -86,26 +86,34 @@ class ProfissionalSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 class ClienteSerializer(serializers.ModelSerializer):
-    profissional_responsavel = ProfissionalSerializer(read_only=True)
-    profissional_id = serializers.IntegerField(write_only=True, required=False)
-
     class Meta:
         model = Cliente
-        fields = '__all__'
+        fields = ['id', 'nome', 'whatsapp', 'email', 'data_cadastro', 
+                 'observacoes', 'historico_agendamentos', 'is_active']
+        read_only_fields = ['data_cadastro', 'estabelecimento']
 
-    def create(self, validated_data):
-        profissional_id = validated_data.pop('profissional_id', None)
-        cliente = Cliente.objects.create(**validated_data)
-        if profissional_id:
-            profissional = Profissional.objects.get(id=profissional_id)
-            cliente.profissional_responsavel = profissional
-            cliente.save()
-        return cliente
+    def validate_whatsapp(self, value):
+        # Remove caracteres não numéricos
+        value = ''.join(filter(str.isdigit, value))
+        if not value:
+            raise serializers.ValidationError("Número de WhatsApp inválido")
+        return value
 
 class ServicoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Servico
-        fields = '__all__'
+        fields = ['id', 'nome_servico', 'duracao', 'preco', 'estabelecimento']
+        read_only_fields = ['estabelecimento']
+
+    def validate_duracao(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("A duração deve ser maior que zero")
+        return value
+
+    def validate_preco(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("O preço deve ser maior que zero")
+        return value
 
 class AgendamentoSerializer(serializers.ModelSerializer):
     class Meta:

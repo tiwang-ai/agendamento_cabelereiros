@@ -134,21 +134,24 @@ const Clients = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const submitData = {
-        ...formData,
-        profissional_id: formData.profissional_id ? parseInt(formData.profissional_id) : null
+      const clientData = {
+        nome: formData.nome,
+        whatsapp: formData.whatsapp.replace(/\D/g, ''),
+        email: formData.email || null,
+        observacoes: formData.observacoes || null,
+        is_active: true
       };
 
       if (selectedClient) {
-        await api.patch(`/clientes/${selectedClient.id}/`, submitData);
+        await api.patch(`/clientes/${selectedClient.id}/`, clientData);
       } else {
-        await api.post('/clientes/', submitData);
+        await api.post('/clientes/', clientData);
       }
       loadClients();
       handleCloseDialog();
     } catch (error: any) {
       console.error('Erro ao salvar cliente:', error);
-      setError(error.response?.data?.message || 'Erro ao salvar cliente');
+      setError(error.response?.data?.detail || 'Erro ao salvar cliente');
     }
   };
 

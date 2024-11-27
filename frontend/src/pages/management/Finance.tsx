@@ -24,17 +24,26 @@ import {
 } from '@mui/icons-material';
 import { FinanceService } from '../../services/finance';
 
-interface SalonFinanceStats {
+interface SalonStats {
   totalRevenue: number;
   monthlyRevenue: number;
   pendingPayments: number;
   totalAppointments: number;
 }
 
+interface Transaction {
+  id: number;
+  date: string;
+  description: string;
+  amount: number;
+  type: 'income' | 'expense';
+  status: 'completed' | 'pending' | 'cancelled';
+}
+
 const SalonFinance = () => {
   const theme = useTheme();
-  const [stats, setStats] = useState<SalonFinanceStats | null>(null);
-  const [transactions, setTransactions] = useState([]);
+  const [stats, setStats] = useState<SalonStats | null>(null);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -32,7 +32,6 @@ const Sidebar = ({ open }: SidebarProps) => {
     { text: 'Profissionais', icon: <PeopleIcon />, path: '/professionals' },
     { text: 'Serviços', icon: <ListAltIcon />, path: '/services' },
     { text: 'Clientes', icon: <ClientsIcon />, path: '/clients' },
-    { text: 'WhatsApp', icon: <WhatsAppIcon />, path: '/settings/whatsapp' },
     { text: 'Gerenciar Conversas', icon: <ChatIcon />, path: '/settings/chats' },
     { text: 'Financeiro', icon: <MoneyIcon />, path: '/finance' },
     { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' }

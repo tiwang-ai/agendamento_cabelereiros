@@ -176,100 +176,31 @@ class ProfissionalViewSet(viewsets.ModelViewSet):
     serializer_class = ProfissionalSerializer
 
 class ClienteViewSet(viewsets.ModelViewSet):
-    queryset = Cliente.objects.all()
     serializer_class = ClienteSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Cliente.objects.all()
+
+    def get_queryset(self):
+        if self.request.user.role == 'ADMIN':
+            return Cliente.objects.all()
+        return Cliente.objects.filter(estabelecimento=self.request.user.estabelecimento)
+
+    def perform_create(self, serializer):
+        serializer.save(estabelecimento=self.request.user.estabelecimento)
 
 class ServicoViewSet(viewsets.ModelViewSet):
     queryset = Servico.objects.all()
     serializer_class = ServicoSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = Servico.objects.all()
 
-class AgendamentoViewSet(viewsets.ModelViewSet):
-    queryset = Agendamento.objects.all()
-    serializer_class = AgendamentoSerializer
+    def get_queryset(self):
+        if self.request.user.role == 'ADMIN':
+            return Servico.objects.all()
+        return Servico.objects.filter(estabelecimento=self.request.user.estabelecimento)
 
-
-def enviar_mensagem_whatsapp(numero, mensagem):
-    """
-    Função para enviar uma mensagem via WhatsApp usando a API do Evolution.
-
-    Parâmetros:
-    - numero (str): Número do destinatário no formato internacional (ex: "+5511999999999").
-    - mensagem (str): Conteúdo da mensagem a ser enviada.
-
-    Retorno:
-    - dict: Resposta JSON da API do Evolution.
-    """
-    url = settings.EVOLUTION_API_URL  # Defina essa URL no settings.py
-    payload = {
-        "numero": numero,
-        "mensagem": mensagem
-    }
-    headers = {
-        "Authorization": f"Bearer {settings.EVOLUTION_API_TOKEN}",  # Defina esse token no settings.py
-        "Content-Type": "application/json"
-    }
-    response = requests.post(url, json=payload, headers=headers)
-    return response.json()
-
-
-
-
-@api_view(["POST"])
-def receber_mensagem_whatsapp(request):
-    """
-    Função para receber mensagens do WhatsApp via webhook do Evolution e processá-las com a LLM do Deep Infra.
-    """
-    data = request.data
-    numero = data.get("numero")
-    mensagem = data.get("mensagem")
-
-    # Envia a mensagem recebida para o Deep Infra e obtém a resposta da LLM
-    resposta_ia = enviar_para_deep_infra(mensagem)
-
-    # Envia a resposta da LLM de volta para o cliente via WhatsApp
-    enviar_mensagem_whatsapp(numero, resposta_ia)
-
-    return Response({"status": "Mensagem processada com sucesso!"})
-
-
-
-def enviar_para_deep_infra(mensagem):
-    """
-    Função para enviar uma mensagem para a LLM hospedada no Deep Infra e receber uma resposta.
-
-    Parâmetros:
-    - mensagem (str): Texto da mensagem a ser processada pela LLM.
-
-    Retorno:
-    - str: Resposta gerada pela LLM.
-    """
-    url = settings.DEEP_INFRA_API_URL
-    headers = {
-        "Authorization": f"Bearer {settings.DEEP_INFRA_API_TOKEN}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "query": mensagem
-    }
-    response = requests.post(url, json=payload, headers=headers)
-    response_data = response.json()
-    return response_data.get("response", "Desculpe, não entendi a sua pergunta.")
-
-
-def verificar_disponibilidade(profissional_id, data, horario):
-    """
-    Verifica se o profissional está disponível em uma data e horário específicos.
-    """
-    data_horario = datetime.strptime(f"{data} {horario}", "%Y-%m-%d %H:%M")
-    agendamentos_existentes = Agendamento.objects.filter(
-        profissional_id=profissional_id,
-        data_agendamento=data,
-        horario=horario
-    )
-
-    # Se houver agendamentos existentes, o horário está indisponível
-    return not agendamentos_existentes.exists()
-
+    def perform_create(self, serializer):
+        serializer.save(estabelecimento=self.request.user.estabelecimento)
 
 class AgendamentoViewSet(viewsets.ModelViewSet):
     queryset = Agendamento.objects.all()
