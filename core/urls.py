@@ -30,7 +30,13 @@ from .views import (
     system_logs,
     reconnect_whatsapp,
     ClienteProfissionalViewSet,
-    whatsapp_webhook
+    whatsapp_webhook,
+    CustomTokenObtainPairView,
+    ChatConfigViewSet,
+    salon_finance_stats,
+    salon_finance_transactions,
+    SystemServiceViewSet,
+    SalonServiceViewSet
 )
 
 router = DefaultRouter()
@@ -39,8 +45,11 @@ router.register(r'profissionais', ProfissionalViewSet)
 router.register(r'clientes', ClienteViewSet)
 router.register(r'servicos', ServicoViewSet)
 router.register(r'agendamentos', AgendamentoViewSet)
-router.register(r'users', UserViewSet)
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'profissional/clientes', ClienteProfissionalViewSet, basename='profissional-clientes')
+router.register(r'whatsapp/chats', ChatConfigViewSet, basename='chat-config')
+router.register(r'system-services', SystemServiceViewSet, basename='system-services')
+router.register(r'salon-services', SalonServiceViewSet, basename='salon-services')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -59,14 +68,17 @@ urlpatterns = [
     path('payments/process/', process_payment, name='process_payment'),
     path('bot/process/', bot_responder, name='bot_responder'),
     path('whatsapp/status/<str:salon_id>/', whatsapp_status, name='whatsapp_status'),
-    path('whatsapp/qr-code/<str:salon_id>/', generate_qr_code),
-    path('whatsapp/connection-status/<str:salon_id>/', check_connection_status),
+    path('whatsapp/qr-code/<str:estabelecimento_id>/', generate_qr_code),
+    path('whatsapp/connection-status/<str:estabelecimento_id>/', check_connection_status),
     path('dashboard/stats/', dashboard_stats, name='dashboard-stats'),
     path('profissionais/', create_professional, name='create-professional'),
     path('admin/whatsapp/instances/', whatsapp_instances_status, name='whatsapp-instances-status'),
     path('admin/system-logs/', system_logs, name='system-logs'),
-    path('whatsapp/reconnect/<str:salon_id>/', reconnect_whatsapp, name='reconnect-whatsapp'),
+    path('whatsapp/reconnect/<str:estabelecimento_id>/', reconnect_whatsapp, name='reconnect-whatsapp'),
     path('whatsapp/webhook/', whatsapp_webhook, name='whatsapp-webhook'),
+    path('auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('finance/salon/stats/', salon_finance_stats, name='salon-finance-stats'),
+    path('finance/salon/transactions/', salon_finance_transactions, name='salon-finance-transactions'),
 ]
 
 

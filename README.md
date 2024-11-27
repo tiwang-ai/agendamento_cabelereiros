@@ -44,6 +44,7 @@ Teste_Agendamento-TIWANG/
 │   ├── migrations/
 │   │   └── ...
 │   ├── services/
+│   │   ├── reports.py         # Serviços para relatórios
 │   │   └── system_logs.py     # Serviços para monitoramento e logs do sistema
 │   ├── views.py               # Views principais, incluindo o processamento de perguntas para os bots
 │   ├── admin.py               # Configuração do painel administrativo
@@ -54,6 +55,7 @@ Teste_Agendamento-TIWANG/
 │   ├── llm_utils.py           # Funções de integração com a LLM (prompt engineering, chamada API)
 │   ├── serializers.py         # Serializers para conversão dos modelos para JSON
 │   ├── tasks.py               # Tarefas assíncronas com Celery (ex: relatórios automáticos)
+│   ├── middleware.py          # Middleware para atualização de atividade do usuário
 │   └── tests.py               # Testes para as principais funcionalidades
 ├── agendamento_salao/
 │   ├── settings.py            # Configurações do projeto Django
@@ -97,6 +99,9 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   ├── WhatsAppStatus.tsx
 │   │   │   │   ├── Services.tsx
 │   │   │   │   ├── TechSupport.tsx
+│   │   │   │   ├── Reports.tsx
+│   │   │   │   ├── StaffManagement.tsx
+│   │   │   │   ├── Profile.tsx
 │   │   │   │   └── Plans.tsx
 │   │   │   ├── auth/
 │   │   │   │   ├── Login.tsx
@@ -105,6 +110,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   └── SalonDashboard.tsx
 │   │   │   ├── management/
 │   │   │   │   ├── Professionals.tsx
+│   │   │   │   ├── Finance.tsx
 │   │   │   │   ├── Clients.tsx
 │   │   │   │   └── Services.tsx
 │   │   │   ├── calendar/
@@ -121,9 +127,11 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── professional/
 │   │   │   │   ├── Agenda.tsx
 │   │   │   │   ├── Clients.tsx
+│   │   │   │   ├── Profile.tsx
 │   │   │   │   └── History.tsx
 │   │   │   └── settings/
 │   │   │       ├── Settings.tsx
+│   │   │       ├── ChatManagement.tsx
 │   │   │       └── WhatsAppConnection.tsx
 │   │   ├── services/      # Serviços de API
 │   │   │   ├── payment.ts
@@ -133,17 +141,25 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── salons.ts
 │   │   │   ├── users.ts
 │   │   │   ├── whatsapp.ts
-│   │   │   ├── system_logs.ts
+│   │   │   ├── permissions.ts
 │   │   │   └── ai.ts
 │   │   ├── hooks/         # Custom hooks
+│   │   │   ├── useLanguage.ts
 │   │   │   └── usePermissions.ts
 │   │   ├── contexts/      # Contextos React
 │   │   │   └── AuthContext.tsx
 │   │   ├── types/         # Tipos/Interfaces
+│   │   │   ├── whatsapp.ts
+│   │   │   ├── onboarding.ts
 │   │   │   └── auth.ts
 │   │   ├── utils/         # Funções utilitárias
 │   │   ├── assets/        # Imagens, etc
 │   │   │   └── react.svg
+│   │   ├── i18n/
+│   │   │   ├── locales/
+│   │   │   │   ├── pt-BR.json
+│   │   │   │   └── en-US.json
+│   │   │   └── index.ts
 │   │   ├── theme.ts
 │   │   ├── App.css
 │   │   ├── App.tsx
@@ -410,8 +426,8 @@ Relacionamentos:
    ~~- Integração com WhatsApp~~
 
 3. Implementar página de conexão WhatsApp
-   - Interface para leitura do QR Code gerado pela Evolution Api
-   - Criar instância na Evolution Api ao criar o salão (tanto via painel da staff quanto via registro e pagamento)
+   - Interface para leitura do QR Code gerado pela Evolution Api (não está funcionando)
+   ~~- Criar instância na Evolution Api ao criar o salão (tanto via painel da staff quanto via registro e pagamento)~~
    - Monitoramento do status da conexão (está com falha)
    - Logs de eventos
 
@@ -425,16 +441,24 @@ Relacionamentos:
       - Métricas de uso do Bot 1
       - Status dos serviços
       - Logs centralizados (a depender do log, vale mais a pena na página do TI (TechSupport))
+   Para Salões:
+      - Métricas de uso do Bot 2
 
-5. Finalizar gestão de equipe staff
-   - Permissões personalizadas
-   - Logs de atividades
-   - Métricas de desempenho
+5. ~~Finalizar gestão de equipe staff~~
+   ~~- Permissões personalizadas~~
+   ~~- Logs de atividades~~
+   ~~- Métricas de desempenho~~
 
 6. Melhorias Gerais
    - Tratar erros
-   - Internacionalização e tradução com os arquivos Locales
-      - Atualizar arquivos locales
+   - Verificar conexões das páginas
+      - Financeiro
+      - Settings
+      - Profile
+   - Fazer o deploy do sistema na Digital Ocean e mudar infra para núvem (Dabco de dados, etc)
+   - Criar uma base de dados integrada dos profissionais caso venha existir profissionais em mais de um salão
+   ~~- Internacionalização e tradução com os arquivos Locales~~
+     ~~ - Atualizar arquivos locales~~
    - Aprimorar sistema de permissões
    - Refinar interface do usuário
    - Otimizar fluxos de navegação

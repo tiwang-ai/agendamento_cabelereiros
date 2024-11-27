@@ -69,6 +69,6 @@ export interface User {
   phone?: string;
   whatsappNumber?: string;
   role: UserRole;
-  salonId?: string; // ID do salão associado;
+  estabelecimento_id?: string;
   isActive: boolean;
 }

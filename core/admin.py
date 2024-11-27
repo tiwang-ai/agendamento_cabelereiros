@@ -24,9 +24,18 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ('email', 'name')
     ordering = ('email',)
 
+@admin.register(Profissional)
+class ProfissionalAdmin(admin.ModelAdmin):
+    list_display = ('nome', 'especialidade', 'telefone', 'estabelecimento', 'is_active')
+    list_filter = ('estabelecimento', 'is_active')
+    search_fields = ('nome', 'especialidade', 'telefone')
+    raw_id_fields = ('user', 'estabelecimento')
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('estabelecimento', 'user')
+
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Estabelecimento)
-admin.site.register(Profissional)
 admin.site.register(Cliente)
 admin.site.register(Servico)
 admin.site.register(Agendamento)

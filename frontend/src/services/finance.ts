@@ -5,7 +5,7 @@ export interface FinanceStats {
   totalRevenue: number;
   monthlyRevenue: number;
   pendingPayments: number;
-  activeSubscriptions: number;
+  totalAppointments: number;
 }
 
 export interface Transaction {
@@ -16,16 +16,31 @@ export interface Transaction {
   type: 'income' | 'expense';
   status: 'completed' | 'pending' | 'cancelled';
   category: string;
-  salon_id?: number;
 }
 
 export const FinanceService = {
-  getStats: async (): Promise<FinanceStats> => {
+  getSalonStats: async (): Promise<FinanceStats> => {
+    const response = await api.get('/finance/salon/stats/');
+    return response.data;
+  },
+
+  getSalonTransactions: async (params?: {
+    start_date?: string;
+    end_date?: string;
+    type?: string;
+    status?: string;
+  }): Promise<Transaction[]> => {
+    const response = await api.get('/finance/salon/transactions/', { params });
+    return response.data;
+  },
+
+  // Para o painel administrativo
+  getAdminStats: async (): Promise<FinanceStats> => {
     const response = await api.get('/admin/finance/stats/');
     return response.data;
   },
 
-  getTransactions: async (params: {
+  getAdminTransactions: async (params?: {
     start_date?: string;
     end_date?: string;
     type?: string;

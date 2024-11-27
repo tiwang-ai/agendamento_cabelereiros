@@ -1,8 +1,8 @@
 import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
-from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan
-from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer
+from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService
+from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer
 from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -16,7 +16,6 @@ from .services.system_logs import SystemMonitor
 from django.http import JsonResponse
 from .integrations.evolution import (
     get_whatsapp_status, 
-    generate_qr_code, 
     check_connection,
     criar_instancia_evolution,
     EvolutionAPI
@@ -54,34 +53,44 @@ User = get_user_model()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
-        # Verifica se é login por email ou telefone
-        email = attrs.get('email')
-        phone = attrs.get('phone')
-        password = attrs.get('password')
+        try:
+            # Normaliza o telefone se fornecido
+            phone = attrs.get('phone')
+            if phone:
+                phone = ''.join(filter(str.isdigit, phone))
+                user = User.objects.get(phone=phone)
+                attrs['username'] = user.get_username()  # Usa o email ou phone como username
+            else:
+                attrs['username'] = attrs.get('email')
 
-        if not (email or phone) or not password:
-            raise serializers.ValidationError('Informe email/telefone e senha')
+            password = attrs.get('password')
 
-        # Tenta autenticar por email
-        if email:
-            user = authenticate(email=email, password=password)
-        # Tenta autenticar por telefone
-        else:
-            user = User.objects.filter(phone=phone).first()
+            if not attrs.get('username') or not password:
+                raise serializers.ValidationError({'detail': 'Informe email/telefone e senha'})
+
+            user = authenticate(
+                request=self.context.get('request'),
+                username=attrs['username'],
+                password=password
+            )
+
             if user:
-                user = authenticate(email=user.email, password=password)
-
-        if user:
-            data = super().validate(attrs)
-            data.update({
-                'email': user.email,
-                'name': user.name,
-                'role': user.role,
-                'estabelecimento_id': user.estabelecimento_id if user.estabelecimento else None
-            })
-            return data
-        
-        raise serializers.ValidationError('Credenciais inválidas')
+                data = super().validate(attrs)
+                data.update({
+                    'email': user.email,
+                    'name': user.name,
+                    'role': user.role,
+                    'estabelecimento_id': user.estabelecimento_id if user.estabelecimento else None,
+                    'phone': user.phone
+                })
+                return data
+            
+            raise serializers.ValidationError({'detail': 'Credenciais inválidas'})
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'detail': 'Usuário não encontrado'})
+        except Exception as e:
+            print("Erro detalhado:", str(e))
+            raise serializers.ValidationError({'detail': str(e)})
 
     @classmethod
     def get_token(cls, user):
@@ -92,6 +101,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
+
+    def post(self, request, *args, **kwargs):
+        print("Dados recebidos:", request.data)  # Debug
+        return super().post(request, *args, **kwargs)
 
 class EstabelecimentoViewSet(viewsets.ModelViewSet):
     queryset = Estabelecimento.objects.all()
@@ -113,9 +126,16 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
                 estabelecimento.evolution_instance_id = instance_response.get('instanceId')
                 estabelecimento.status = 'pending_connection'
                 estabelecimento.save()
-            else:
-                print("Falha ao criar instância WhatsApp")
-                # Não retornamos erro para não impedir a criação do salão
+                
+                # Ativar bot automaticamente
+                BotConfig.objects.create(
+                    estabelecimento=estabelecimento,
+                    bot_ativo=True
+                )
+
+                # Configurar webhooks
+                api = EvolutionAPI()
+                api.configurar_webhooks(instance_response.get('instanceId'))
 
             return Response(serializer.data, status=201)
         except Exception as e:
@@ -614,12 +634,18 @@ def admin_stats(request):
     })
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
 
     def get_queryset(self):
-        return User.objects.all().select_related('estabelecimento')
+        user = self.request.user
+        if user.role == 'ADMIN':
+            return User.objects.all()
+        elif user.role == 'OWNER':
+            return User.objects.filter(estabelecimento=user.estabelecimento)
+        else:
+            return User.objects.filter(id=user.id)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -686,7 +712,10 @@ def process_payment(request):
 def whatsapp_status(request, salon_id):
     try:
         estabelecimento = Estabelecimento.objects.get(id=salon_id)
-        status = get_whatsapp_status(estabelecimento.instance_id)
+        if not estabelecimento.evolution_instance_id:
+            return JsonResponse({'error': 'Instância não encontrada'}, status=404)
+            
+        status = get_whatsapp_status(estabelecimento.evolution_instance_id)
         return JsonResponse(status)
     except Estabelecimento.DoesNotExist:
         return JsonResponse({'error': 'Salão não encontrado'}, status=404)
@@ -697,8 +726,15 @@ def whatsapp_status(request, salon_id):
 def generate_qr_code(request, salon_id):
     try:
         estabelecimento = Estabelecimento.objects.get(id=salon_id)
-        qr_code = generate_qr_code(estabelecimento.instance_id)
-        return JsonResponse({'qrCode': qr_code})
+        if not estabelecimento.evolution_instance_id:
+            return JsonResponse({'error': 'Instância não encontrada'}, status=404)
+            
+        api = EvolutionAPI()
+        qr_response = api.get_qr_code(estabelecimento.evolution_instance_id)
+        
+        if 'error' not in qr_response:
+            return JsonResponse(qr_response)
+        return JsonResponse({'error': 'Erro ao gerar QR code'}, status=500)
     except Estabelecimento.DoesNotExist:
         return JsonResponse({'error': 'Salão não encontrado'}, status=404)
     except Exception as e:
@@ -718,30 +754,48 @@ def check_connection_status(request, salon_id):
 @api_view(['GET'])
 def dashboard_stats(request):
     try:
-        salon_id = request.user.estabelecimento_id
+        # Obtém estabelecimento_id do usuário logado
+        estabelecimento_id = request.user.estabelecimento_id
+        if not estabelecimento_id:
+            return Response(
+                {'error': 'Usuário não est associado a um estabelecimento'}, 
+                status=400
+            )
+            
         hoje = datetime.now().date()
+        
+        # Busca profissionais do estabelecimento
+        profissionais_ids = Profissional.objects.filter(
+            estabelecimento_id=estabelecimento_id
+        ).values_list('id', flat=True)
         
         stats = {
             'clientesHoje': Agendamento.objects.filter(
-                estabelecimento_id=salon_id,
+                profissional_id__in=profissionais_ids,
                 data_agendamento=hoje
-            ).count(),
+            ).values('cliente').distinct().count(),
+            
             'agendamentosHoje': Agendamento.objects.filter(
-                estabelecimento_id=salon_id,
+                profissional_id__in=profissionais_ids,
                 data_agendamento=hoje
             ).count(),
+            
             'faturamentoHoje': Agendamento.objects.filter(
-                estabelecimento_id=salon_id,
+                profissional_id__in=profissionais_ids,
                 data_agendamento=hoje,
                 status='finalizado'
-            ).aggregate(Sum('valor'))['valor__sum'] or 0,
+            ).aggregate(
+                total=Sum('servico__preco')
+            )['total'] or 0,
+            
             'clientesTotal': Cliente.objects.filter(
-                estabelecimento_id=salon_id
+                estabelecimento_id=estabelecimento_id
             ).count()
         }
         
         return Response(stats)
     except Exception as e:
+        print(f"Erro no dashboard_stats: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
@@ -826,13 +880,13 @@ def system_logs(request):
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
-def reconnect_whatsapp(request, salon_id):
+def reconnect_whatsapp(request, estabelecimento_id):
     try:
-        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
         api = EvolutionAPI()
         
         # Verifica se instância existe
-        instance_exists = api.check_instance_exists(f"salon_{salon_id}")
+        instance_exists = api.check_instance_exists(f"estabelecimento_{estabelecimento_id}")
         
         if instance_exists:
             # Deleta instância antiga
@@ -840,7 +894,7 @@ def reconnect_whatsapp(request, salon_id):
         
         # Cria nova instância
         instance_response = criar_instancia_evolution(
-            salon_id=salon_id,
+            estabelecimento_id=estabelecimento_id,
             phone=estabelecimento.whatsapp
         )
         
@@ -849,8 +903,7 @@ def reconnect_whatsapp(request, salon_id):
             estabelecimento.save()
             return Response({
                 'success': True, 
-                'instanceId': instance_response['instanceId'],
-                'qrcode': instance_response.get('qrcode')
+                'instanceId': instance_response['instanceId']
             })
             
         return Response({
@@ -858,7 +911,6 @@ def reconnect_whatsapp(request, salon_id):
             'error': 'Falha ao criar instância'
         }, status=400)
     except Exception as e:
-        print(f"Erro detalhado: {str(e)}")
         return Response({
             'success': False,
             'error': str(e)
@@ -867,6 +919,7 @@ def reconnect_whatsapp(request, salon_id):
 class ClienteProfissionalViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
     permission_classes = [IsAuthenticated]
+    queryset = Cliente.objects.all()
 
     def get_queryset(self):
         profissional = Profissional.objects.get(user=self.request.user)
@@ -892,6 +945,25 @@ def whatsapp_webhook(request):
     instance_id = data.get('instanceId')
     
     try:
+        # Primeiro verifica se é uma mensagem para o Bot 1 (suporte)
+        system_config = SystemConfig.objects.first()
+        if system_config and system_config.evolution_instance_id == instance_id:
+            if event_type == 'messages':
+                mensagem = data.get('message', {})
+                if not mensagem.get('fromMe'):
+                    # Verifica se o número é de um salão para evitar loop de IAs
+                    numero = mensagem.get('from')
+                    if not Estabelecimento.objects.filter(whatsapp=numero).exists():
+                        resposta = processar_pergunta(mensagem.get('body', ''), bot_tipo=1)
+                        api = EvolutionAPI()
+                        api.send_message(
+                            instance_id=instance_id,
+                            number=numero,
+                            message=resposta
+                        )
+            return Response({"status": "success"})
+
+        # Se não for Bot 1, processa como Bot 2
         estabelecimento = Estabelecimento.objects.get(evolution_instance_id=instance_id)
         
         if event_type == 'connection':
@@ -899,13 +971,26 @@ def whatsapp_webhook(request):
             estabelecimento.save()
         
         elif event_type == 'messages':
-            # Processar mensagens recebidas
             mensagem = data.get('message', {})
-            if mensagem.get('fromMe') == False:
+            numero = mensagem.get('from')
+            
+            # Verifica se o bot está desativado para este número
+            bot_desativado = BotConfig.objects.filter(
+                estabelecimento=estabelecimento,
+                numero_cliente=numero,
+                bot_ativo=False
+            ).exists()
+            
+            if not mensagem.get('fromMe') and not bot_desativado:
                 resposta = processar_pergunta(mensagem.get('body', ''), bot_tipo=2)
-                enviar_mensagem_whatsapp(mensagem.get('from'), resposta)
+                api = EvolutionAPI()
+                api.send_message(
+                    instance_id=instance_id,
+                    number=numero,
+                    message=resposta
+                )
         
-        # Registrar log do evento
+        # Registrar log
         Interacao.objects.create(
             salao=estabelecimento,
             tipo=event_type,
@@ -913,16 +998,9 @@ def whatsapp_webhook(request):
         )
         
         return Response({"status": "success"})
-    except Estabelecimento.DoesNotExist:
-        return Response(
-            {"error": "Estabelecimento não encontrado"},
-            status=404
-        )
     except Exception as e:
-        return Response(
-            {"error": str(e)},
-            status=500
-        )
+        print(f"Erro no webhook: {str(e)}")
+        return Response({"error": str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -937,3 +1015,219 @@ def system_metrics(request):
     }
     
     return Response(metrics)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def salon_analytics(request):
+    """
+    Retorna análises do salão
+    """
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    salon_id = request.user.estabelecimento_id
+
+    if not salon_id:
+        return Response({"error": "Salão não encontrado"}, status=400)
+
+    analytics = ReportService.get_salon_analytics(salon_id, start_date, end_date)
+    return Response(analytics)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def staff_analytics(request):
+    """
+    Retorna análises para a equipe administrativa
+    """
+    analytics = ReportService.get_staff_analytics()
+    return Response(analytics)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def export_data(request):
+    """
+    Exporta dados em CSV
+    """
+    data_type = request.query_params.get('type')
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    salon_id = request.user.estabelecimento_id
+
+    if not all([data_type, start_date, end_date, salon_id]):
+        return Response({"error": "Parâmetros inválidos"}, status=400)
+
+    try:
+        data = ReportService.export_data(salon_id, data_type, start_date, end_date)
+        return Response(data)
+    except ValueError as e:
+        return Response({"error": str(e)}, status=400)
+
+@api_view(['POST'])
+def send_whatsapp_message(request, salon_id):
+    try:
+        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        api = EvolutionAPI()
+        
+        number = request.data.get('number')
+        message = request.data.get('message')
+        options = request.data.get('options', {})
+        
+        if not all([number, message]):
+            return Response({
+                'success': False,
+                'error': 'Número e mensagem são obrigatórios'
+            }, status=400)
+            
+        response = api.send_message(
+            instance_id=estabelecimento.evolution_instance_id,
+            number=number,
+            message=message,
+            options=options
+        )
+        
+        # Registrar log
+        Interacao.objects.create(
+            salao=estabelecimento,
+            tipo='message_sent',
+            descricao=f"Mensagem enviada para {number}"
+        )
+        
+        return Response(response)
+    except Estabelecimento.DoesNotExist:
+        return Response({
+            'success': False,
+            'error': 'Estabelecimento não encontrado'
+        }, status=404)
+    except Exception as e:
+        return Response({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+class ChatConfigViewSet(viewsets.ModelViewSet):
+    serializer_class = ChatConfigSerializer
+    permission_classes = [IsAuthenticated]
+    queryset = BotConfig.objects.all()
+
+    def get_queryset(self):
+        if self.request.user.role == 'OWNER':
+            return BotConfig.objects.filter(
+                estabelecimento=self.request.user.estabelecimento
+            ).order_by('-ultima_atualizacao')
+        return BotConfig.objects.none()
+
+    def perform_create(self, serializer):
+        serializer.save(estabelecimento=self.request.user.estabelecimento)
+
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        # Notificar cliente sobre mudança no status do bot
+        if 'bot_ativo' in serializer.validated_data:
+            try:
+                api = EvolutionAPI()
+                message = (
+                    "O atendimento automático foi reativado." 
+                    if instance.bot_ativo 
+                    else "Um atendente humano assumirá a conversa a partir de agora."
+                )
+                api.send_message(
+                    instance_id=instance.estabelecimento.evolution_instance_id,
+                    number=instance.numero_cliente,
+                    message=message
+                )
+            except Exception as e:
+                print(f"Erro ao enviar notificação: {str(e)}")
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def salon_finance_stats(request):
+    """
+    Retorna estatísticas financeiras para o salão
+    """
+    estabelecimento = request.user.estabelecimento
+    if not estabelecimento:
+        return Response({"error": "Salão não encontrado"}, status=400)
+
+    today = datetime.now()
+    first_day_of_month = today.replace(day=1)
+    
+    # Calcular estatísticas
+    total_revenue = Agendamento.objects.filter(
+        profissional__estabelecimento=estabelecimento,
+        status='completed'
+    ).aggregate(total=Sum('servico__preco'))['total'] or 0
+    
+    monthly_revenue = Agendamento.objects.filter(
+        profissional__estabelecimento=estabelecimento,
+        status='completed',
+        data_agendamento__gte=first_day_of_month
+    ).aggregate(total=Sum('servico__preco'))['total'] or 0
+    
+    pending_payments = Agendamento.objects.filter(
+        profissional__estabelecimento=estabelecimento,
+        status='pending'
+    ).aggregate(total=Sum('servico__preco'))['total'] or 0
+    
+    total_appointments = Agendamento.objects.filter(
+        profissional__estabelecimento=estabelecimento
+    ).count()
+    
+    return Response({
+        'totalRevenue': float(total_revenue),
+        'monthlyRevenue': float(monthly_revenue),
+        'pendingPayments': float(pending_payments),
+        'totalAppointments': total_appointments
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def salon_finance_transactions(request):
+    """
+    Retorna transações financeiras do salão
+    """
+    estabelecimento = request.user.estabelecimento
+    if not estabelecimento:
+        return Response({"error": "Salão não encontrado"}, status=400)
+
+    start_date = request.query_params.get('start_date')
+    end_date = request.query_params.get('end_date')
+    transaction_type = request.query_params.get('type')
+    status = request.query_params.get('status')
+    
+    transactions = Agendamento.objects.filter(
+        profissional__estabelecimento=estabelecimento
+    )
+    
+    if start_date:
+        transactions = transactions.filter(data_agendamento__gte=start_date)
+    if end_date:
+        transactions = transactions.filter(data_agendamento__lte=end_date)
+    if status and status != 'all':
+        transactions = transactions.filter(status=status)
+        
+    # Converter agendamentos em transações
+    transaction_list = []
+    for agendamento in transactions:
+        transaction_list.append({
+            'id': agendamento.id,
+            'date': agendamento.data_agendamento,
+            'description': f'Agendamento - {agendamento.servico.nome_servico}',
+            'amount': float(agendamento.servico.preco),
+            'type': 'income',
+            'status': agendamento.status
+        })
+    
+    return Response(transaction_list)
+
+class SystemServiceViewSet(viewsets.ModelViewSet):
+    queryset = SystemService.objects.all()
+    serializer_class = SystemServiceSerializer
+    permission_classes = [IsAuthenticated]
+
+class SalonServiceViewSet(viewsets.ModelViewSet):
+    serializer_class = SalonServiceSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return SalonService.objects.filter(
+            estabelecimento=self.request.user.estabelecimento
+        )

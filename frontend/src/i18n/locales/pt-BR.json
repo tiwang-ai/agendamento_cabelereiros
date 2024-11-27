@@ -1,0 +1,56 @@
+{
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "create": "Criar",
+    "search": "Buscar",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso"
+  },
+  "auth": {
+    "login": "Entrar",
+    "logout": "Sair",
+    "register": "Registrar",
+    "email": "Email",
+    "password": "Senha",
+    "phone": "Telefone"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "appointments": "Agendamentos",
+    "clients": "Clientes",
+    "revenue": "Receita",
+    "professionals": "Profissionais"
+  },
+  "appointments": {
+    "title": "Agendamentos",
+    "new": "Novo Agendamento",
+    "status": {
+      "pending": "Pendente",
+      "confirmed": "Confirmado",
+      "cancelled": "Cancelado",
+      "completed": "Concluído"
+    }
+  },
+  "clients": {
+    "title": "Clientes",
+    "new": "Novo Cliente",
+    "edit": "Editar Cliente",
+    "details": "Detalhes do Cliente"
+  },
+  "professionals": {
+    "title": "Profissionais",
+    "new": "Novo Profissional",
+    "edit": "Editar Profissional",
+    "schedule": "Agenda"
+  },
+  "settings": {
+    "title": "Configurações",
+    "profile": "Perfil",
+    "whatsapp": "WhatsApp",
+    "notifications": "Notificações"
+  }
+}

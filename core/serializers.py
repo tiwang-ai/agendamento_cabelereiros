@@ -8,20 +8,82 @@ from .models import (
     Agendamento,
     Transaction,
     SystemService,
-    SalonService
+    SalonService,
+    BotConfig,
+    Interacao
 )
+import json
 
 User = get_user_model()
 
 class EstabelecimentoSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    
     class Meta:
         model = Estabelecimento
-        fields = '__all__'
+        fields = [
+            'id', 'nome', 'endereco', 'telefone', 'whatsapp',
+            'horario_funcionamento', 'evolution_instance_id',
+            'status', 'status_display', 'is_active'
+        ]
+        read_only_fields = ['evolution_instance_id', 'status']
 
 class ProfissionalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profissional
-        fields = '__all__'
+        fields = ['id', 'nome', 'especialidade', 'telefone', 'estabelecimento', 'is_active']
+
+    def validate(self, data):
+        # Garantir que estabelecimento está presente
+        if not data.get('estabelecimento'):
+            raise serializers.ValidationError("Estabelecimento é obrigatório")
+        
+        # Validar telefone
+        telefone = ''.join(filter(str.isdigit, data.get('telefone', '')))
+        if len(telefone) < 10:
+            raise serializers.ValidationError("Telefone deve ter pelo menos 10 dígitos")
+        data['telefone'] = telefone
+
+        return data
+
+    def create(self, validated_data):
+        try:
+            # Gera uma senha temporária
+            temp_password = 'mudar123'
+            
+            # Normaliza o telefone para usar como username
+            phone = ''.join(filter(str.isdigit, validated_data['telefone']))
+            
+            # Cria o usuário primeiro
+            user = User.objects.create(
+                phone=phone,  # Importante: usar o telefone normalizado
+                name=validated_data['nome'],
+                role='PROFESSIONAL',
+                estabelecimento=validated_data['estabelecimento']
+            )
+            user.set_password(temp_password)
+            user.save()
+            
+            # Cria o profissional vinculado ao usuário
+            profissional = Profissional.objects.create(
+                user=user,
+                **validated_data
+            )
+            
+            return profissional
+        except Exception as e:
+            # Se der erro, limpa o usuário criado
+            if 'user' in locals():
+                user.delete()
+            raise serializers.ValidationError(str(e))
+
+    def update(self, instance, validated_data):
+        if instance.user:
+            instance.user.phone = validated_data.get('telefone', instance.user.phone)
+            instance.user.name = validated_data.get('nome', instance.user.name)
+            instance.user.save()
+        
+        return super().update(instance, validated_data)
 
 class ClienteSerializer(serializers.ModelSerializer):
     profissional_responsavel = ProfissionalSerializer(read_only=True)
@@ -107,3 +169,33 @@ class SalonServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = SalonService
         fields = ['id', 'system_service', 'system_service_name', 'duration', 'price', 'active']
+
+class ChatConfigSerializer(serializers.ModelSerializer):
+    ultima_mensagem = serializers.SerializerMethodField()
+    nome_cliente = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BotConfig
+        fields = ['id', 'numero_cliente', 'bot_ativo', 'ultima_atualizacao', 'ultima_mensagem', 'nome_cliente']
+
+    def get_ultima_mensagem(self, obj):
+        ultima_interacao = Interacao.objects.filter(
+            salao=obj.estabelecimento,
+            tipo='messages',
+            descricao__contains=obj.numero_cliente
+        ).order_by('-data_criacao').first()
+        
+        if ultima_interacao:
+            try:
+                mensagem_data = json.loads(ultima_interacao.descricao)
+                return mensagem_data.get('body', '')
+            except:
+                return None
+        return None
+
+    def get_nome_cliente(self, obj):
+        cliente = Cliente.objects.filter(
+            estabelecimento=obj.estabelecimento,
+            whatsapp=obj.numero_cliente
+        ).first()
+        return cliente.nome if cliente else None

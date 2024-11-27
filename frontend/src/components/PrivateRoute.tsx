@@ -2,39 +2,36 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { UserRole } from '../types/auth'
+import { usePermissions } from '../hooks/usePermissions'
 
-interface PrivateRouteProps {
-  children?: React.ReactNode;
+interface Props {
   roles?: UserRole[];
   role?: UserRole;
+  module?: string;
+  action?: 'view' | 'create' | 'edit' | 'delete';
 }
 
-const PrivateRoute = ({ children, roles, role }: PrivateRouteProps) => {
-  const { isAuthenticated, loading, user } = useAuth()
-  
-  if (loading) {
-    return <div>Carregando...</div>
-  }
-  
+const PrivateRoute = ({ roles, role, module, action = 'view' }: Props) => {
+  const { user, isAuthenticated } = useAuth()
+  const { checkPermission } = usePermissions()
+
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" />
   }
 
   if (roles && !roles.includes(user?.role as UserRole)) {
-    if (user?.role === UserRole.OWNER) {
-      return <Navigate to="/dashboard" replace />
-    }
-    if (user?.role === UserRole.ADMIN) {
-      return <Navigate to="/admin/dashboard" replace />
-    }
-    return <Navigate to="/" replace />
+    return <Navigate to="/" />
   }
 
   if (role && user?.role !== role) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" />
   }
 
-  return <>{children || <Outlet />}</>
+  if (module && !checkPermission(module as any, action)) {
+    return <Navigate to="/" />
+  }
+
+  return <Outlet />
 }
 
 export default PrivateRoute

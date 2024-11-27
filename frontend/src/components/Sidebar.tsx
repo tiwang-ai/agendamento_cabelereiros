@@ -6,61 +6,74 @@ import {
   People as PeopleIcon,
   Settings as SettingsIcon,
   ListAlt as ListAltIcon,
-  Money as MoneyIcon,
-  WhatsApp as WhatsAppIcon
+  WhatsApp as WhatsAppIcon,
+  Person as ClientsIcon,
+  Person as PersonIcon,
+  Chat as ChatIcon,
+  AttachMoney as MoneyIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types/auth';
 
 const drawerWidth = 240;
 
-const Sidebar = () => {
+interface SidebarProps {
+  open: boolean;
+}
+
+const Sidebar = ({ open }: SidebarProps) => {
   const navigate = useNavigate();
-  const permissions = usePermissions();
   const { user } = useAuth();
 
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard', show: true },
-    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar', show: permissions.canViewCalendar },
-    { text: 'Profissionais', icon: <PeopleIcon />, path: '/professionals', show: permissions.canManageProfessionals },
-    { text: 'Serviços', icon: <ListAltIcon />, path: '/services', show: permissions.canManageServices },
-    { text: 'Financeiro', icon: <MoneyIcon />, path: '/financials', show: permissions.canViewFinancials },
-    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings', show: true },
-    {
-      text: 'WhatsApp',
-      icon: <WhatsAppIcon />,
-      path: '/settings/whatsapp',
-      show: permissions.canManageWhatsApp
-    },
+  const ownerMenuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
+    { text: 'Calendário', icon: <CalendarIcon />, path: '/calendar' },
+    { text: 'Profissionais', icon: <PeopleIcon />, path: '/professionals' },
+    { text: 'Serviços', icon: <ListAltIcon />, path: '/services' },
+    { text: 'Clientes', icon: <ClientsIcon />, path: '/clients' },
+    { text: 'WhatsApp', icon: <WhatsAppIcon />, path: '/settings/whatsapp' },
+    { text: 'Gerenciar Conversas', icon: <ChatIcon />, path: '/settings/chats' },
+    { text: 'Financeiro', icon: <MoneyIcon />, path: '/finance' },
+    { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' }
   ];
+
+  const professionalMenuItems = [
+    { text: 'Agenda', icon: <CalendarIcon />, path: '/professional/agenda' },
+    { text: 'Clientes', icon: <ClientsIcon />, path: '/professional/clients' },
+    { text: 'Histórico', icon: <ListAltIcon />, path: '/professional/historico' },
+    { text: 'Perfil', icon: <PersonIcon />, path: '/professional/profile' }
+  ];
+
+  const menuItems = user?.role === UserRole.PROFESSIONAL ? professionalMenuItems : ownerMenuItems;
 
   return (
     <Drawer
       variant="permanent"
+      open={open}
       sx={{
-        width: drawerWidth,
+        width: open ? drawerWidth : 0,
         flexShrink: 0,
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          marginTop: '64px' // Altura da AppBar
+          marginTop: '64px',
+          transform: open ? 'none' : 'translateX(-100%)',
+          transition: 'transform 225ms cubic-bezier(0, 0, 0.2, 1) 0ms'
         },
       }}
     >
       <List>
-        {menuItems
-          .filter(item => item.show)
-          .map((item) => (
-            <ListItem 
-              button 
-              key={item.text}
-              onClick={() => navigate(item.path)}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItem>
-          ))}
+        {menuItems.map((item) => (
+          <ListItem 
+            button 
+            key={item.text}
+            onClick={() => navigate(item.path)}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.text} />
+          </ListItem>
+        ))}
       </List>
     </Drawer>
   );

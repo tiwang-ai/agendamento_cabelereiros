@@ -16,26 +16,38 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField
+  TextField,
+  Box,
+  Chip,
+  Alert
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import api from '../../services/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface Professional {
   id: number;
-  name: string;
-  specialty: string;
-  phone: string;
+  nome: string;
+  especialidade: string;
+  telefone: string;
+  is_active: boolean;
 }
 
-const ProfessionalsManagement = () => {
+const Professionals = () => {
+  const { user } = useAuth();
   const [professionals, setProfessionals] = useState<Professional[]>([]);
-  const [openDialog, setOpenDialog] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    specialty: '',
-    phone: ''
+    nome: '',
+    especialidade: '',
+    telefone: ''
   });
 
   useEffect(() => {
@@ -51,17 +63,56 @@ const ProfessionalsManagement = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleOpenDialog = (professional?: Professional) => {
+    if (professional) {
+      setFormData({
+        nome: professional.nome,
+        especialidade: professional.especialidade,
+        telefone: professional.telefone
+      });
+      setSelectedProfessional(professional);
+    } else {
+      setFormData({
+        nome: '',
+        especialidade: '',
+        telefone: ''
+      });
+      setSelectedProfessional(null);
+    }
+    setOpenDialog(true);
+  };
+
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
+    setSelectedProfessional(null);
+    setError(null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
     try {
+      const userData = {
+        nome: formData.nome,
+        especialidade: formData.especialidade,
+        telefone: formData.telefone,
+        estabelecimento: user?.estabelecimento_id,
+        is_active: true
+      };
+
       if (selectedProfessional) {
-        await api.put(`/profissionais/${selectedProfessional.id}/`, formData);
+        await api.patch(`/profissionais/${selectedProfessional.id}/`, userData);
       } else {
-        await api.post('/profissionais/', formData);
+        await api.post('/profissionais/', userData);
       }
-      loadProfessionals();
+      
       handleCloseDialog();
-    } catch (error) {
+      loadProfessionals();
+    } catch (error: any) {
       console.error('Erro ao salvar profissional:', error);
+      setError(error.response?.data?.message || 'Erro ao salvar profissional');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -76,41 +127,21 @@ const ProfessionalsManagement = () => {
     }
   };
 
-  const handleOpenDialog = (professional?: Professional) => {
-    if (professional) {
-      setSelectedProfessional(professional);
-      setFormData({
-        name: professional.name,
-        specialty: professional.specialty,
-        phone: professional.phone
-      });
-    } else {
-      setSelectedProfessional(null);
-      setFormData({ name: '', specialty: '', phone: '' });
-    }
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setSelectedProfessional(null);
-    setFormData({ name: '', specialty: '', phone: '' });
-  };
-
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h5" gutterBottom>
-          Gerenciamento de Profissionais
-        </Typography>
-        
-        <Button 
-          variant="contained" 
-          onClick={() => handleOpenDialog()}
-          sx={{ mb: 3 }}
-        >
-          Adicionar Profissional
-        </Button>
+    <Container maxWidth="lg">
+      <Paper sx={{ p: 3, mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h5">
+            Profissionais
+          </Typography>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => handleOpenDialog()}
+          >
+            Novo Profissional
+          </Button>
+        </Box>
 
         <TableContainer>
           <Table>
@@ -119,20 +150,35 @@ const ProfessionalsManagement = () => {
                 <TableCell>Nome</TableCell>
                 <TableCell>Especialidade</TableCell>
                 <TableCell>Telefone</TableCell>
-                <TableCell align="right">Ações</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Ações</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {professionals.map((professional) => (
                 <TableRow key={professional.id}>
-                  <TableCell>{professional.name}</TableCell>
-                  <TableCell>{professional.specialty}</TableCell>
-                  <TableCell>{professional.phone}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleOpenDialog(professional)}>
+                  <TableCell>{professional.nome}</TableCell>
+                  <TableCell>{professional.especialidade}</TableCell>
+                  <TableCell>{professional.telefone}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={professional.is_active ? 'Ativo' : 'Inativo'}
+                      color={professional.is_active ? 'success' : 'error'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpenDialog(professional)}
+                    >
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(professional.id)}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(professional.id)}
+                      color="error"
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -142,44 +188,57 @@ const ProfessionalsManagement = () => {
           </Table>
         </TableContainer>
 
-        <Dialog open={openDialog} onClose={handleCloseDialog}>
+        <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
           <DialogTitle>
             {selectedProfessional ? 'Editar Profissional' : 'Novo Profissional'}
           </DialogTitle>
-          <DialogContent>
-            <TextField
-              autoFocus
-              margin="dense"
-              label="Nome"
-              fullWidth
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            />
-            <TextField
-              margin="dense"
-              label="Especialidade"
-              fullWidth
-              value={formData.specialty}
-              onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-            />
-            <TextField
-              margin="dense"
-              label="Telefone"
-              fullWidth
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            />
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={handleCloseDialog}>Cancelar</Button>
-            <Button onClick={handleSubmit} variant="contained">
-              Salvar
-            </Button>
-          </DialogActions>
+          <form onSubmit={handleSubmit}>
+            <DialogContent>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              <TextField
+                fullWidth
+                label="Nome"
+                value={formData.nome}
+                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                required
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Especialidade"
+                value={formData.especialidade}
+                onChange={(e) => setFormData({ ...formData, especialidade: e.target.value })}
+                required
+                margin="normal"
+              />
+              <TextField
+                fullWidth
+                label="Telefone"
+                value={formData.telefone}
+                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                required
+                margin="normal"
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Cancelar</Button>
+              <Button 
+                type="submit" 
+                variant="contained"
+                disabled={loading}
+              >
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </DialogActions>
+          </form>
         </Dialog>
       </Paper>
     </Container>
   );
 };
 
-export default ProfessionalsManagement;
+export default Professionals;

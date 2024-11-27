@@ -43,6 +43,8 @@ const Login = () => {
         ? { email: formData.email, password: formData.password }
         : { phone: formData.phone, password: formData.password };
       
+      console.log('Enviando credenciais:', credentials);
+      
       const data = await AuthService.login(credentials);
       
       // Redireciona baseado no papel do usuário
@@ -60,6 +62,7 @@ const Login = () => {
           navigate('/calendar');
       }
     } catch (err: any) {
+      console.error('Erro completo:', err);
       setError(err.response?.data?.detail || 'Erro ao fazer login');
     }
   };

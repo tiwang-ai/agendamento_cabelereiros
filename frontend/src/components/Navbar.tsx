@@ -1,23 +1,23 @@
 // src/components/Navbar.tsx
-import { AppBar, Toolbar, Typography, IconButton, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, IconButton, Button, Box } from '@mui/material';
 import { Menu as MenuIcon, ExitToApp as LogoutIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import LanguageSelector from './LanguageSelector';
 
-const Navbar = () => {
+interface NavbarProps {
+  toggleSidebar: () => void;
+}
+
+const Navbar = ({ toggleSidebar }: NavbarProps) => {
   const navigate = useNavigate();
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
 
   return (
     <AppBar position="fixed">
       <Toolbar>
         <IconButton
-          edge="start"
           color="inherit"
-          aria-label="menu"
+          onClick={toggleSidebar}
+          edge="start"
           sx={{ mr: 2 }}
         >
           <MenuIcon />
@@ -25,7 +25,10 @@ const Navbar = () => {
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
           Sistema de Agendamento
         </Typography>
-        <Button color="inherit" onClick={handleLogout} startIcon={<LogoutIcon />}>
+        <Box sx={{ ml: 2 }}>
+          <LanguageSelector />
+        </Box>
+        <Button color="inherit" onClick={() => navigate('/login')} startIcon={<LogoutIcon />}>
           Sair
         </Button>
       </Toolbar>

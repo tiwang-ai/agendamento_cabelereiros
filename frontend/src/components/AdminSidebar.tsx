@@ -8,7 +8,9 @@ import {
   Settings as SettingsIcon,
   ViewList as PlansIcon,
   Support as SupportIcon,
-  WhatsApp as WhatsAppIcon
+  WhatsApp as WhatsAppIcon,
+  Assessment as AssessmentIcon,
+  Group as StaffIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +24,8 @@ const menuItems = [
   { text: 'Financeiro', icon: <MoneyIcon />, path: '/admin/finance' },
   { text: 'Suporte Técnico', icon: <SupportIcon />, path: '/admin/tech-support' },
   { text: 'Status WhatsApp', icon: <WhatsAppIcon />, path: '/admin/whatsapp-status' },
+  { text: 'Relatórios', icon: <AssessmentIcon />, path: '/admin/reports' },
+  { text: 'Equipe Staff', icon: <StaffIcon />, path: '/admin/staff' },
   { text: 'Configurações', icon: <SettingsIcon />, path: '/admin/settings' }
 ];
 

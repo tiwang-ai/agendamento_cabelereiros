@@ -8,17 +8,19 @@ class EvolutionAPI:
     def __init__(self):
         self.base_url = settings.EVOLUTION_API_URL
         self.headers = {
-            "apikey": f"{settings.EVOLUTION_API_KEY}",
-            "Content-Type": "application/json"
+            'Authorization': f'Bearer {settings.EVOLUTION_API_TOKEN}',
+            'Content-Type': 'application/json'
         }
 
-    def criar_instancia(self, salon_id: str, phone: str) -> Optional[Dict]:
+    def criar_instancia(self, estabelecimento_id: str, phone: str) -> Optional[Dict]:
         """
-        Cria uma nova instância do WhatsApp para um salão
+        Cria uma nova instância do WhatsApp para um estabelecimento
         """
         url = f"{self.base_url}/instance/create"
+        instance_name = f"estabelecimento_{estabelecimento_id}"
+        
         payload = {
-            "instanceName": f"salon_{salon_id}",
+            "instanceName": instance_name,
             "token": settings.EVOLUTION_API_KEY,
             "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
             "qrcode": True,
@@ -32,40 +34,25 @@ class EvolutionAPI:
         
         try:
             response = requests.post(url, json=payload, headers=self.headers)
-            if response.status_code != 201 and response.status_code != 200:
+            if response.status_code not in [200, 201]:
                 print(f"Erro Evolution API: {response.text}")
-                print(f"Headers enviados: {self.headers}")
-                print(f"Payload enviado: {payload}")
                 return None
             return response.json()
         except Exception as e:
-            print(f"Erro detalhado ao criar instância: {str(e)}")
+            print(f"Erro ao criar instância: {str(e)}")
             return None
 
-    def get_qr_code(self, instance_id: str) -> Optional[str]:
+    def check_connection_status(self, instance_id: str) -> dict:
         """
-        Obtém o QR Code para conexão do WhatsApp
+        Verifica o status da conexão de uma instância
         """
-        url = f"{self.base_url}/instance/{instance_id}/qr"
-        try:
-            response = requests.get(url, headers=self.headers)
-            response.raise_for_status()
-            return response.json().get('qrcode')
-        except requests.exceptions.RequestException as e:
-            print(f"Erro ao obter QR code: {str(e)}")
-            return None
-
-    def check_connection_status(self, instance_id: str) -> Dict:
-        """
-        Verifica o status da conexão do WhatsApp
-        """
-        url = f"{self.base_url}/instance/{instance_id}/status"
+        url = f"{self.base_url}/instance/connectionState/{instance_id}"
         try:
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
             return response.json()
-        except requests.exceptions.RequestException:
-            return {"status": "error", "message": "Erro ao verificar status"}
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "message": str(e)}
 
     def disconnect_instance(self, instance_id: str) -> bool:
         """
@@ -144,6 +131,35 @@ class EvolutionAPI:
         except requests.exceptions.RequestException:
             return False
 
+    def get_qr_code(self, instance_id: str) -> Dict:
+        """
+        Obtém o QR Code para uma instância específica
+        Retorna um dicionário com:
+        - pairingCode: código de pareamento
+        - code: string do QR code
+        - count: contador
+        """
+        url = f"{self.base_url}/instance/connect/{instance_id}"
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao obter QR code: {str(e)}")
+            return {"error": str(e)}
+
+    def get_instance_logs(self, instance_id: str) -> dict:
+        """
+        Obtém logs de eventos da instância
+        """
+        url = f"{self.base_url}/instance/logs/{instance_id}"
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            return {"status": "error", "message": str(e)}
+
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:
     """
@@ -152,13 +168,6 @@ def get_whatsapp_status(instance_id: str) -> Dict:
     api = EvolutionAPI()
     return api.check_connection_status(instance_id)
 
-def generate_qr_code(instance_id: str) -> Optional[str]:
-    """
-    Gera o QR Code para uma instância específica
-    """
-    api = EvolutionAPI()
-    return api.get_qr_code(instance_id)
-
 def check_connection(instance_id: str) -> Dict:
     """
     Verifica o status da conexão para uma instância específica
@@ -166,9 +175,9 @@ def check_connection(instance_id: str) -> Dict:
     api = EvolutionAPI()
     return api.check_connection_status(instance_id)
 
-def criar_instancia_evolution(salon_id: str, phone: str) -> Optional[Dict]:
+def criar_instancia_evolution(estabelecimento_id: str, phone: str) -> Optional[Dict]:
     """
     Cria uma nova instância do WhatsApp
     """
     api = EvolutionAPI()
-    return api.criar_instancia(salon_id, phone)
+    return api.criar_instancia(estabelecimento_id, phone)

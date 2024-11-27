@@ -15,7 +15,6 @@ import {
   Person as PersonIcon,
   Event as EventIcon,
   AttachMoney as MoneyIcon,
-  TrendingUp as TrendingUpIcon
 } from '@mui/icons-material';
 import AppointmentsTable from '../../components/AppointmentsTable';
 import api from '../../services/api';
@@ -40,6 +39,13 @@ interface Appointment {
   status: 'confirmed' | 'pending' | 'cancelled';
 }
 
+interface StatsCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+}
+
 const SalonDashboard = () => {
   const theme = useTheme();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -52,15 +58,19 @@ const SalonDashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Carregar estatísticas
-      const statsResponse = await api.get('/dashboard/stats/');
+      setLoading(true);
+      const [statsResponse, appointmentsResponse] = await Promise.all([
+        api.get('/dashboard/stats/'),
+        api.get('/agendamentos/')
+      ]);
+      
       setStats(statsResponse.data);
-
-      // Carregar agendamentos
-      const appointmentsResponse = await api.get('/agendamentos/');
       setAppointments(appointmentsResponse.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao carregar dados do dashboard:', error);
+      if (error.response?.status === 401) {
+        window.location.href = '/login';
+      }
     } finally {
       setLoading(false);
     }
@@ -86,6 +96,49 @@ const SalonDashboard = () => {
       }
     }
   };
+
+  const StatsCard = ({ title, value, icon, color }: StatsCardProps) => (
+    <Card 
+      elevation={2}
+      sx={{ 
+        height: '100%',
+        background: `linear-gradient(135deg, ${color} 0%, ${color}99 100%)`,
+        color: 'white',
+        borderRadius: 2,
+        transition: 'transform 0.2s',
+        '&:hover': {
+          transform: 'translateY(-4px)'
+        }
+      }}
+    >
+      <CardContent>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          mb: 2 
+        }}>
+          <IconButton 
+            sx={{ 
+              color: 'white', 
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.2)'
+              }
+            }}
+          >
+            {icon}
+          </IconButton>
+        </Box>
+        <Typography variant="h4" sx={{ mb: 1, fontWeight: 'bold' }}>
+          {value}
+        </Typography>
+        <Typography variant="body2" sx={{ opacity: 0.8 }}>
+          {title}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return <div>Carregando...</div>;
@@ -147,23 +200,5 @@ const SalonDashboard = () => {
     </Container>
   );
 };
-
-const StatsCard = ({ title, value, icon, color }: any) => (
-  <Card sx={{ 
-    height: '100%',
-    background: `linear-gradient(135deg, ${color} 0%, ${color}99 100%)`,
-    color: 'white'
-  }}>
-    <CardContent>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <IconButton sx={{ color: 'white', backgroundColor: 'rgba(255,255,255,0.1)' }}>
-          {icon}
-        </IconButton>
-      </Box>
-      <Typography variant="h4" sx={{ mb: 1 }}>{value}</Typography>
-      <Typography variant="body2" sx={{ opacity: 0.8 }}>{title}</Typography>
-    </CardContent>
-  </Card>
-);
 
 export default SalonDashboard;

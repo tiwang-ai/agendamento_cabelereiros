@@ -1,6 +1,7 @@
 import requests
 from django.conf import settings
 from .filters import filtrar_pergunta_bot1, filtrar_pergunta_bot2
+from .models import Estabelecimento, BotConfig
 
 def gerar_prompt_bot1(pergunta):
     prompt = f"""
@@ -9,29 +10,44 @@ def gerar_prompt_bot1(pergunta):
     """
     return prompt
 
-def gerar_prompt_bot2(pergunta):
+def gerar_prompt_bot2(pergunta, nome_estabelecimento, horario_funcionamento, servicos):
     prompt = f"""
     Você é um bot de atendimento para um salão de beleza. Responda apenas a perguntas sobre agendamentos, tipos de serviços e horários disponíveis.
     Pergunta: {pergunta}
     """
     return prompt
 
-def processar_pergunta(pergunta, bot_tipo):
-    if bot_tipo == 1:  # Bot 1 - Atendimento ao salão cliente
-        if filtrar_pergunta_bot1(pergunta):
-            prompt = gerar_prompt_bot1(pergunta)
-            resposta = chamar_llm(prompt)
-        else:
-            resposta = "Desculpe, só posso ajudar com questões sobre relatórios e configuração do sistema."
-    
-    elif bot_tipo == 2:  # Bot 2 - Atendimento ao cliente final do salão
-        if filtrar_pergunta_bot2(pergunta):
-            prompt = gerar_prompt_bot2(pergunta)
-            resposta = chamar_llm(prompt)
-        else:
-            resposta = "Desculpe, só posso ajudar com questões sobre agendamentos e serviços do salão."
+def processar_pergunta(pergunta, bot_tipo, estabelecimento_id=None):
+    """
+    Processa perguntas para os bots com contexto do estabelecimento
+    """
+    try:
+        if bot_tipo == 2:  # Bot de atendimento ao cliente final
+            estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+            # Verifica se o bot está ativo
+            bot_config = BotConfig.objects.filter(
+                estabelecimento=estabelecimento,
+                bot_ativo=True
+            ).first()
+            
+            if not bot_config:
+                return "Atendimento automático desativado."
 
-    return resposta
+            # Adiciona contexto do estabelecimento ao prompt
+            prompt = gerar_prompt_bot2(
+                pergunta=pergunta,
+                nome_estabelecimento=estabelecimento.nome,
+                horario_funcionamento=estabelecimento.horario_funcionamento,
+                servicos=list(estabelecimento.servicos.all().values())
+            )
+        else:
+            prompt = gerar_prompt_bot1(pergunta)
+
+        resposta = chamar_llm(prompt)
+        return resposta
+    except Exception as e:
+        print(f"Erro ao processar pergunta: {str(e)}")
+        return "Desculpe, ocorreu um erro ao processar sua mensagem."
 
 def chamar_llm(prompt):
     url = "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct"

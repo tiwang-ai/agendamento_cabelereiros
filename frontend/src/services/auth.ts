@@ -21,36 +21,19 @@ interface LoginResponse {
 export const AuthService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
-      const response = await api.post<LoginResponse>('/auth/login/', credentials);
-      
-      if (response.data.access) {
-        // Salva os tokens
-        localStorage.setItem('token', response.data.access);
-        localStorage.setItem('refreshToken', response.data.refresh);
-        
-        // Salva os dados do usuário
-        localStorage.setItem('userData', JSON.stringify({
-          email: response.data.email,
-          name: response.data.name,
-          role: response.data.role,
-          estabelecimento_id: response.data.estabelecimento_id
-        }));
-        
-        // Configura o token no header das requisições
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+      if (credentials.phone) {
+        credentials.phone = credentials.phone.replace(/\D/g, '');
       }
-      
-      return response.data;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.detail || 'Erro ao fazer login';
-      throw new Error(errorMessage);
-    }
-  },
 
-  loginWithPhone: async (credentials: { phone: string; password: string }) => {
-    try {
+      console.log('Enviando credenciais:', {
+        ...(credentials.email ? { email: credentials.email } : {}),
+        ...(credentials.phone ? { phone: credentials.phone } : {}),
+        password: '***'
+      });
+
       const response = await api.post<LoginResponse>('/auth/login/', {
-        phone: credentials.phone,
+        ...(credentials.email ? { email: credentials.email } : {}),
+        ...(credentials.phone ? { phone: credentials.phone } : {}),
         password: credentials.password
       });
       
@@ -58,10 +41,11 @@ export const AuthService = {
         localStorage.setItem('token', response.data.access);
         localStorage.setItem('refreshToken', response.data.refresh);
         localStorage.setItem('userData', JSON.stringify({
+          email: response.data.email,
           name: response.data.name,
           role: response.data.role,
           estabelecimento_id: response.data.estabelecimento_id,
-          phone: credentials.phone
+          phone: response.data.phone
         }));
         
         api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
@@ -69,7 +53,8 @@ export const AuthService = {
       
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.detail || 'Erro ao fazer login');
+      console.error('Erro detalhado:', error.response?.data);
+      throw error;
     }
   },
 

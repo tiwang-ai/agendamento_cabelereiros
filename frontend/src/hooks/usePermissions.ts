@@ -1,20 +1,23 @@
 // src/hooks/usePermissions.ts
 import { useAuth } from '../contexts/AuthContext';
-import { UserRole } from '../types/auth';
+import { Permission, RolePermissions, PermissionService } from '../services/permissions';
 
 export const usePermissions = () => {
   const { user } = useAuth();
 
-  const permissions = {
-    canManagePlans: user?.role === UserRole.ADMIN,
-    canManageSalons: user?.role === UserRole.ADMIN,
-    canManageUsers: user?.role === UserRole.ADMIN,
-    canViewFinancials: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
-    canManageServices: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
-    canManageProfessionals: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
-    canViewCalendar: [UserRole.ADMIN, UserRole.OWNER, UserRole.PROFESSIONAL, UserRole.RECEPTIONIST].includes(user?.role as UserRole),
-    canManageWhatsApp: [UserRole.ADMIN, UserRole.OWNER].includes(user?.role as UserRole),
+  const checkPermission = (
+    module: keyof RolePermissions,
+    action: keyof Permission
+  ): boolean => {
+    if (!user?.role) return false;
+    return PermissionService.hasPermission(user.role, module, action);
   };
 
-  return permissions;
+  return {
+    canView: (module: keyof RolePermissions) => checkPermission(module, 'view'),
+    canCreate: (module: keyof RolePermissions) => checkPermission(module, 'create'),
+    canEdit: (module: keyof RolePermissions) => checkPermission(module, 'edit'),
+    canDelete: (module: keyof RolePermissions) => checkPermission(module, 'delete'),
+    checkPermission
+  };
 };

@@ -1,5 +1,6 @@
 // frontend/src/services/whatsapp.ts
 import api from './api';
+import { QRCodeResponse, WhatsAppStatus } from '../types/whatsapp';
 
 export const WhatsAppService = {
   getAllInstances: async () => {
@@ -7,41 +8,89 @@ export const WhatsAppService = {
     return response.data;
   },
 
-  reconnect: async (salonId: string) => {
+  reconnect: async (estabelecimento_id: string) => {
     try {
-      const response = await api.post(`/whatsapp/reconnect/${salonId}/`);
+      const response = await api.post(`/whatsapp/reconnect/${estabelecimento_id}/`);
       return response.data;
     } catch (error) {
-      console.error('Erro detalhado:', error);
+      console.error('Erro ao reconectar:', error);
       throw error;
     }
   },
 
-  getStatus: async (salonId: string) => {
-    const response = await api.get(`/whatsapp/status/${salonId}/`);
-    return response.data;
+  getStatus: async (estabelecimento_id: string): Promise<WhatsAppStatus> => {
+    try {
+      const response = await api.get(`/whatsapp/status/${estabelecimento_id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao verificar status:', error);
+      throw error;
+    }
   },
 
-  generateQrCode: async (salonId: string) => {
-    const response = await api.get(`/whatsapp/qr-code/${salonId}/`);
-    return response.data;
+  generateQrCode: async (estabelecimento_id: string): Promise<QRCodeResponse> => {
+    try {
+      const response = await api.get(`/whatsapp/qr-code/salon_${estabelecimento_id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao gerar QR code:', error);
+      throw error;
+    }
   },
 
-  sendMessage: async (salonId: string, number: string, message: string) => {
-    const response = await api.post(`/whatsapp/send-message/${salonId}/`, {
-      number,
-      message
-    });
-    return response.data;
+  sendMessage: async (salonId: string, number: string, message: string, options?: any) => {
+    try {
+      const response = await api.post(`/whatsapp/send-message/${salonId}/`, {
+        number,
+        message,
+        ...options
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error);
+      throw error;
+    }
   },
 
   getInstanceLogs: async (salonId: string) => {
-    const response = await api.get(`/whatsapp/logs/${salonId}/`);
-    return response.data;
+    try {
+      const response = await api.get(`/whatsapp/logs/${salonId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar logs:', error);
+      throw error;
+    }
   },
 
   createInstance: async (salonId: string) => {
     const response = await api.post(`/whatsapp/create-instance/${salonId}/`);
+    return response.data;
+  },
+
+  generatePairingCode: async (salonId: string) => {
+    try {
+      const response = await api.get(`/whatsapp/pairing-code/${salonId}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao gerar código de pareamento:', error);
+      throw error;
+    }
+  },
+
+  getChats: async () => {
+    const response = await api.get('/whatsapp/chats/');
+    return response.data;
+  },
+
+  toggleBot: async (chatId: number, status: boolean) => {
+    const response = await api.patch(`/whatsapp/chats/${chatId}/`, {
+      bot_ativo: status
+    });
+    return response.data;
+  },
+
+  checkConnectionStatus: async (salonId: string) => {
+    const response = await api.get(`/whatsapp/connection-status/${salonId}/`);
     return response.data;
   }
 };

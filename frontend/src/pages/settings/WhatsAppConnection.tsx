@@ -8,17 +8,23 @@ import {
   CircularProgress,
   Alert,
   Tabs,
-  Tab
+  Tab,
+  Fade
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { WhatsAppService } from '../../services/whatsapp';
 import { useAuth } from '../../contexts/AuthContext';
-import { DataGrid } from '@mui/x-data-grid';
 
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
   value: number;
+}
+
+interface PairingCode {
+  pairingCode: string;
+  code: string;
+  count: number;
 }
 
 const TabPanel = (props: TabPanelProps) => {
@@ -36,68 +42,89 @@ const WhatsAppConnection = () => {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pairingCode, setPairingCode] = useState<PairingCode | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
 
   useEffect(() => {
-    const checkStatus = async () => {
-      if (!user?.salonId) {
-        setError('Salão não encontrado. Por favor, verifique seu cadastro.');
-        return;
-      }
+    if (status === 'connecting') {
+      const interval = setInterval(checkStatus, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [status]);
 
-      try {
-        const statusResponse = await WhatsAppService.getStatus(user.salonId);
-        setStatus(statusResponse.status);
-        
-        if (statusResponse.status === 'connecting') {
-          const qrResponse = await WhatsAppService.generateQrCode(user.salonId);
-          setQrCode(qrResponse.qrCode);
-        }
-      } catch (err) {
-        console.error('Erro ao verificar status:', err);
-        setError('Erro ao verificar status do WhatsApp');
-      }
-    };
+  const checkStatus = async () => {
+    if (!user?.estabelecimento_id) return;
 
-    checkStatus();
-    const interval = setInterval(checkStatus, 10000);
-    return () => clearInterval(interval);
-  }, [user?.salonId]);
-
-  useEffect(() => {
-    const loadLogs = async () => {
-      if (user?.salonId) {
-        try {
-          const logsData = await WhatsAppService.getInstanceLogs(user.salonId);
-          setLogs(logsData);
-        } catch (err) {
-          console.error('Erro ao carregar logs:', err);
-        }
-      }
-    };
-
-    loadLogs();
-    const logsInterval = setInterval(loadLogs, 30000);
-    return () => clearInterval(logsInterval);
-  }, [user?.salonId]);
-
-  const handleConnect = async () => {
     try {
-      if (!user?.salonId) {
-        setError('ID do salão não encontrado');
-        return;
-      }
-
-      setStatus('connecting');
-      const response = await WhatsAppService.reconnect(user.salonId);
+      const statusResponse = await WhatsAppService.checkConnectionStatus(
+        user.estabelecimento_id
+      );
       
-      if (response.success) {
-        const qrResponse = await WhatsAppService.generateQrCode(user.salonId);
-        setQrCode(qrResponse.qrCode);
+      if (statusResponse.status === 'connected') {
+        setStatus('connected');
+        loadLogs();
       }
     } catch (err) {
-      setError('Erro ao conectar WhatsApp');
+      console.error('Erro ao verificar status:', err);
+    }
+  };
+
+  const loadLogs = async () => {
+    if (!user?.estabelecimento_id) return;
+
+    try {
+      const logsResponse = await WhatsAppService.getInstanceLogs(
+        user.estabelecimento_id
+      );
+      setLogs(logsResponse.logs || []);
+    } catch (err) {
+      console.error('Erro ao carregar logs:', err);
+    }
+  };
+
+  const getQRCode = async () => {
+    if (!user?.estabelecimento_id) {
+      setError('ID do salão não encontrado');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      const qrResponse = await WhatsAppService.generateQrCode(user.estabelecimento_id);
+      
+      if (qrResponse.code) {
+        setQrCode(qrResponse.code);
+        setStatus('connecting');
+      } else {
+        throw new Error('QR Code não recebido');
+      }
+    } catch (err) {
+      console.error('Erro ao gerar QR code:', err);
+      setError('Não foi possível gerar o QR code. Por favor, tente novamente.');
       setStatus('disconnected');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGetPairingCode = async () => {
+    if (!user?.estabelecimento_id) {
+      setError('ID do salão não encontrado');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await WhatsAppService.generatePairingCode(user.estabelecimento_id);
+      setPairingCode(response);
+    } catch (err) {
+      setError('Erro ao gerar código de pareamento');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -109,77 +136,118 @@ const WhatsAppConnection = () => {
         </Typography>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <Fade in={true}>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          </Fade>
+        )}
+
+        {status === 'connected' && (
+          <Fade in={true}>
+            <Alert severity="success" sx={{ mb: 2 }}>
+              WhatsApp conectado com sucesso!
+            </Alert>
+          </Fade>
         )}
 
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label="QR Code" />
           <Tab label="Código" disabled />
-          <Tab label="Logs" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            {status === 'connected' ? (
-              <Alert severity="success">
-                WhatsApp conectado ao número {user?.phone || 'Não informado'}!
-              </Alert>
-            ) : (
-              <>
-                {qrCode && (
-                  <Box sx={{ mb: 2, p: 2, border: '1px solid #ddd' }}>
-                    <QRCodeSVG value={qrCode} size={256} />
-                  </Box>
-                )}
-                <Typography variant="body2" color="text.secondary" align="center">
-                  Escaneie o QR Code com seu WhatsApp para conectar
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            gap: 2,
+            minHeight: 400 
+          }}>
+            {isLoading ? (
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 2,
+                mt: 4 
+              }}>
+                <CircularProgress />
+                <Typography color="text.secondary">
+                  Gerando QR Code...
                 </Typography>
-                <Button
-                  variant="contained"
-                  onClick={handleConnect}
-                  disabled={status === 'connecting'}
-                >
-                  {status === 'connecting' ? (
-                    <CircularProgress size={24} />
+              </Box>
+            ) : (
+              <Fade in={true}>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  gap: 3 
+                }}>
+                  {qrCode ? (
+                    <>
+                      <Box sx={{ 
+                        p: 3, 
+                        border: '1px solid #ddd', 
+                        borderRadius: 2,
+                        bgcolor: '#fff',
+                        boxShadow: 1
+                      }}>
+                        <QRCodeSVG value={qrCode} size={256} />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" align="center">
+                        Abra o WhatsApp no seu celular e escaneie o QR Code
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        onClick={getQRCode}
+                        sx={{ mt: 2 }}
+                      >
+                        Gerar Novo QR Code
+                      </Button>
+                    </>
                   ) : (
-                    'Gerar QR Code'
+                    <Button
+                      variant="contained"
+                      onClick={getQRCode}
+                      disabled={isLoading}
+                      sx={{ mt: 4 }}
+                    >
+                      Gerar QR Code
+                    </Button>
                   )}
-                </Button>
-              </>
+                </Box>
+              </Fade>
             )}
           </Box>
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body1" color="text.secondary">
-              Conexão por código temporariamente indisponível
-            </Typography>
+          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            {pairingCode ? (
+              <>
+                <Typography variant="h4" sx={{ letterSpacing: 2 }}>
+                  {pairingCode.pairingCode}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Digite este código no seu WhatsApp para conectar
+                </Typography>
+              </>
+            ) : (
+              <Button
+                variant="contained"
+                onClick={handleGetPairingCode}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <CircularProgress size={24} />
+                ) : (
+                  'Gerar Código de Pareamento'
+                )}
+              </Button>
+            )}
           </Box>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={2}>
-          <Typography variant="h6" gutterBottom>
-            Logs de Conexão
-          </Typography>
-          <DataGrid
-            rows={logs}
-            columns={[
-              { field: 'timestamp', headerName: 'Data/Hora', width: 200 },
-              { field: 'event', headerName: 'Evento', width: 200 },
-              { field: 'status', headerName: 'Status', width: 150 },
-              { field: 'details', headerName: 'Detalhes', width: 400 }
-            ]}
-            autoHeight
-            initialState={{
-              pagination: {
-                paginationModel: { pageSize: 10, page: 0 },
-              },
-            }}
-            pageSizeOptions={[5, 10, 25]}
-          />
         </TabPanel>
       </Paper>
     </Box>

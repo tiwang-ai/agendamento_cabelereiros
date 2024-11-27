@@ -1,12 +1,15 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
+from django.utils import timezone
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError('O email é obrigatório')
-        email = self.normalize_email(email)
+    def create_user(self, email=None, password=None, **extra_fields):
+        if not (email or extra_fields.get('phone')):
+            raise ValueError('Email ou telefone é obrigatório')
+        
+        if email:
+            email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save()
@@ -16,7 +19,22 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         return self.create_user(email, password, **extra_fields)
-    
+
+    def get_by_natural_key(self, username):
+        """
+        Permite autenticação por email ou telefone
+        """
+        try:
+            # Tenta primeiro por email
+            return self.get(email=username)
+        except self.model.DoesNotExist:
+            try:
+                # Se não encontrar por email, tenta por telefone normalizado
+                phone = ''.join(filter(str.isdigit, username))
+                return self.get(phone=phone)
+            except self.model.DoesNotExist:
+                return None
+
 class User(AbstractBaseUser, PermissionsMixin):
     ROLES = (
         ('ADMIN', 'Administrador'),
@@ -25,13 +43,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('RECEPTIONIST', 'Recepcionista')
     )
     
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, null=True, blank=True)
     phone = models.CharField(max_length=15, blank=True)
     name = models.CharField(max_length=255)
     role = models.CharField(max_length=20, choices=ROLES, default='OWNER')
     estabelecimento = models.ForeignKey('Estabelecimento', on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    custom_permissions = models.JSONField(default=dict, blank=True)
+    last_login_ip = models.GenericIPAddressField(null=True, blank=True)
+    last_activity = models.DateTimeField(null=True, blank=True)
     
     objects = UserManager()
 
@@ -42,6 +63,26 @@ class User(AbstractBaseUser, PermissionsMixin):
         verbose_name = 'user'
         verbose_name_plural = 'users'
 
+    def __str__(self):
+        # Retorna o identificador mais apropriado disponível
+        if self.name:
+            return self.name
+        if self.email:
+            return self.email
+        if self.phone:
+            return self.phone
+        return f'User {self.id}'  # Fallback seguro
+
+    def get_username(self):
+        # Retorna o identificador principal (email ou telefone)
+        return self.email or self.phone or f'user_{self.id}'
+
+    def update_activity(self, ip_address=None):
+        self.last_activity = timezone.now()
+        if ip_address:
+            self.last_login_ip = ip_address
+        self.save(update_fields=['last_activity', 'last_login_ip'])
+
 class Estabelecimento(models.Model): 
     nome = models.CharField(max_length=200)
     endereco = models.CharField(max_length=500)
@@ -49,11 +90,22 @@ class Estabelecimento(models.Model):
     whatsapp = models.CharField(max_length=20)
     horario_funcionamento = models.CharField(max_length=200, null=True, blank=True)
     evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
-    status = models.CharField(max_length=50, default='disconnected')
+    status = models.CharField(
+        max_length=50, 
+        default='disconnected',
+        choices=[
+            ('disconnected', 'Desconectado'),
+            ('connected', 'Conectado'),
+            ('pending_connection', 'Aguardando Conexão'),
+            ('error', 'Erro')
+        ]
+    )
     is_active = models.BooleanField(default=True)
     
     class Meta:
         db_table = 'estabelecimento'
+        verbose_name = 'Estabelecimento'
+        verbose_name_plural = 'Estabelecimentos'
 
     def __str__(self):
         return self.nome
@@ -63,12 +115,18 @@ class Profissional(models.Model):
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE, related_name="profissionais")
     nome = models.CharField(max_length=100)
     especialidade = models.CharField(max_length=100)
+    telefone = models.CharField(max_length=20)
     foto = models.ImageField(upload_to='profissionais/', null=True, blank=True)
     bio = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        verbose_name = 'Profissional'
+        verbose_name_plural = 'Profissionais'
+
     def __str__(self):
-        return f"{self.nome} - {self.estabelecimento.nome}"
+        estabelecimento_nome = self.estabelecimento.nome if self.estabelecimento else 'Sem estabelecimento'
+        return f"{self.nome} - {estabelecimento_nome}"
 
 class Cliente(models.Model):
     estabelecimento = models.ForeignKey(
@@ -189,3 +247,30 @@ class Plan(models.Model):
 
     def __str__(self):
         return self.name
+
+class SystemConfig(models.Model):
+    support_whatsapp = models.CharField(max_length=20)
+    evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
+    status = models.CharField(
+        max_length=50, 
+        default='disconnected',
+        choices=[
+            ('disconnected', 'Desconectado'),
+            ('connected', 'Conectado'),
+            ('pending_connection', 'Aguardando Conexão'),
+            ('error', 'Erro')
+        ]
+    )
+    
+    class Meta:
+        verbose_name = 'Configuração do Sistema'
+        verbose_name_plural = 'Configurações do Sistema'
+
+class BotConfig(models.Model):
+    estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
+    numero_cliente = models.CharField(max_length=20)
+    bot_ativo = models.BooleanField(default=True)
+    ultima_atualizacao = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['estabelecimento', 'numero_cliente']
