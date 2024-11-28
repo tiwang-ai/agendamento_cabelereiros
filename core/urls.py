@@ -23,7 +23,6 @@ from .views import (
     bot_responder,
     whatsapp_status,
     generate_qr_code,
-    check_connection_status,
     dashboard_stats,
     create_professional,
     whatsapp_instances_status,
@@ -36,7 +35,11 @@ from .views import (
     salon_finance_stats,
     salon_finance_transactions,
     SystemServiceViewSet,
-    SalonServiceViewSet
+    SalonServiceViewSet,
+    connect_whatsapp,
+    get_connection_status,
+    bot_config,
+    system_metrics
 )
 
 router = DefaultRouter()
@@ -69,7 +72,6 @@ urlpatterns = [
     path('bot/process/', bot_responder, name='bot_responder'),
     path('whatsapp/status/<str:salon_id>/', whatsapp_status, name='whatsapp_status'),
     path('whatsapp/qr-code/<str:estabelecimento_id>/', generate_qr_code),
-    path('whatsapp/connection-status/<str:estabelecimento_id>/', check_connection_status),
     path('dashboard/stats/', dashboard_stats, name='dashboard-stats'),
     path('profissionais/', create_professional, name='create-professional'),
     path('admin/whatsapp/instances/', whatsapp_instances_status, name='whatsapp-instances-status'),
@@ -79,6 +81,10 @@ urlpatterns = [
     path('auth/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('finance/salon/stats/', salon_finance_stats, name='salon-finance-stats'),
     path('finance/salon/transactions/', salon_finance_transactions, name='salon-finance-transactions'),
+    path('whatsapp/connect/<str:estabelecimento_id>/', connect_whatsapp, name='connect-whatsapp'),
+    path('whatsapp/status/<str:estabelecimento_id>/', get_connection_status, name='get-connection-status'),
+    path('admin/bot-config/', bot_config, name='bot-config'),
+    path('admin/system-metrics/', system_metrics, name='system-metrics'),
 ]
 
 

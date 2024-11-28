@@ -7,16 +7,37 @@ from ..models import Estabelecimento, Interacao
 
 class SystemMonitor:
     def __init__(self):
-        self.docker_client = docker.from_env()
+        self.has_docker = self._check_docker_available()
+
+    def _check_docker_available(self) -> bool:
+        try:
+            import docker
+            self.docker_client = docker.from_env()
+            return True
+        except:
+            return False
 
     def get_system_metrics(self) -> Dict:
-        return {
-            'cpu_percent': psutil.cpu_percent(),
-            'memory_percent': psutil.virtual_memory().percent,
-            'disk_usage': psutil.disk_usage('/').percent
+        metrics = {
+            'system': {
+                'cpu_percent': psutil.cpu_percent(),
+                'memory_percent': psutil.virtual_memory().percent,
+                'disk_usage': psutil.disk_usage('/').percent
+            },
+            'salons': self.get_salon_metrics(),
+            'bot': self.get_bot_metrics()
         }
 
+        # Só inclui métricas do Docker se disponível
+        if self.has_docker:
+            metrics['docker'] = self.get_docker_metrics()
+        
+        return metrics
+
     def get_docker_metrics(self) -> List[Dict]:
+        if not self.has_docker:
+            return []
+            
         containers = []
         try:
             for container in self.docker_client.containers.list():
@@ -45,16 +66,14 @@ class SystemMonitor:
         return salons
 
     def get_bot_metrics(self) -> Dict:
+        total_interactions = Interacao.objects.filter(tipo='bot_response').count()
+        success = Interacao.objects.filter(tipo='bot_response', sucesso=True).count()
+        
         return {
             'total_messages': Interacao.objects.filter(tipo='message').count(),
-            'success_rate': self._calculate_success_rate(),
+            'success_rate': (success / total_interactions * 100) if total_interactions > 0 else 0,
             'average_response_time': self._calculate_response_time()
         }
-
-    def _calculate_success_rate(self) -> float:
-        total = Interacao.objects.filter(tipo='bot_response').count()
-        success = Interacao.objects.filter(tipo='bot_response', descricao__contains='success').count()
-        return (success / total * 100) if total > 0 else 0
 
     def _calculate_response_time(self) -> float:
         interactions = Interacao.objects.filter(tipo='bot_response')

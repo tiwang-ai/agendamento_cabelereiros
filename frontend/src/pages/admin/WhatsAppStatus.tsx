@@ -10,8 +10,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Box,
+  CircularProgress,
+  Fade
 } from '@mui/material';
+import { QRCodeSVG } from 'qrcode.react';
 import { WhatsAppService } from '../../services/whatsapp';
 
 interface SalonStatus {
@@ -22,9 +29,18 @@ interface SalonStatus {
   status: string;
 }
 
+interface ConnectionData {
+  pairingCode?: string;
+  code?: string;
+  count?: number;
+}
+
 const WhatsAppStatus = () => {
   const [instances, setInstances] = useState<SalonStatus[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openQRDialog, setOpenQRDialog] = useState(false);
+  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
 
   const loadInstances = async () => {
     try {
@@ -38,8 +54,19 @@ const WhatsAppStatus = () => {
   const handleReconnect = async (salonId: string) => {
     try {
       setLoading(true);
-      await WhatsAppService.reconnect(salonId);
-      await loadInstances();
+      setSelectedSalonId(salonId);
+      const response = await WhatsAppService.reconnect(salonId);
+      
+      if (response.success) {
+        await loadInstances();
+        
+        if (response.connection_data) {
+          setConnectionData(response.connection_data);
+          setOpenQRDialog(true);
+        }
+      } else {
+        console.error('Erro:', response.error);
+      }
     } catch (error) {
       console.error('Erro ao reconectar:', error);
     } finally {
@@ -47,9 +74,15 @@ const WhatsAppStatus = () => {
     }
   };
 
+  const handleCloseDialog = () => {
+    setOpenQRDialog(false);
+    setConnectionData(null);
+    setSelectedSalonId(null);
+  };
+
   useEffect(() => {
     loadInstances();
-    const interval = setInterval(loadInstances, 30000); // Atualiza a cada 30s
+    const interval = setInterval(loadInstances, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -95,6 +128,62 @@ const WhatsAppStatus = () => {
             </TableBody>
           </Table>
         </TableContainer>
+        
+        <Dialog 
+          open={openQRDialog} 
+          onClose={handleCloseDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            Conectar WhatsApp
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              gap: 3,
+              p: 3
+            }}>
+              {loading ? (
+                <CircularProgress />
+              ) : connectionData ? (
+                <>
+                  {connectionData.code ? (
+                    <>
+                      <Box sx={{ 
+                        p: 3, 
+                        border: '1px solid #ddd', 
+                        borderRadius: 2,
+                        bgcolor: '#fff',
+                        boxShadow: 1
+                      }}>
+                        <QRCodeSVG value={connectionData.code} size={256} />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" align="center">
+                        Abra o WhatsApp no seu celular e escaneie o QR Code
+                      </Typography>
+                    </>
+                  ) : connectionData.pairingCode ? (
+                    <>
+                      <Typography variant="h4" sx={{ letterSpacing: 2 }}>
+                        {connectionData.pairingCode}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Digite este código no seu WhatsApp para conectar
+                      </Typography>
+                    </>
+                  ) : (
+                    <Typography color="error">
+                      Erro ao gerar código de conexão
+                    </Typography>
+                  )}
+                </>
+              ) : null}
+            </Box>
+          </DialogContent>
+        </Dialog>
       </Paper>
     </Container>
   );

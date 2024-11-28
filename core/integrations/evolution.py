@@ -2,19 +2,19 @@
 
 import requests
 from django.conf import settings
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 class EvolutionAPI:
     def __init__(self):
         self.base_url = settings.EVOLUTION_API_URL
         self.headers = {
-            'Authorization': f'Bearer {settings.EVOLUTION_API_TOKEN}',
+            'apikey': f'{settings.EVOLUTION_API_KEY}',
             'Content-Type': 'application/json'
         }
 
     def criar_instancia(self, estabelecimento_id: str, phone: str) -> Optional[Dict]:
         """
-        Cria uma nova instância do WhatsApp para um estabelecimento
+        Cria uma nova instância do WhatsApp
         """
         url = f"{self.base_url}/instance/create"
         instance_name = f"estabelecimento_{estabelecimento_id}"
@@ -26,10 +26,11 @@ class EvolutionAPI:
             "qrcode": True,
             "integration": "WHATSAPP-BAILEYS",
             "reject_call": True,
+            "groupsIgnore": True,
+            "alwaysOnline": True,
             "readMessages": True,
             "readStatus": True,
-            "alwaysOnline": False,
-            "webhookBase64": False,
+            "syncFullHistory": True
         }
         
         try:
@@ -37,6 +38,7 @@ class EvolutionAPI:
             if response.status_code not in [200, 201]:
                 print(f"Erro Evolution API: {response.text}")
                 return None
+            
             return response.json()
         except Exception as e:
             print(f"Erro ao criar instância: {str(e)}")
@@ -101,23 +103,29 @@ class EvolutionAPI:
         """
         Configura os webhooks para a instância
         """
-        url = f"{self.base_url}/webhook/set"
+        url = f"{self.base_url}/webhook/set/{instance_id}"
+        
         payload = {
-            "instanceId": instance_id,
-            "webhookUrl": f"{settings.BACKEND_URL}/api/whatsapp/webhook/",
+            "enabled": True,
+            "url": f"{settings.BACKEND_URL}/api/whatsapp/webhook/",
+            "webhookByEvents": True,
+            "webhookBase64": False,
             "events": [
-                "connection",
-                "messages",
-                "status"
+                "messages.upsert",
+                "connection.update",
+                "status.instance",
+                "messages.status"
             ]
         }
         
         try:
             response = requests.post(url, json=payload, headers=self.headers)
             response.raise_for_status()
+            print(f"Webhook configurado: {response.text}")  # Debug
             return response.json()
-        except requests.exceptions.RequestException as e:
-            return {"status": "error", "message": str(e)}
+        except Exception as e:
+            print(f"Erro ao configurar webhook: {str(e)}")
+            return {"error": str(e)}
 
     def delete_instance(self, instance_id: str) -> bool:
         """
@@ -159,6 +167,32 @@ class EvolutionAPI:
             return response.json()
         except requests.exceptions.RequestException as e:
             return {"status": "error", "message": str(e)}
+
+    def fetch_instances(self) -> List[Dict]:
+        """
+        Busca todas as instâncias existentes na Evolution API
+        """
+        url = f"{self.base_url}/instance/fetchInstances"
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Erro ao buscar instâncias: {str(e)}")
+            return []
+
+    def connect_instance(self, instance_name: str) -> Dict:
+        """
+        Conecta uma instância específica usando o nome da instância
+        """
+        url = f"{self.base_url}/instance/connect/{instance_name}"
+        try:
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            print(f"Erro ao conectar instância: {str(e)}")
+            return {"error": str(e)}
 
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:

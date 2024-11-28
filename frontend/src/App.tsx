@@ -41,6 +41,7 @@ import ChatManagement from './pages/settings/ChatManagement';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import ptBR from 'date-fns/locale/pt-BR';
+import BotConfig from './pages/admin/BotConfig';
 
 function App() {
   return (
@@ -91,6 +92,7 @@ function App() {
                   <Route path="/admin/staff" element={<StaffManagement />} />
                   <Route path="/admin/profile" element={<AdminProfile />} />
                   <Route path="/admin/chats" element={<ChatManagement />} />
+                  <Route path="/admin/bot-config" element={<BotConfig />} />
                 </Route>
               </Route>
               {/* Rotas do Profissional */}

@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from django.conf import settings
 from datetime import datetime, timedelta
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from .services.system_logs import SystemMonitor
@@ -672,15 +672,14 @@ def generate_qr_code(request, salon_id):
         return JsonResponse({'error': str(e)}, status=500)
 
 @api_view(['GET'])
-def check_connection_status(request, salon_id):
+def get_connection_status(request, estabelecimento_id):
     try:
-        estabelecimento = Estabelecimento.objects.get(id=salon_id)
-        status = check_connection(estabelecimento.instance_id)
-        return JsonResponse({'status': status})
+        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+        return JsonResponse({
+            'status': estabelecimento.status
+        })
     except Estabelecimento.DoesNotExist:
         return JsonResponse({'error': 'Salão não encontrado'}, status=404)
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 def dashboard_stats(request):
@@ -806,8 +805,34 @@ def whatsapp_instances_status(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def system_logs(request):
-    # Implementar lógica de logs
-    pass
+    """
+    Retorna logs do sistema para a página de suporte técnico
+    """
+    try:
+        # Busca as últimas 100 interações
+        logs = Interacao.objects.all().order_by('-data')[:100].values(
+            'id',
+            'tipo',
+            'descricao',
+            'data',
+            'sucesso',
+            'salao__nome'
+        )
+        
+        formatted_logs = [{
+            'id': log['id'],
+            'action': log['tipo'],
+            'user': log['salao__nome'],
+            'timestamp': log['data'].isoformat(),
+            'details': log['descricao']
+        } for log in logs]
+        
+        return Response(formatted_logs)
+    except Exception as e:
+        return Response(
+            {'error': f'Erro ao buscar logs: {str(e)}'}, 
+            status=500
+        )
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
@@ -816,35 +841,37 @@ def reconnect_whatsapp(request, estabelecimento_id):
         estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
         api = EvolutionAPI()
         
-        # Verifica se instância existe
-        instance_exists = api.check_instance_exists(f"estabelecimento_{estabelecimento_id}")
+        # Busca todas as instâncias
+        instances = api.fetch_instances()
+        instance_name = f"estabelecimento_{estabelecimento_id}"
         
-        if instance_exists:
-            # Deleta instância antiga
-            api.disconnect_instance(estabelecimento.evolution_instance_id)
+        instance_exists = any(inst.get('instanceName') == instance_name for inst in instances)
         
-        # Cria nova instância
-        instance_response = criar_instancia_evolution(
-            estabelecimento_id=estabelecimento_id,
-            phone=estabelecimento.whatsapp
-        )
-        
-        if instance_response and instance_response.get('instanceId'):
-            estabelecimento.evolution_instance_id = instance_response['instanceId']
-            estabelecimento.save()
-            return Response({
-                'success': True, 
-                'instanceId': instance_response['instanceId']
-            })
+        if not instance_exists:
+            # Cria nova instância
+            instance_response = criar_instancia_evolution(
+                estabelecimento_id=str(estabelecimento_id),
+                phone=estabelecimento.whatsapp
+            )
+            
+            if instance_response and instance_response.get('instanceId'):
+                estabelecimento.evolution_instance_id = instance_response['instanceId']
+                estabelecimento.save()
+                return Response({
+                    'success': True,
+                    'message': 'Nova instância criada.',
+                    'instanceId': instance_response['instanceId']
+                })
             
         return Response({
             'success': False,
             'error': 'Falha ao criar instância'
         }, status=400)
     except Exception as e:
+        print(f"Erro detalhado: {str(e)}")
         return Response({
             'success': False,
-            'error': str(e)
+            'error': f'Erro ao criar instância: {str(e)}'
         }, status=500)
 
 class ClienteProfissionalViewSet(viewsets.ModelViewSet):
@@ -868,66 +895,46 @@ class ClienteProfissionalViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 def whatsapp_webhook(request):
-    """
-    Endpoint para receber webhooks da Evolution API
-    """
     data = request.data
     event_type = data.get('event')
     instance_id = data.get('instanceId')
     
     try:
-        # Primeiro verifica se é uma mensagem para o Bot 1 (suporte)
-        system_config = SystemConfig.objects.first()
-        if system_config and system_config.evolution_instance_id == instance_id:
-            if event_type == 'messages':
-                mensagem = data.get('message', {})
-                if not mensagem.get('fromMe'):
-                    # Verifica se o número é de um salão para evitar loop de IAs
-                    numero = mensagem.get('from')
-                    if not Estabelecimento.objects.filter(whatsapp=numero).exists():
-                        resposta = processar_pergunta(mensagem.get('body', ''), bot_tipo=1)
-                        api = EvolutionAPI()
-                        api.send_message(
-                            instance_id=instance_id,
-                            number=numero,
-                            message=resposta
-                        )
-            return Response({"status": "success"})
-
-        # Se não for Bot 1, processa como Bot 2
         estabelecimento = Estabelecimento.objects.get(evolution_instance_id=instance_id)
         
-        if event_type == 'connection':
-            estabelecimento.status = data.get('status', 'disconnected')
+        if event_type == 'connection.update':
+            instance_data = data.get('instance', {})
+            status = instance_data.get('state', 'disconnected')
+            estabelecimento.status = status
             estabelecimento.save()
-        
-        elif event_type == 'messages':
-            mensagem = data.get('message', {})
-            numero = mensagem.get('from')
             
-            # Verifica se o bot está desativado para este número
-            bot_desativado = BotConfig.objects.filter(
-                estabelecimento=estabelecimento,
-                numero_cliente=numero,
-                bot_ativo=False
-            ).exists()
+            Interacao.objects.create(
+                salao=estabelecimento,
+                tipo='connection_status',
+                descricao=f"Status atualizado para: {status}"
+            )
             
-            if not mensagem.get('fromMe') and not bot_desativado:
-                resposta = processar_pergunta(mensagem.get('body', ''), bot_tipo=2)
-                api = EvolutionAPI()
-                api.send_message(
-                    instance_id=instance_id,
-                    number=numero,
-                    message=resposta
-                )
-        
-        # Registrar log
-        Interacao.objects.create(
-            salao=estabelecimento,
-            tipo=event_type,
-            descricao=str(data)
-        )
-        
+        elif event_type == 'messages.upsert':
+            message = data.get('message', {})
+            from_number = message.get('from')
+            text = message.get('body', '')
+            
+            # Processa com o bot
+            resposta = processar_pergunta(
+                pergunta=text,
+                bot_tipo=2,
+                estabelecimento_id=estabelecimento.id,
+                numero_cliente=from_number
+            )
+            
+            # Envia resposta
+            api = EvolutionAPI()
+            api.send_message(
+                instance_id=instance_id,
+                phone=from_number,
+                message=resposta
+            )
+            
         return Response({"status": "success"})
     except Exception as e:
         print(f"Erro no webhook: {str(e)}")
@@ -1162,3 +1169,115 @@ class SalonServiceViewSet(viewsets.ModelViewSet):
         return SalonService.objects.filter(
             estabelecimento=self.request.user.estabelecimento
         )
+
+@api_view(['GET'])
+def bot_metricas(request, estabelecimento_id):
+    interacoes = Interacao.objects.filter(
+        salao_id=estabelecimento_id,
+        tipo='bot_response'
+    )
+    
+    return Response({
+        'total_interacoes': interacoes.count(),
+        'tempo_medio_resposta': interacoes.aggregate(Avg('tempo_resposta')),
+        'taxa_sucesso': interacoes.filter(sucesso=True).count() / interacoes.count(),
+        'intencoes': interacoes.values('intencao').annotate(
+            total=Count('id')
+        ).order_by('-total'),
+        'satisfacao_cliente': interacoes.filter(
+            cliente_satisfeito=True
+        ).count() / interacoes.filter(
+            cliente_satisfeito__isnull=False
+        ).count()
+    })
+
+@api_view(['GET'])
+def connect_whatsapp(request, estabelecimento_id):
+    try:
+        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+        api = EvolutionAPI()
+        
+        # Primeiro verifica se a instância já existe na Evolution API
+        instances = api.fetch_instances()
+        instance_name = f"estabelecimento_{estabelecimento_id}"
+        
+        instance_exists = any(inst.get('instanceName') == instance_name for inst in instances)
+        
+        if not instance_exists:
+            # Se não existe, cria nova instância
+            instance_response = criar_instancia_evolution(
+                estabelecimento_id=str(estabelecimento_id),
+                phone=estabelecimento.whatsapp
+            )
+            if instance_response and instance_response.get('instanceId'):
+                estabelecimento.evolution_instance_id = instance_response.get('instanceId')
+                estabelecimento.save()
+        
+        # Agora tenta conectar usando o nome da instância
+        connect_response = api.connect_instance(instance_name)
+        
+        if 'error' not in connect_response:
+            estabelecimento.status = 'pending_connection'
+            estabelecimento.save()
+            return JsonResponse(connect_response)
+            
+        return JsonResponse({'error': 'Erro ao conectar'}, status=500)
+    except Estabelecimento.DoesNotExist:
+        return JsonResponse({'error': 'Salão não encontrado'}, status=404)
+    except Exception as e:
+        print(f"Erro detalhado: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def bot_config(request):
+    try:
+        config = SystemConfig.objects.first()
+        if request.method == 'POST':
+            data = request.data
+            instance_created = False
+            webhook_configured = False
+            
+            if not config:
+                config = SystemConfig.objects.create(
+                    support_whatsapp=data['support_whatsapp']
+                )
+            else:
+                config.support_whatsapp = data['support_whatsapp']
+                config.save()
+
+            # Criar instância se não existir
+            if not config.evolution_instance_id:
+                api = EvolutionAPI()
+                instance_response = api.criar_instancia(
+                    estabelecimento_id='staff_support',
+                    phone=config.support_whatsapp
+                )
+                
+                if instance_response and instance_response.get('instanceId'):
+                    config.evolution_instance_id = instance_response['instanceId']
+                    config.save()
+                    instance_created = True
+                    
+                    # Configurar webhook após criar instância
+                    webhook_response = api.configurar_webhooks(instance_response['instanceId'])
+                    webhook_configured = 'error' not in webhook_response
+
+            return Response({
+                'success': True,
+                'instance_created': instance_created,
+                'webhook_configured': webhook_configured,
+                'config': {
+                    'support_whatsapp': config.support_whatsapp,
+                    'status': config.status
+                }
+            })
+        else:
+            return Response({
+                'support_whatsapp': config.support_whatsapp if config else '',
+                'status': config.status if config else 'disconnected'
+            })
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=500)

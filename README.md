@@ -142,6 +142,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── users.ts
 │   │   │   ├── whatsapp.ts
 │   │   │   ├── permissions.ts
+│   │   │   ├── botConfig.ts
 │   │   │   └── ai.ts
 │   │   ├── hooks/         # Custom hooks
 │   │   │   ├── useLanguage.ts
@@ -288,20 +289,27 @@ Relacionamentos:
 ---
 
 ## Funcionalidades
-
-1. **Bot 1 (Atendimento ao Salão Cliente)**:
-   - Responde a perguntas administrativas dos salões, como status de agendamentos e relatórios.
-   - Envia relatórios automáticos de desempenho.
-
-2. **Bot 2 (Atendimento ao Cliente Final do Salão)**:
-   - Responde a perguntas sobre agendamentos, tipos de serviços e horários disponíveis.
-   - Gerencia agendamentos dos clientes finais.
-
-3. **Integração com WhatsApp**:
+1. **Integração com WhatsApp**:
    - Sistema de comunicação via API para atender e interagir com os clientes pelo WhatsApp.
 
-4. **Gerenciamento de Agendamentos**:
+2. **Gerenciamento de Agendamentos**:
    - Sistema de calendário para armazenar e organizar agendamentos de cada salão.
+
+### Bots de Atendimento
+
+#### Bot 1 (Atendimento ao Salão)
+- Atendimento administrativo aos salões
+- Respostas sobre relatórios e métricas
+- Envio automático de relatórios de desempenho
+- Suporte técnico básico
+
+#### Bot 2 (Atendimento ao Cliente)
+- Agendamento automatizado via WhatsApp
+- Consulta de horários disponíveis
+- Seleção de serviços e profissionais
+- Confirmação e cancelamento de agendamentos
+- Lembretes automáticos
+
 
 ---
 
@@ -368,13 +376,13 @@ Relacionamentos:
 
 ## Integrações
 
-### Evolution API
+### WhatsApp (Evolution API)
 - Versão: v2
 - Documentação: https://doc.evolution-api.com/v2/pt/get-started/introduction
 - Status: Parcialmente implementada
   - [x] Configuração básica
   - [] Envio de mensagens
-  - [x] QR Code e conexão de instância
+  - [] QR Code e conexão de instância
   - [ ] Webhooks para status da conexão
 
 ### Deep Infra (LLM)

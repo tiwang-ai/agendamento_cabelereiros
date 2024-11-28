@@ -16,8 +16,10 @@ import {
   Card,
   CardContent,
   LinearProgress,
-  CircularProgress
+  CircularProgress,
+  Button
 } from '@mui/material';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
 import api from '../../services/api';
 
 interface TabPanelProps {
@@ -74,41 +76,53 @@ const TechSupport = () => {
   const [systemLogs, setSystemLogs] = useState<SystemLog[]>([]);
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadData = async () => {
+    try {
+      setRefreshing(true);
+      const [logsResponse, metricsResponse] = await Promise.all([
+        api.get('/admin/system-logs/'),
+        api.get('/admin/system-metrics/')
+      ]);
+      setSystemLogs(logsResponse.data);
+      setMetrics(metricsResponse.data);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [logsResponse, metricsResponse] = await Promise.all([
-          api.get('/admin/system-logs/'),
-          api.get('/admin/system-metrics/')
-        ]);
-        setSystemLogs(logsResponse.data);
-        setMetrics(metricsResponse.data);
-      } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
-    const interval = setInterval(loadData, 30000);
+    const interval = setInterval(loadData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <Container maxWidth="lg">
       <Paper sx={{ p: 3, mt: 2 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography variant="h5">
+            Suporte Técnico
+          </Typography>
+          <Button
+            startIcon={<RefreshIcon />}
+            onClick={loadData}
+            disabled={refreshing}
+          >
+            {refreshing ? <CircularProgress size={24} /> : 'Atualizar'}
+          </Button>
+        </Box>
+
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
             <CircularProgress />
           </Box>
         ) : (
           <>
-            <Typography variant="h5" gutterBottom>
-              Suporte Técnico
-            </Typography>
-
             <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
               <Tab label="Logs do Sistema" />
               <Tab label="Métricas" />

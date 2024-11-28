@@ -12,6 +12,7 @@ import {
   Tabs,
   Tab,
   FormControlLabel,
+  Box,
 } from '@mui/material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -79,6 +80,7 @@ const Settings = () => {
           <Tab label="Perfil" />
           <Tab label="Notificações" />
           <Tab label="WhatsApp" />
+          <Tab label="Bot WhatsApp" />
         </Tabs>
 
         <Grid container spacing={2}>
@@ -238,9 +240,84 @@ const Settings = () => {
               <WhatsAppConnection />
             </Grid>
           )}
+
+          {tabValue === 3 && (
+            <Grid item xs={12}>
+              <BotSettings />
+            </Grid>
+          )}
         </Grid>
       </Paper>
     </Container>
+  );
+};
+
+const BotSettings = () => {
+  const [config, setConfig] = useState({
+    bot_ativo: true,
+    ignorar_grupos: true,
+    tempo_debounce: 5,
+    horario_atendimento_inicio: '09:00',
+    horario_atendimento_fim: '18:00',
+    dias_atendimento: [1,2,3,4,5], // seg a sex
+    mensagem_fora_horario: '',
+    mensagem_bot_desativado: ''
+  });
+
+  const handleConfigChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+    setConfig(prev => ({
+      ...prev,
+      [setting]: event.target.checked
+    }));
+  };
+
+  const handleConfigSubmit = async () => {
+    try {
+      await api.put('/api/users/bot-settings/', config);
+      // Mostrar mensagem de sucesso
+    } catch (error) {
+      // Mostrar erro
+    }
+  };
+
+  return (
+    <Box sx={{ p: 3 }}>
+      <Typography variant="h6" gutterBottom>
+        Configurações do Bot
+      </Typography>
+      
+      <FormControlLabel
+        control={<Switch checked={config.bot_ativo} />}
+        label="Bot Ativo"
+      />
+      
+      <FormControlLabel
+        control={<Switch checked={config.ignorar_grupos} />}
+        label="Ignorar Grupos"
+      />
+      
+      <TextField
+        label="Tempo Debounce (segundos)"
+        type="number"
+        value={config.tempo_debounce}
+      />
+      
+      {/* Campos para horários e dias */}
+      
+      <TextField
+        label="Mensagem Fora do Horário"
+        multiline
+        rows={3}
+        value={config.mensagem_fora_horario}
+      />
+      
+      <TextField
+        label="Mensagem Bot Desativado"
+        multiline
+        rows={3}
+        value={config.mensagem_bot_desativado}
+      />
+    </Box>
   );
 };
 

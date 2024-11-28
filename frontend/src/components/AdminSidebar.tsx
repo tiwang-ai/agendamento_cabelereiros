@@ -10,7 +10,8 @@ import {
   Support as SupportIcon,
   WhatsApp as WhatsAppIcon,
   Assessment as AssessmentIcon,
-  Group as StaffIcon
+  Group as StaffIcon,
+  Chat as ChatIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,7 +27,9 @@ const menuItems = [
   { text: 'Status WhatsApp', icon: <WhatsAppIcon />, path: '/admin/whatsapp-status' },
   { text: 'Relatórios', icon: <AssessmentIcon />, path: '/admin/reports' },
   { text: 'Equipe Staff', icon: <StaffIcon />, path: '/admin/staff' },
-  { text: 'Configurações', icon: <SettingsIcon />, path: '/admin/settings' }
+  { text: 'Bot de Suporte', icon: <ChatIcon />, path: '/admin/bot-config' },
+  // { text: 'Configurações', icon: <SettingsIcon />, path: '/admin/settings' }
+
 ];
 
 const AdminSidebar = () => {

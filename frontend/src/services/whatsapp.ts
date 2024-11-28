@@ -10,10 +10,16 @@ export const WhatsAppService = {
 
   reconnect: async (estabelecimento_id: string) => {
     try {
-      const response = await api.post(`/whatsapp/reconnect/${estabelecimento_id}/`);
+      console.log('Tentando reconectar estabelecimento:', estabelecimento_id);
+      
+      const response = await api.post(`/whatsapp/reconnect/${estabelecimento_id}/`, {
+        estabelecimento_id: estabelecimento_id
+      });
+      
+      console.log('Resposta da reconexão:', response.data);
       return response.data;
-    } catch (error) {
-      console.error('Erro ao reconectar:', error);
+    } catch (error: any) {
+      console.error('Erro detalhado da reconexão:', error.response?.data || error);
       throw error;
     }
   },
@@ -89,8 +95,37 @@ export const WhatsAppService = {
     return response.data;
   },
 
-  checkConnectionStatus: async (salonId: string) => {
-    const response = await api.get(`/whatsapp/connection-status/${salonId}/`);
-    return response.data;
+  checkConnectionStatus: async (estabelecimento_id: string) => {
+    try {
+      const response = await api.get(`/whatsapp/connection-status/${estabelecimento_id}/`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao verificar status:', error);
+      throw error;
+    }
+  },
+
+  connectInstance: async (estabelecimento_id: string) => {
+    try {
+      const response = await api.get(`/whatsapp/connect/${estabelecimento_id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao conectar instância:', error);
+      throw error;
+    }
+  },
+
+  updateBotConfig: async (estabelecimento_id: string, config: {
+    bot_ativo: boolean;
+    aceitar_nao_clientes: boolean;
+    mensagem_nao_cliente?: string;
+  }) => {
+    try {
+      const response = await api.patch(`/whatsapp/bot-config/${estabelecimento_id}/`, config);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar configuração do bot:', error);
+      throw error;
+    }
   }
 };

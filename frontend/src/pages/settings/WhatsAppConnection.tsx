@@ -21,10 +21,10 @@ interface TabPanelProps {
   value: number;
 }
 
-interface PairingCode {
-  pairingCode: string;
-  code: string;
-  count: number;
+interface ConnectionData {
+  pairingCode?: string;
+  code?: string;
+  count?: number;
 }
 
 const TabPanel = (props: TabPanelProps) => {
@@ -39,51 +39,27 @@ const TabPanel = (props: TabPanelProps) => {
 const WhatsAppConnection = () => {
   const { user } = useAuth();
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
-  const [qrCode, setQrCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const [pairingCode, setPairingCode] = useState<PairingCode | null>(null);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
 
   useEffect(() => {
-    if (status === 'connecting') {
-      const interval = setInterval(checkStatus, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [status]);
-
-  const checkStatus = async () => {
-    if (!user?.estabelecimento_id) return;
-
-    try {
-      const statusResponse = await WhatsAppService.checkConnectionStatus(
-        user.estabelecimento_id
-      );
+    const checkInitialStatus = async () => {
+      if (!user?.estabelecimento_id) return;
       
-      if (statusResponse.status === 'connected') {
-        setStatus('connected');
-        loadLogs();
+      try {
+        const statusResponse = await WhatsAppService.getStatus(user.estabelecimento_id);
+        setStatus(statusResponse.status);
+      } catch (err) {
+        console.error('Erro ao verificar status inicial:', err);
       }
-    } catch (err) {
-      console.error('Erro ao verificar status:', err);
-    }
-  };
+    };
 
-  const loadLogs = async () => {
-    if (!user?.estabelecimento_id) return;
+    checkInitialStatus();
+  }, [user?.estabelecimento_id]);
 
-    try {
-      const logsResponse = await WhatsAppService.getInstanceLogs(
-        user.estabelecimento_id
-      );
-      setLogs(logsResponse.logs || []);
-    } catch (err) {
-      console.error('Erro ao carregar logs:', err);
-    }
-  };
-
-  const getQRCode = async () => {
+  const handleGeneratePairingCode = async () => {
     if (!user?.estabelecimento_id) {
       setError('ID do salão não encontrado');
       return;
@@ -93,36 +69,16 @@ const WhatsAppConnection = () => {
       setIsLoading(true);
       setError(null);
       
-      const qrResponse = await WhatsAppService.generateQrCode(user.estabelecimento_id);
+      const response = await WhatsAppService.connectInstance(user.estabelecimento_id);
       
-      if (qrResponse.code) {
-        setQrCode(qrResponse.code);
-        setStatus('connecting');
+      if (response.pairingCode || response.code) {
+        setConnectionData(response);
       } else {
-        throw new Error('QR Code não recebido');
+        throw new Error('Dados de conexão não recebidos');
       }
     } catch (err) {
-      console.error('Erro ao gerar QR code:', err);
-      setError('Não foi possível gerar o QR code. Por favor, tente novamente.');
-      setStatus('disconnected');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGetPairingCode = async () => {
-    if (!user?.estabelecimento_id) {
-      setError('ID do salão não encontrado');
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await WhatsAppService.generatePairingCode(user.estabelecimento_id);
-      setPairingCode(response);
-    } catch (err) {
-      setError('Erro ao gerar código de pareamento');
+      console.error('Erro ao gerar código:', err);
+      setError('Não foi possível gerar o código. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +109,7 @@ const WhatsAppConnection = () => {
 
         <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
           <Tab label="QR Code" />
-          <Tab label="Código" disabled />
+          <Tab label="Código" />
         </Tabs>
 
         <TabPanel value={tabValue} index={0}>
@@ -185,7 +141,7 @@ const WhatsAppConnection = () => {
                   alignItems: 'center', 
                   gap: 3 
                 }}>
-                  {qrCode ? (
+                  {connectionData?.code ? (
                     <>
                       <Box sx={{ 
                         p: 3, 
@@ -194,14 +150,14 @@ const WhatsAppConnection = () => {
                         bgcolor: '#fff',
                         boxShadow: 1
                       }}>
-                        <QRCodeSVG value={qrCode} size={256} />
+                        <QRCodeSVG value={connectionData.code} size={256} />
                       </Box>
                       <Typography variant="body2" color="text.secondary" align="center">
                         Abra o WhatsApp no seu celular e escaneie o QR Code
                       </Typography>
                       <Button
                         variant="outlined"
-                        onClick={getQRCode}
+                        onClick={handleGeneratePairingCode}
                         sx={{ mt: 2 }}
                       >
                         Gerar Novo QR Code
@@ -210,7 +166,7 @@ const WhatsAppConnection = () => {
                   ) : (
                     <Button
                       variant="contained"
-                      onClick={getQRCode}
+                      onClick={handleGeneratePairingCode}
                       disabled={isLoading}
                       sx={{ mt: 4 }}
                     >
@@ -224,28 +180,61 @@ const WhatsAppConnection = () => {
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
-          <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            {pairingCode ? (
+          <Box sx={{ 
+            p: 2, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center', 
+            gap: 2,
+            minHeight: 400
+          }}>
+            {isLoading ? (
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 2,
+                mt: 4 
+              }}>
+                <CircularProgress />
+                <Typography color="text.secondary">
+                  Gerando código de pareamento...
+                </Typography>
+              </Box>
+            ) : connectionData?.pairingCode ? (
               <>
                 <Typography variant="h4" sx={{ letterSpacing: 2 }}>
-                  {pairingCode.pairingCode}
+                  {connectionData.pairingCode}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Digite este código no seu WhatsApp para conectar
+                <Typography variant="body2" color="text.secondary" align="center">
+                  Abra o WhatsApp no seu celular e digite este código em Configurações {'>'} Dispositivos Conectados
                 </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={handleGeneratePairingCode}
+                  sx={{ mt: 2 }}
+                >
+                  Gerar Novo Código
+                </Button>
               </>
             ) : (
-              <Button
-                variant="contained"
-                onClick={handleGetPairingCode}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <CircularProgress size={24} />
-                ) : (
-                  'Gerar Código de Pareamento'
-                )}
-              </Button>
+              <Box sx={{ 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                gap: 2 
+              }}>
+                <Typography variant="body1" color="text.secondary" align="center">
+                  Clique no botão abaixo para gerar um código de pareamento
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleGeneratePairingCode}
+                  disabled={isLoading}
+                >
+                  Gerar Código de Pareamento
+                </Button>
+              </Box>
             )}
           </Box>
         </TabPanel>

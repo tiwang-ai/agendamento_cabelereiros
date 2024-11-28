@@ -207,3 +207,13 @@ class ChatConfigSerializer(serializers.ModelSerializer):
             whatsapp=obj.numero_cliente
         ).first()
         return cliente.nome if cliente else None
+
+class BotConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BotConfig
+        fields = [
+            'id', 'bot_ativo', 'ignorar_grupos', 'tempo_debounce',
+            'horario_atendimento_inicio', 'horario_atendimento_fim',
+            'dias_atendimento', 'mensagem_fora_horario', 
+            'mensagem_bot_desativado'
+        ]

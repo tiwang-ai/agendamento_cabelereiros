@@ -173,8 +173,12 @@ class Agendamento(models.Model):
 class Interacao(models.Model):
     salao = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
     data = models.DateTimeField(auto_now_add=True)
-    tipo = models.CharField(max_length=50)  # ex: 'agendamento', 'consulta', etc
+    tipo = models.CharField(max_length=50)
     descricao = models.TextField()
+    tempo_resposta = models.FloatField(null=True)
+    sucesso = models.BooleanField(default=True)
+    intencao = models.CharField(max_length=50, null=True)
+    cliente_satisfeito = models.BooleanField(null=True)
 
     def __str__(self):
         return f"{self.salao.nome} - {self.tipo} - {self.data}"
@@ -270,7 +274,19 @@ class BotConfig(models.Model):
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
     numero_cliente = models.CharField(max_length=20)
     bot_ativo = models.BooleanField(default=True)
+    aceitar_nao_clientes = models.BooleanField(default=False)
+    mensagem_nao_cliente = models.TextField(
+        blank=True,
+        default="Olá! Para melhor atendê-lo, por favor, faça seu cadastro em nosso salão."
+    )
     ultima_atualizacao = models.DateTimeField(auto_now=True)
+    ignorar_grupos = models.BooleanField(default=True)
+    tempo_debounce = models.IntegerField(default=5)  # em segundos
+    horario_atendimento_inicio = models.TimeField(default='09:00')
+    horario_atendimento_fim = models.TimeField(default='18:00')
+    dias_atendimento = models.JSONField(default=list)  # lista de dias da semana
+    mensagem_fora_horario = models.TextField(blank=True, null=True)
+    mensagem_bot_desativado = models.TextField(blank=True, null=True)
     
     class Meta:
         unique_together = ['estabelecimento', 'numero_cliente']
