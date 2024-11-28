@@ -1,5 +1,4 @@
 // frontend/landing/components/PricingCards.tsx
-import React from 'react';
 import { Box, Container, Grid, Typography, Button, Card, CardContent } from '@mui/material';
 
 interface PricingCardsProps {

@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: userEmail, 
       role: userRole, 
       name,
-      salonId: estabelecimento_id?.toString(),
+      estabelecimento_id: estabelecimento_id?.toString(),
       phone,
       whatsappNumber: phone,
       isActive: is_active

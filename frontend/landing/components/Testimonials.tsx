@@ -1,5 +1,4 @@
 // frontend/landing/components/Testimonials.tsx
-import React from 'react';
 import { Box, Container, Typography, Card, CardContent, Avatar, Grid } from '@mui/material';
 
 const testimonials = [

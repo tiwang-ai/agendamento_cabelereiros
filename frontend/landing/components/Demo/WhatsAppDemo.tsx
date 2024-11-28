@@ -1,5 +1,5 @@
 // frontend/landing/components/Demo/WhatsAppDemo.tsx
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Box, Paper, Typography, TextField, IconButton, Button, Grid, Card, CardContent, Avatar, Rating } from '@mui/material';
 import { Send as SendIcon, Check as CheckIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -45,7 +45,6 @@ const WhatsAppDemo = () => {
     }
   ]);
   const [userInput, setUserInput] = useState('');
-  const [step, setStep] = useState(0);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
   // Novos estados para controlar elementos visuais
@@ -116,12 +115,6 @@ const WhatsAppDemo = () => {
 
     // Executa ação visual
     action();
-  };
-
-  const handleSendMessage = () => {
-    if (!userInput.trim()) return;
-    simulateResponse(userInput);
-    setUserInput('');
   };
 
   return (

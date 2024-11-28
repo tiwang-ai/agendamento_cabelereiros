@@ -1,6 +1,6 @@
 // frontend/landing/components/Features.tsx
 import React from 'react';
-import { Box, Container, Grid, Paper, Typography, Icon } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography } from '@mui/material';
 import { 
   AutoAwesome, 
   Schedule, 

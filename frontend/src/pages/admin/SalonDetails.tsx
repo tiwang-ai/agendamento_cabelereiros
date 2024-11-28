@@ -18,14 +18,7 @@ import {
   TableHead,
   TableRow,
   Chip,
-  Button
 } from '@mui/material';
-import {
-  Business as BusinessIcon,
-  People as PeopleIcon,
-  Event as EventIcon,
-  AttachMoney as MoneyIcon
-} from '@mui/icons-material';
 import api from '../../services/api';
 
 interface TabPanelProps {
@@ -85,7 +78,7 @@ const SalonDetails = () => {
     }
   };
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_: any, newValue: number) => {
     setTabValue(newValue);
   };
 

@@ -1,8 +1,7 @@
 // frontend/landing/components/Hero.tsx
-import React from 'react';
 import { Box, Container, Typography, Button, useTheme } from '@mui/material';
 import WhatsAppDemo from './Demo/WhatsAppDemo';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 const Hero = () => {
   const theme = useTheme();

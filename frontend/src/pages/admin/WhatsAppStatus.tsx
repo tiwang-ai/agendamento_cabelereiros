@@ -15,8 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   Box,
-  CircularProgress,
-  Fade
+  CircularProgress
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { WhatsAppService } from '../../services/whatsapp';
@@ -40,7 +39,6 @@ const WhatsAppStatus = () => {
   const [loading, setLoading] = useState(false);
   const [openQRDialog, setOpenQRDialog] = useState(false);
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
-  const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
 
   const loadInstances = async () => {
     try {
@@ -51,11 +49,10 @@ const WhatsAppStatus = () => {
     }
   };
 
-  const handleReconnect = async (salonId: string) => {
+  const handleReconnect = async (estabelecimentoId: string) => {
     try {
       setLoading(true);
-      setSelectedSalonId(salonId);
-      const response = await WhatsAppService.reconnect(salonId);
+      const response = await WhatsAppService.reconnect(estabelecimentoId);
       
       if (response.success) {
         await loadInstances();
@@ -77,7 +74,6 @@ const WhatsAppStatus = () => {
   const handleCloseDialog = () => {
     setOpenQRDialog(false);
     setConnectionData(null);
-    setSelectedSalonId(null);
   };
 
   useEffect(() => {

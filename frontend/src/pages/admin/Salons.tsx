@@ -127,15 +127,6 @@ const SalonsManagement = () => {
     }
   };
 
-  const handleReconnect = async (salonId: string) => {
-    try {
-      await WhatsAppService.reconnect(salonId);
-      loadSalons();
-    } catch (error) {
-      console.error('Erro ao reconectar:', error);
-    }
-  };
-
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
