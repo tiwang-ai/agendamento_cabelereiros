@@ -381,8 +381,8 @@ Relacionamentos:
 - Documentação: https://doc.evolution-api.com/v2/pt/get-started/introduction
 - Status: Parcialmente implementada
   - [x] Configuração básica
-  - [] Envio de mensagens
-  - [] QR Code e conexão de instância
+  - [ ] Envio de mensagens
+  - [ ] QR Code e conexão de instância
   - [ ] Webhooks para status da conexão
 
 ### Deep Infra (LLM)
