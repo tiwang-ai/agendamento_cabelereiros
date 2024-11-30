@@ -34,8 +34,6 @@ services:
     source_dir: "frontend"  # Diretório do frontend
     build_command: |
       npm install
-      npm install -D eslint-plugin-unused-imports
-      npx eslint . --fix
       npm run build
     environment_slug: node-js
     output_dir: dist  # Diretório onde o Vite gera os arquivos estáticos

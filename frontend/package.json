@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "eslint . --fix && tsc --noEmit && vite build",
+    "build": "tsc && vite build",
     "build:do": "npm install -g typescript && tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --ext .ts,.tsx,.cjs --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     "react-router-dom": "^6.16.0"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.22.15",
     "@types/date-arithmetic": "^4.1.4",
     "@types/node": "^20.17.9",
     "@types/qrcode.react": "^1.0.5",
