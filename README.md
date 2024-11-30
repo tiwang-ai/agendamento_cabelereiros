@@ -406,6 +406,7 @@ Relacionamentos:
 ## Integrações
 
 ### WhatsApp (Evolution API)
+
 - Versão: v2
 - Documentação: https://doc.evolution-api.com/v2/pt/get-started/introduction
 - Status: Parcialmente implementada
@@ -415,6 +416,7 @@ Relacionamentos:
   - [ ] Webhooks para status da conexão
 
 ### Deep Infra (LLM)
+
 - Modelo: Meta-Llama-3-8B-Instruct
 - Status: Implementado
   - [x] Bot 1 (Atendimento ao Salão)
@@ -422,13 +424,16 @@ Relacionamentos:
   - [ ] Testes e ajustes de prompts
 
 ## Páginas do Sistema
+
 ### Área Pública
+
 - [x] Landing Page
 - [x] Página de Planos
 - [x] Login
 - [x] Registro
 
 ### Área do Salão (Owner)
+
 - [x] Dashboard
 - [x] Calendário
 - [x] Gerenciamento de Profissionais
@@ -440,6 +445,7 @@ Relacionamentos:
 - [ ] Perfil e Plano
 
 ### Área Administrativa (Staff)
+
 - [x] Dashboard
 - [x] Gerenciamento de Salões
 - [x] Gerenciamento de Planos
@@ -448,6 +454,7 @@ Relacionamentos:
 - [ ] Relatórios Administrativos
 
 ## Próximos Passos (Priorizado)
+
 1. ~~Área do Profissional (Prioridade atual)~~
    ~~- Implementar login por telefone ~~
    ~~- Criar visualização de agenda pessoal~~
@@ -463,6 +470,7 @@ Relacionamentos:
    ~~- Integração com WhatsApp~~
 
 3. Implementar página de conexão WhatsApp
+
    - Interface para leitura do QR Code gerado pela Evolution Api (não está funcionando)
      ~~- Criar instância na Evolution Api ao criar o salão (tanto via painel da staff quanto via registro e pagamento)~~
    - Monitoramento do status da conexão (está com falha)
@@ -470,6 +478,7 @@ Relacionamentos:
 
 4. Desenvolver área de relatórios
    Para Staff e Salões:
+
    - Dashboard analítico
    - Exportação de dados
    - Métricas por período
@@ -522,6 +531,7 @@ Relacionamentos:
 ### 1. Configuração Inicial
 
 1. **Criar conta na DigitalOcean**
+
    - Acesse digitalocean.com e crie uma conta
    - Adicione um método de pagamento
    - Ative a autenticação em 2 fatores (recomendado)
@@ -537,6 +547,7 @@ Relacionamentos:
 ### 2. Configurar Banco de Dados
 
 1. **Criar Database Cluster**:
+
    - No painel DigitalOcean, vá em "Databases"
    - Clique em "Create Database Cluster"
    - Selecione "PostgreSQL"
@@ -562,6 +573,7 @@ Relacionamentos:
 ### 3. Configurar Redis
 
 1. **Criar Redis Database**:
+
    - No painel DigitalOcean, vá em "Databases"
    - Clique em "Create Database Cluster"
    - Selecione "Redis"
@@ -581,6 +593,7 @@ Relacionamentos:
 ### 4. Configurar App Platform
 
 1. **Criar Novo App**:
+
    - No painel DigitalOcean, vá em "Apps"
    - Clique em "Create App"
    - Selecione seu repositório GitHub
@@ -589,6 +602,7 @@ Relacionamentos:
 2. **Configurar Componentes**:
 
    a. **Web Component (Django)**:
+
    ```yaml
    - name: web
      git:
@@ -602,6 +616,7 @@ Relacionamentos:
    ```
 
    b. **Worker Component (Celery)**:
+
    ```yaml
    - name: worker
      git:
@@ -613,8 +628,10 @@ Relacionamentos:
    ```
 
 3. **Configurar Variáveis de Ambiente**:
+
    - Clique em "Environment Variables"
    - Adicione as seguintes variáveis:
+
    ```
    DEBUG=False
    SECRET_KEY=sua_chave_secreta
@@ -635,6 +652,7 @@ Relacionamentos:
 ### 5. Deploy Frontend
 
 1. **Preparar Build**:
+
    ```bash
    cd frontend
    npm install
@@ -652,6 +670,7 @@ Relacionamentos:
 ### 6. Monitoramento e Logs
 
 1. **Configurar Monitoramento**:
+
    - Ative o monitoramento no painel do App
    - Configure alertas de uso de recursos
 
@@ -662,20 +681,24 @@ Relacionamentos:
 ### Observações Importantes:
 
 1. **Celery e Redis**:
+
    - O Celery precisa usar o pool gevent no App Platform
    - Configure o Celery com:
+
    ```python
    CELERY_BROKER_URL = os.getenv('REDIS_URL')
    CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')
    ```
 
 2. **Custos**:
+
    - Basic Plan: ~$12/mês por componente
    - Database: ~$15/mês
    - Redis: ~$15/mês
    - Total estimado: ~$54/mês
 
 3. **Segurança**:
+
    - Mantenha as chaves secretas nas variáveis de ambiente
    - Use HTTPS para todas as conexões
    - Configure firewalls e restrições de acesso

@@ -3,12 +3,12 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/frontend/',
+  base: '/',
   server: {
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
@@ -16,6 +16,15 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', '@mui/material', 'framer-motion'],
+          utils: ['date-fns', 'axios']
+        }
+      }
+    }
   }
 })
