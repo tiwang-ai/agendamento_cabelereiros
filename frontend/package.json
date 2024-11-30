@@ -7,12 +7,15 @@
     "start": "vite preview",
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:do": "npm install && tsc && vite build",
+    "build:do": "npm install && npx tsc && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --fix",
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",
