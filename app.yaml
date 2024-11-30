@@ -5,8 +5,8 @@ services:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: "/"  # Diretório raiz do projeto
-    dockerfile_path: Dockerfile  # Se usar Dockerfile
+    source_dir: '/' # Diretório raiz do projeto
+    dockerfile_path: Dockerfile # Se usar Dockerfile
     build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
     run_command: gunicorn agendamento_salao.wsgi:application --workers 4
     instance_size_slug: basic-s
@@ -18,7 +18,7 @@ services:
       - key: DJANGO_SETTINGS_MODULE
         value: agendamento_salao.settings
       - key: DEBUG
-        value: "False" 
+        value: 'False'
       - key: ALLOWED_HOSTS
         value: ${APP_DOMAIN}
       - key: DATABASE_URL
@@ -31,12 +31,14 @@ services:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: "frontend"  # Diretório do frontend
+    source_dir: 'frontend' # Diretório do frontend
     build_command: |
       npm install
+      npm install -D eslint-plugin-unused-imports
+      npx eslint . --fix
       npm run build
     environment_slug: node-js
-    output_dir: dist  # Diretório onde o Vite gera os arquivos estáticos
+    output_dir: dist # Diretório onde o Vite gera os arquivos estáticos
     routes:
       - path: /
     instance_size_slug: basic-xs
@@ -51,7 +53,7 @@ workers:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: "/"
+    source_dir: '/'
     build_command: pip install -r requirements.txt
     run_command: celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp
     instance_size_slug: basic-s
@@ -68,7 +70,7 @@ workers:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: "/"
+    source_dir: '/'
     build_command: pip install -r requirements.txt
     run_command: celery -A agendamento_salao beat -l info
     instance_size_slug: basic-xs
@@ -82,4 +84,4 @@ databases:
     name: db
     num_nodes: 1
     size: db-s-dev-database
-    version: "12"
+    version: '12'

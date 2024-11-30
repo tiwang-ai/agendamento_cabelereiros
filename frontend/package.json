@@ -28,7 +28,9 @@
     "react-router-dom": "^6.16.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.22.15",
+    "@babel/core": "^7.23.7",
+    "@babel/eslint-parser": "^7.23.3",
+    "@babel/preset-react": "^7.23.3",
     "@types/date-arithmetic": "^4.1.4",
     "@types/node": "^20.17.9",
     "@types/qrcode.react": "^1.0.5",
@@ -39,8 +41,12 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
     "eslint": "^8.45.0",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.3",
+    "eslint-plugin-unused-imports": "^3.0.0",
     "qrcode.react": "^4.1.0",
     "recharts": "^2.13.3",
     "typescript": "^5.0.2",
