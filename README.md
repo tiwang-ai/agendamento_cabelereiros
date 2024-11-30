@@ -162,6 +162,8 @@ Teste_Agendamento-TIWANG/
 │   │   ├── types/         # Tipos/Interfaces
 │   │   │   ├── whatsapp.ts
 │   │   │   ├── onboarding.ts
+│   │   │   ├── global.d.ts
+│   │   │   ├── framer-motion.d.ts
 │   │   │   └── auth.ts
 │   │   ├── utils/         # Funções utilitárias
 │   │   ├── assets/        # Imagens, etc

@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import api from '../../services/api';
+import { ChangeEvent } from 'react';
 
 interface Cliente {
   id: number;
@@ -149,6 +150,10 @@ const ProfessionalClients = () => {
     (client.email && client.email.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -181,7 +186,7 @@ const ProfessionalClients = () => {
               fullWidth
               placeholder="Buscar por nome, telefone ou email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleInputChange}
               sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
@@ -268,13 +273,13 @@ const ProfessionalClients = () => {
               <DialogTitle>
                 {selectedClient ? 'Editar Cliente' : 'Novo Cliente'}
               </DialogTitle>
-              <form onSubmit={handleSubmit}>
+              <Box component="form" onSubmit={handleSubmit}>
                 <DialogContent>
                   <TextField
                     fullWidth
                     label="Nome"
                     value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nome: e.target.value })}
                     required
                     margin="normal"
                   />
@@ -282,7 +287,7 @@ const ProfessionalClients = () => {
                     fullWidth
                     label="WhatsApp"
                     value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, whatsapp: e.target.value })}
                     required
                     margin="normal"
                   />
@@ -291,7 +296,7 @@ const ProfessionalClients = () => {
                     label="Email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, email: e.target.value })}
                     margin="normal"
                   />
                   <TextField
@@ -300,7 +305,7 @@ const ProfessionalClients = () => {
                     multiline
                     rows={4}
                     value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, observacoes: e.target.value })}
                     margin="normal"
                   />
                 </DialogContent>
@@ -310,7 +315,7 @@ const ProfessionalClients = () => {
                     Salvar
                   </Button>
                 </DialogActions>
-              </form>
+              </Box>
             </Dialog>
 
             <Dialog 

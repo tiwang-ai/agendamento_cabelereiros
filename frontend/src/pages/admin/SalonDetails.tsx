@@ -31,7 +31,7 @@ function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
-    <div
+    <Box
       role="tabpanel"
       hidden={value !== index}
       {...other}
@@ -41,7 +41,7 @@ function TabPanel(props: TabPanelProps) {
           {children}
         </Box>
       )}
-    </div>
+    </Box>
   );
 }
 
@@ -83,7 +83,7 @@ const SalonDetails = () => {
   };
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <Box component="div">Carregando...</Box>;
   }
 
   return (
@@ -155,9 +155,15 @@ const SalonDetails = () => {
                 Detalhes do Estabelecimento
               </Typography>
               <Box sx={{ mt: 2 }}>
-                <Typography><strong>Telefone:</strong> {salon.telefone}</Typography>
-                <Typography><strong>WhatsApp:</strong> {salon.whatsapp}</Typography>
-                <Typography><strong>Horário de Funcionamento:</strong> {salon.horario_funcionamento}</Typography>
+                <Typography>
+                  <Box component="strong" sx={{ fontWeight: 'bold' }}>Telefone:</Box> {salon.telefone}
+                </Typography>
+                <Typography>
+                  <Box component="strong" sx={{ fontWeight: 'bold' }}>WhatsApp:</Box> {salon.whatsapp}
+                </Typography>
+                <Typography>
+                  <Box component="strong" sx={{ fontWeight: 'bold' }}>Horário:</Box> {salon.horario_funcionamento}
+                </Typography>
               </Box>
             </Grid>
           </Grid>

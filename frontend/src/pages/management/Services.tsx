@@ -23,6 +23,7 @@ import {
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { ChangeEvent, FormEvent } from 'react';
 
 interface SystemService {
   id: number;
@@ -89,7 +90,7 @@ const ServicesManagement = () => {
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const serviceData = {
@@ -109,6 +110,18 @@ const ServicesManagement = () => {
       console.error('Erro ao salvar serviço:', error);
       setError(error.response?.data?.message || 'Erro ao salvar serviço');
     }
+  };
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, nome_servico: e.target.value });
+  };
+
+  const handleDurationChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, duracao: e.target.value });
+  };
+
+  const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, preco: e.target.value });
   };
 
   const handleDelete = async (id: number) => {
@@ -182,7 +195,7 @@ const ServicesManagement = () => {
           <DialogTitle>
             {selectedService ? 'Editar Serviço' : 'Novo Serviço'}
           </DialogTitle>
-          <form onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={handleSubmit}>
             <DialogContent>
               <TextField
                 autoFocus
@@ -190,7 +203,7 @@ const ServicesManagement = () => {
                 label="Nome do Serviço"
                 fullWidth
                 value={formData.nome_servico}
-                onChange={(e) => setFormData({ ...formData, nome_servico: e.target.value })}
+                onChange={handleNameChange}
                 required
               />
               <TextField
@@ -199,7 +212,7 @@ const ServicesManagement = () => {
                 fullWidth
                 type="number"
                 value={formData.duracao}
-                onChange={(e) => setFormData({ ...formData, duracao: e.target.value })}
+                onChange={handleDurationChange}
                 required
               />
               <TextField
@@ -208,7 +221,7 @@ const ServicesManagement = () => {
                 fullWidth
                 type="number"
                 value={formData.preco}
-                onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                onChange={handlePriceChange}
                 required
               />
             </DialogContent>
@@ -218,7 +231,7 @@ const ServicesManagement = () => {
                 Salvar
               </Button>
             </DialogActions>
-          </form>
+          </Box>
         </Dialog>
       </Paper>
     </Container>

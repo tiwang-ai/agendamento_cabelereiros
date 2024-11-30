@@ -1,10 +1,11 @@
 // frontend/landing/components/Demo/WhatsAppDemo.tsx
-import { useState } from 'react';
+import { useState, ChangeEvent, KeyboardEvent } from 'react';
 import { Box, Paper, Typography, TextField, IconButton, Button, Grid, Card, CardContent, Avatar, Rating } from '@mui/material';
 import { Send as SendIcon, Check as CheckIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 import ptBR from 'date-fns/locale/pt-BR';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
+import { FC, ReactElement } from 'react';
 import BookingConfirmation from './BookingConfirmation';
 
 interface Message {
@@ -36,7 +37,10 @@ interface ProfessionalsViewProps {
   onSelectProfessional: (professional: Professional) => void;
 }
 
-const WhatsAppDemo = () => {
+// Componente Motion personalizado
+const MotionBox = motion.div;
+
+const WhatsAppDemo: FC = (): ReactElement => {
   const [messages, setMessages] = useState<Message[]>([
     { 
       type: 'bot', 
@@ -115,6 +119,26 @@ const WhatsAppDemo = () => {
 
     // Executa ação visual
     action();
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setUserInput(e.target.value);
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      simulateResponse(userInput);
+    }
+  };
+
+  const handleSlotSelect = (slot: Slot) => {
+    setSelectedSlot(slot);
+    setUserInput(`Quero agendar para ${format(new Date(slot.date), 'EEEE', { locale: ptBR })} às ${slot.time}`);
+  };
+
+  const handleProfessionalSelect = (professional: Professional) => {
+    setSelectedProfessional(professional);
+    setUserInput(`Quero agendar com ${professional.name}`);
   };
 
   return (
@@ -201,8 +225,8 @@ const WhatsAppDemo = () => {
             fullWidth
             placeholder="Digite uma mensagem"
             value={userInput}
-            onChange={(e) => setUserInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && simulateResponse(userInput)}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
             size="small"
             sx={{ bgcolor: 'white', borderRadius: 1 }}
           />
@@ -217,59 +241,61 @@ const WhatsAppDemo = () => {
 
       {/* Elementos Visuais Dinâmicos */}
       <Box sx={{ width: '400px' }}>
-        <AnimatePresence>
-          {showCalendar && (
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-            >
-              <CalendarView 
-                availableSlots={[
-                  { date: '2024-03-19', time: '15:00' },
-                  { date: '2024-03-20', time: '13:00' }
-                ]}
-                onSelectSlot={(slot) => {
-                  setSelectedSlot(slot);
-                  setUserInput(`Quero agendar para ${format(new Date(slot.date), 'EEEE', { locale: ptBR })} às ${slot.time}`);
-                }}
-              />
-            </motion.div>
-          )}
+        <Box component={LazyMotion} features={domAnimation}>
+          <Box component={AnimatePresence} mode="wait">
+            {showCalendar && (
+              <Box
+                component={motion.div}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                layout
+              >
+                <CalendarView 
+                  availableSlots={[
+                    { date: '2024-03-19', time: '15:00' },
+                    { date: '2024-03-20', time: '13:00' }
+                  ]}
+                  onSelectSlot={handleSlotSelect}
+                />
+              </Box>
+            )}
 
-          {showProfessionals && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <ProfessionalsView
-                professionals={[
-                  { id: 1, name: 'Júlio', avatar: '/julio.jpg', rating: 4.8 },
-                  { id: 2, name: 'Carlos', avatar: '/carlos.jpg', rating: 4.9 }
-                ]}
-                onSelectProfessional={(professional) => {
-                  setSelectedProfessional(professional);
-                  setUserInput(`Quero agendar com ${professional.name}`);
-                }}
-              />
-            </motion.div>
-          )}
+            {showProfessionals && (
+              <Box
+                component={motion.div}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                layout
+              >
+                <ProfessionalsView
+                  professionals={[
+                    { id: 1, name: 'Júlio', avatar: '/julio.jpg', rating: 4.8 },
+                    { id: 2, name: 'Carlos', avatar: '/carlos.jpg', rating: 4.9 }
+                  ]}
+                  onSelectProfessional={handleProfessionalSelect}
+                />
+              </Box>
+            )}
 
-          {showConfirmation && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-            >
-              <BookingConfirmation
-                slot={selectedSlot}
-                professional={selectedProfessional}
-                service="Corte Masculino"
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {showConfirmation && (
+              <Box
+                component={motion.div}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                layout
+              >
+                <BookingConfirmation
+                  slot={selectedSlot}
+                  professional={selectedProfessional}
+                  service="Corte Masculino"
+                />
+              </Box>
+            )}
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

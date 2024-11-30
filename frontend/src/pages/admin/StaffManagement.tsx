@@ -31,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import api from '../../services/api';
+import { ChangeEvent } from 'react';
 
 interface StaffMember {
   id: number;
@@ -98,6 +99,34 @@ const StaffManagement = () => {
     }
   };
 
+  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSelectedMember(prev => 
+      prev ? {...prev, name: e.target.value} : null
+    );
+  };
+
+  const handleStatusChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSelectedMember(prev =>
+      prev ? {...prev, is_active: e.target.checked} : null
+    );
+  };
+
+  const handlePermissionChange = (key: string) => (e: ChangeEvent<HTMLInputElement>) => {
+    setSelectedMember(prev =>
+      prev ? {
+        ...prev,
+        custom_permissions: {
+          ...prev.custom_permissions,
+          [key]: e.target.checked
+        }
+      } : null
+    );
+  };
+
   return (
     <Container maxWidth="lg">
       <Paper sx={{ p: 3, mt: 2 }}>
@@ -105,7 +134,7 @@ const StaffManagement = () => {
           Gerenciamento de Equipe Staff
         </Typography>
 
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+        <Tabs value={tabValue} onChange={handleTabChange}>
           <Tab label="Membros" />
           <Tab label="Atividades" />
         </Tabs>
@@ -196,15 +225,13 @@ const StaffManagement = () => {
           <DialogTitle>
             Editar Membro da Equipe
           </DialogTitle>
-          <form onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={handleSubmit}>
             <DialogContent>
               <TextField
                 fullWidth
                 label="Nome"
                 value={selectedMember?.name || ''}
-                onChange={(e) => setSelectedMember(prev => 
-                  prev ? {...prev, name: e.target.value} : null
-                )}
+                onChange={handleNameChange}
                 margin="normal"
               />
               
@@ -212,9 +239,7 @@ const StaffManagement = () => {
                 control={
                   <Switch
                     checked={selectedMember?.is_active || false}
-                    onChange={(e) => setSelectedMember(prev =>
-                      prev ? {...prev, is_active: e.target.checked} : null
-                    )}
+                    onChange={handleStatusChange}
                   />
                 }
                 label="Ativo"
@@ -231,15 +256,7 @@ const StaffManagement = () => {
                     control={
                       <Switch
                         checked={value}
-                        onChange={(e) => setSelectedMember(prev =>
-                          prev ? {
-                            ...prev,
-                            custom_permissions: {
-                              ...prev.custom_permissions,
-                              [key]: e.target.checked
-                            }
-                          } : null
-                        )}
+                        onChange={handlePermissionChange(key)}
                       />
                     }
                     label={key}
@@ -255,7 +272,7 @@ const StaffManagement = () => {
                 Salvar
               </Button>
             </DialogActions>
-          </form>
+          </Box>
         </Dialog>
 
         <Dialog 

@@ -1,5 +1,5 @@
 // frontend/src/pages/admin/Reports.tsx
-import { useState } from 'react';
+import { useState, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -93,6 +93,18 @@ const Reports = () => {
     }
   };
 
+  const handleStartDateChange = (newValue: Date | null) => {
+    setStartDate(newValue);
+  };
+
+  const handleEndDateChange = (newValue: Date | null) => {
+    setEndDate(newValue);
+  };
+
+  const handleReportTypeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setReportType(e.target.value);
+  };
+
   return (
     <Container maxWidth="lg">
       <Paper sx={{ p: 3, mt: 2 }}>
@@ -111,14 +123,14 @@ const Reports = () => {
             <DatePicker
               label="Data Inicial"
               value={startDate}
-              onChange={(newValue) => setStartDate(newValue)}
+              onChange={handleStartDateChange}
             />
           </Grid>
           <Grid item xs={12} md={4}>
             <DatePicker
               label="Data Final"
               value={endDate}
-              onChange={(newValue) => setEndDate(newValue)}
+              onChange={handleEndDateChange}
             />
           </Grid>
           <Grid item xs={12} md={4}>
@@ -127,7 +139,7 @@ const Reports = () => {
               fullWidth
               label="Tipo de Relatório"
               value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
+              onChange={handleReportTypeChange}
             >
               <MenuItem value="agendamentos">Agendamentos</MenuItem>
               <MenuItem value="clientes">Clientes</MenuItem>
@@ -201,16 +213,24 @@ const Reports = () => {
                   <Typography variant="h6" gutterBottom>
                     Serviços Mais Populares
                   </Typography>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={analytics.servicos_populares}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="servico__nome_servico" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="total" fill="#8884d8" name="Quantidade" />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <Box sx={{ width: '100%', height: 300 }}>
+                    <Box sx={{ width: '100%', height: '100%' }}>
+                      {analytics?.servicos_populares && (
+                        <BarChart
+                          width={500}
+                          height={300}
+                          data={analytics.servicos_populares}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="servico__nome_servico" />
+                          <YAxis />
+                          <Tooltip />
+                          <Legend />
+                          <Bar dataKey="total" fill="#8884d8" name="Quantidade" />
+                        </BarChart>
+                      )}
+                    </Box>
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>

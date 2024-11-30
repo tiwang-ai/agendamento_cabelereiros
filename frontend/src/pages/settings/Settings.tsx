@@ -1,5 +1,5 @@
 // src/pages/settings/Settings.tsx
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -44,10 +44,17 @@ const Settings = () => {
     setTabValue(newValue);
   };
 
-  const handleSettingChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSettingChange = (setting: string) => (event: ChangeEvent<HTMLInputElement>) => {
     setSettings(prev => ({
       ...prev,
       [setting]: event.target.checked
+    }));
+  };
+
+  const handleProfileChange = (field: keyof typeof profile) => (e: ChangeEvent<HTMLInputElement>) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: e.target.value
     }));
   };
 
@@ -97,7 +104,7 @@ const Settings = () => {
                     fullWidth
                     label="Nome"
                     value={profile.name}
-                    onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                    onChange={handleProfileChange('name')}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -113,7 +120,7 @@ const Settings = () => {
                     fullWidth
                     label="Telefone"
                     value={profile.phone}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                    onChange={handleProfileChange('phone')}
                   />
                 </Grid>
                 
@@ -129,7 +136,7 @@ const Settings = () => {
                     type="password"
                     label="Senha Atual"
                     value={profile.currentPassword}
-                    onChange={(e) => setProfile({ ...profile, currentPassword: e.target.value })}
+                    onChange={handleProfileChange('currentPassword')}
                   />
                 </Grid>
                 
@@ -139,7 +146,7 @@ const Settings = () => {
                     type="password"
                     label="Nova Senha"
                     value={profile.newPassword}
-                    onChange={(e) => setProfile({ ...profile, newPassword: e.target.value })}
+                    onChange={handleProfileChange('newPassword')}
                   />
                 </Grid>
                 
@@ -149,7 +156,7 @@ const Settings = () => {
                     type="password"
                     label="Confirmar Nova Senha"
                     value={profile.confirmPassword}
-                    onChange={(e) => setProfile({ ...profile, confirmPassword: e.target.value })}
+                    onChange={handleProfileChange('confirmPassword')}
                   />
                 </Grid>
                 

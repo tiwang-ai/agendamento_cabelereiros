@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import api from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import { ChangeEvent, FormEvent } from 'react';
 
 interface Professional {
   id: number;
@@ -192,7 +193,7 @@ const Professionals = () => {
           <DialogTitle>
             {selectedProfessional ? 'Editar Profissional' : 'Novo Profissional'}
           </DialogTitle>
-          <form onSubmit={handleSubmit}>
+          <Box component="form" onSubmit={handleSubmit}>
             <DialogContent>
               {error && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -203,7 +204,7 @@ const Professionals = () => {
                 fullWidth
                 label="Nome"
                 value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, nome: e.target.value })}
                 required
                 margin="normal"
               />
@@ -211,7 +212,7 @@ const Professionals = () => {
                 fullWidth
                 label="Especialidade"
                 value={formData.especialidade}
-                onChange={(e) => setFormData({ ...formData, especialidade: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, especialidade: e.target.value })}
                 required
                 margin="normal"
               />
@@ -219,7 +220,7 @@ const Professionals = () => {
                 fullWidth
                 label="Telefone"
                 value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, telefone: e.target.value })}
                 required
                 margin="normal"
               />
@@ -234,7 +235,7 @@ const Professionals = () => {
                 {loading ? 'Salvando...' : 'Salvar'}
               </Button>
             </DialogActions>
-          </form>
+          </Box>
         </Dialog>
       </Paper>
     </Container>

@@ -1,5 +1,5 @@
 // frontend/src/pages/management/Clients.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import {
   Container,
   Paper,
@@ -131,7 +131,7 @@ const Clients = () => {
     setError(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       const clientData = {
@@ -182,6 +182,30 @@ const Clients = () => {
     setOpenHistoryDialog(true);
   };
 
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, nome: e.target.value });
+  };
+
+  const handleWhatsAppChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, whatsapp: e.target.value });
+  };
+
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, email: e.target.value });
+  };
+
+  const handleProfissionalChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, profissional_id: e.target.value });
+  };
+
+  const handleObservacoesChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, observacoes: e.target.value });
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -214,7 +238,7 @@ const Clients = () => {
               fullWidth
               placeholder="Buscar por nome, telefone ou email..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={handleSearchChange}
               sx={{ mb: 3 }}
               InputProps={{
                 startAdornment: (
@@ -305,13 +329,13 @@ const Clients = () => {
               <DialogTitle>
                 {selectedClient ? 'Editar Cliente' : 'Novo Cliente'}
               </DialogTitle>
-              <form onSubmit={handleSubmit}>
+              <Box component="form" onSubmit={handleSubmit}>
                 <DialogContent>
                   <TextField
                     fullWidth
                     label="Nome"
                     value={formData.nome}
-                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                    onChange={handleNameChange}
                     required
                     margin="normal"
                   />
@@ -319,7 +343,7 @@ const Clients = () => {
                     fullWidth
                     label="WhatsApp"
                     value={formData.whatsapp}
-                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    onChange={handleWhatsAppChange}
                     required
                     margin="normal"
                   />
@@ -328,18 +352,20 @@ const Clients = () => {
                     label="Email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={handleEmailChange}
                     margin="normal"
                   />
                   <FormControl fullWidth margin="normal">
                     <InputLabel>Profissional Responsável</InputLabel>
                     <Select
                       value={formData.profissional_id}
-                      onChange={(e) => setFormData({ ...formData, profissional_id: e.target.value })}
+                      onChange={handleProfissionalChange}
                       label="Profissional Responsável"
                     >
                       <MenuItem value="">
-                        <em>Nenhum</em>
+                        <Typography variant="body2" color="textSecondary">
+                          Nenhum
+                        </Typography>
                       </MenuItem>
                       {professionals.map((prof) => (
                         <MenuItem key={prof.id} value={prof.id}>
@@ -354,7 +380,7 @@ const Clients = () => {
                     multiline
                     rows={4}
                     value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                    onChange={handleObservacoesChange}
                     margin="normal"
                   />
                 </DialogContent>
@@ -364,7 +390,7 @@ const Clients = () => {
                     Salvar
                   </Button>
                 </DialogActions>
-              </form>
+              </Box>
             </Dialog>
 
             <Dialog 

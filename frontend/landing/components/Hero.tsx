@@ -1,7 +1,9 @@
 // frontend/landing/components/Hero.tsx
 import { Box, Container, Typography, Button, useTheme } from '@mui/material';
-import WhatsAppDemo from './Demo/WhatsAppDemo';
+import { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
+
+const WhatsAppDemo = lazy(() => import('./Demo/WhatsAppDemo'));
 
 const Hero = () => {
   const theme = useTheme();
@@ -79,10 +81,13 @@ const Hero = () => {
               width: { xs: '100%', md: 'auto' },
               maxWidth: '400px'
             }}>
-              <WhatsAppDemo />
+              <Suspense fallback={<div>Loading...</div>}>
+                <WhatsAppDemo />
+              </Suspense>
             </Box>
 
             <Box 
+              component={AnimatePresence}
               sx={{ 
                 position: 'absolute',
                 right: { xs: '-50%', md: '-70%' },
@@ -91,9 +96,7 @@ const Hero = () => {
                 pointerEvents: 'none'
               }}
             >
-              <AnimatePresence>
-                {/* Componentes dinâmicos aqui */}
-              </AnimatePresence>
+              {/* Componentes dinâmicos aqui */}
             </Box>
           </Box>
         </Box>

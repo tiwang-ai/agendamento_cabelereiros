@@ -1,5 +1,5 @@
 // frontend/src/pages/admin/BotConfig.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import {
     Container,
     Paper,
@@ -63,6 +63,10 @@ const BotConfig = () => {
         }
     };
 
+    const handleWhatsAppChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setConfig({ ...config, support_whatsapp: e.target.value });
+    };
+
     return (
         <Container maxWidth="sm">
             <Paper sx={{ p: 3, mt: 4 }}>
@@ -80,7 +84,7 @@ const BotConfig = () => {
                     <TextField
                         label="WhatsApp de Suporte"
                         value={config.support_whatsapp}
-                        onChange={(e) => setConfig({ ...config, support_whatsapp: e.target.value })}
+                        onChange={handleWhatsAppChange}
                         helperText="Formato: 5511999999999"
                         disabled={loading}
                     />

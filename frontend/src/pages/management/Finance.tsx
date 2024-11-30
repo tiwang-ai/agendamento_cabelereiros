@@ -23,6 +23,7 @@ import {
   Receipt as ReceiptIcon
 } from '@mui/icons-material';
 import { FinanceService } from '../../services/finance';
+import { Box as MuiBox } from '@mui/material';
 
 interface SalonStats {
   totalRevenue: number;
@@ -88,7 +89,7 @@ const SalonFinance = () => {
   );
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <MuiBox>Carregando...</MuiBox>;
   }
 
   return (

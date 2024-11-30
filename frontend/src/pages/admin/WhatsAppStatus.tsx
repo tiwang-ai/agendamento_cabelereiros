@@ -17,7 +17,7 @@ import {
   Box,
   CircularProgress
 } from '@mui/material';
-import { QRCodeSVG } from 'qrcode.react';
+import QRCode from 'qrcode.react';
 import { WhatsAppService } from '../../services/whatsapp';
 
 interface SalonStatus {
@@ -155,7 +155,7 @@ const WhatsAppStatus = () => {
                         bgcolor: '#fff',
                         boxShadow: 1
                       }}>
-                        <QRCodeSVG value={connectionData.code} size={256} />
+                        <QRCode value={connectionData.code} size={256} />
                       </Box>
                       <Typography variant="body2" color="text.secondary" align="center">
                         Abra o WhatsApp no seu celular e escaneie o QR Code

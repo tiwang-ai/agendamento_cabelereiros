@@ -1,5 +1,5 @@
 // frontend/src/pages/professional/Profile.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -62,7 +62,7 @@ const Profile = () => {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -76,6 +76,10 @@ const Profile = () => {
     } catch (error) {
       setError('Erro ao atualizar foto');
     }
+  };
+
+  const handleInputChange = (field: keyof typeof formData) => (e: ChangeEvent<HTMLInputElement>) => {
+    setProfileData(prev => ({ ...prev, [field]: e.target.value }));
   };
 
   return (
@@ -101,7 +105,8 @@ const Profile = () => {
                 sx={{ mb: 2 }}
               >
                 Alterar Foto
-                <input
+                <Box
+                  component="input"
                   type="file"
                   hidden
                   accept="image/*"
@@ -112,14 +117,14 @@ const Profile = () => {
           </Grid>
 
           <Grid item xs={12} md={8}>
-            <form onSubmit={handleSubmit}>
+            <Box component="form" onSubmit={handleSubmit}>
               <Grid container spacing={2}>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
                     label="Nome"
                     value={profileData.nome}
-                    onChange={(e) => setProfileData({ ...profileData, nome: e.target.value })}
+                    onChange={handleInputChange('nome')}
                     required
                   />
                 </Grid>
@@ -128,7 +133,7 @@ const Profile = () => {
                     fullWidth
                     label="Especialidade"
                     value={profileData.especialidade}
-                    onChange={(e) => setProfileData({ ...profileData, especialidade: e.target.value })}
+                    onChange={handleInputChange('especialidade')}
                     required
                   />
                 </Grid>
@@ -137,7 +142,7 @@ const Profile = () => {
                     fullWidth
                     label="Telefone"
                     value={profileData.telefone}
-                    onChange={(e) => setProfileData({ ...profileData, telefone: e.target.value })}
+                    onChange={handleInputChange('telefone')}
                     required
                   />
                 </Grid>
@@ -148,7 +153,7 @@ const Profile = () => {
                     multiline
                     rows={4}
                     value={profileData.bio}
-                    onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
+                    onChange={handleInputChange('bio')}
                   />
                 </Grid>
                 <Grid item xs={12}>
@@ -161,7 +166,7 @@ const Profile = () => {
                   </Button>
                 </Grid>
               </Grid>
-            </form>
+            </Box>
           </Grid>
         </Grid>
       </Paper>

@@ -27,12 +27,19 @@ interface ConnectionData {
   count?: number;
 }
 
-const TabPanel = (props: TabPanelProps) => {
+const TabPanel = (props: TabPanelProps): JSX.Element => {
   const { children, value, index, ...other } = props;
+
   return (
-    <div hidden={value !== index} {...other}>
+    <Box
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      aria-labelledby={`tab-${index}`}
+      {...other}
+    >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
+    </Box>
   );
 };
 
@@ -84,6 +91,10 @@ const WhatsAppConnection = () => {
     }
   };
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   return (
     <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -107,137 +118,130 @@ const WhatsAppConnection = () => {
           </Fade>
         )}
 
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
-          <Tab label="QR Code" />
-          <Tab label="Código" />
-        </Tabs>
+        <Box>
+          <Tabs value={tabValue} onChange={handleTabChange}>
+            <Tab label="QR Code" />
+            <Tab label="Código" />
+          </Tabs>
 
-        <TabPanel value={tabValue} index={0}>
-          <Box sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            gap: 2,
-            minHeight: 400 
-          }}>
-            {isLoading ? (
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: 2,
-                mt: 4 
-              }}>
-                <CircularProgress />
-                <Typography color="text.secondary">
-                  Gerando QR Code...
-                </Typography>
+          <Box role="tabpanel" hidden={tabValue !== 0}>
+            {tabValue === 0 && (
+              <Box sx={{ p: 3 }}>
+                {isLoading ? (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    mt: 4 
+                  }}>
+                    <CircularProgress />
+                    <Typography color="text.secondary">
+                      Gerando QR Code...
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Fade in={true}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      gap: 3 
+                    }}>
+                      {connectionData?.code ? (
+                        <>
+                          <Box sx={{ 
+                            p: 3, 
+                            border: '1px solid #ddd', 
+                            borderRadius: 2,
+                            bgcolor: '#fff',
+                            boxShadow: 1
+                          }}>
+                            <QRCodeSVG value={connectionData.code} size={256} />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" align="center">
+                            Abra o WhatsApp no seu celular e escaneie o QR Code
+                          </Typography>
+                          <Button
+                            variant="outlined"
+                            onClick={handleGeneratePairingCode}
+                            sx={{ mt: 2 }}
+                          >
+                            Gerar Novo QR Code
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={handleGeneratePairingCode}
+                          disabled={isLoading}
+                          sx={{ mt: 4 }}
+                        >
+                          Gerar QR Code
+                        </Button>
+                      )}
+                    </Box>
+                  </Fade>
+                )}
               </Box>
-            ) : (
-              <Fade in={true}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  gap: 3 
-                }}>
-                  {connectionData?.code ? (
-                    <>
-                      <Box sx={{ 
-                        p: 3, 
-                        border: '1px solid #ddd', 
-                        borderRadius: 2,
-                        bgcolor: '#fff',
-                        boxShadow: 1
-                      }}>
-                        <QRCodeSVG value={connectionData.code} size={256} />
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" align="center">
-                        Abra o WhatsApp no seu celular e escaneie o QR Code
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        onClick={handleGeneratePairingCode}
-                        sx={{ mt: 2 }}
-                      >
-                        Gerar Novo QR Code
-                      </Button>
-                    </>
-                  ) : (
+            )}
+          </Box>
+
+          <Box role="tabpanel" hidden={tabValue !== 1}>
+            {tabValue === 1 && (
+              <Box sx={{ p: 3 }}>
+                {isLoading ? (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: 2,
+                    mt: 4 
+                  }}>
+                    <CircularProgress />
+                    <Typography color="text.secondary">
+                      Gerando código de pareamento...
+                    </Typography>
+                  </Box>
+                ) : connectionData?.pairingCode ? (
+                  <>
+                    <Typography variant="h4" sx={{ letterSpacing: 2 }}>
+                      {connectionData.pairingCode}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" align="center">
+                      Abra o WhatsApp no seu celular e digite este código em Configurações {'>'} Dispositivos Conectados
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      onClick={handleGeneratePairingCode}
+                      sx={{ mt: 2 }}
+                    >
+                      Gerar Novo Código
+                    </Button>
+                  </>
+                ) : (
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: 2 
+                  }}>
+                    <Typography variant="body1" color="text.secondary" align="center">
+                      Clique no botão abaixo para gerar um código de pareamento
+                    </Typography>
                     <Button
                       variant="contained"
                       onClick={handleGeneratePairingCode}
                       disabled={isLoading}
-                      sx={{ mt: 4 }}
                     >
-                      Gerar QR Code
+                      Gerar Código de Pareamento
                     </Button>
-                  )}
-                </Box>
-              </Fade>
-            )}
-          </Box>
-        </TabPanel>
-
-        <TabPanel value={tabValue} index={1}>
-          <Box sx={{ 
-            p: 2, 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            gap: 2,
-            minHeight: 400
-          }}>
-            {isLoading ? (
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: 2,
-                mt: 4 
-              }}>
-                <CircularProgress />
-                <Typography color="text.secondary">
-                  Gerando código de pareamento...
-                </Typography>
-              </Box>
-            ) : connectionData?.pairingCode ? (
-              <>
-                <Typography variant="h4" sx={{ letterSpacing: 2 }}>
-                  {connectionData.pairingCode}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" align="center">
-                  Abra o WhatsApp no seu celular e digite este código em Configurações {'>'} Dispositivos Conectados
-                </Typography>
-                <Button
-                  variant="outlined"
-                  onClick={handleGeneratePairingCode}
-                  sx={{ mt: 2 }}
-                >
-                  Gerar Novo Código
-                </Button>
-              </>
-            ) : (
-              <Box sx={{ 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                gap: 2 
-              }}>
-                <Typography variant="body1" color="text.secondary" align="center">
-                  Clique no botão abaixo para gerar um código de pareamento
-                </Typography>
-                <Button
-                  variant="contained"
-                  onClick={handleGeneratePairingCode}
-                  disabled={isLoading}
-                >
-                  Gerar Código de Pareamento
-                </Button>
+                  </Box>
+                )}
               </Box>
             )}
           </Box>
-        </TabPanel>
+        </Box>
       </Paper>
     </Box>
   );

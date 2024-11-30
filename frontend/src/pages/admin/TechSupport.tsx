@@ -65,9 +65,13 @@ interface SystemMetrics {
 const TabPanel = (props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
   return (
-    <div hidden={value !== index} {...other}>
+    <Box
+      role="tabpanel"
+      hidden={value !== index}
+      {...other}
+    >
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
-    </div>
+    </Box>
   );
 };
 
@@ -101,6 +105,10 @@ const TechSupport = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   return (
     <Container maxWidth="lg">
       <Paper sx={{ p: 3, mt: 2 }}>
@@ -123,7 +131,7 @@ const TechSupport = () => {
           </Box>
         ) : (
           <>
-            <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)}>
+            <Tabs value={tabValue} onChange={handleTabChange}>
               <Tab label="Logs do Sistema" />
               <Tab label="Métricas" />
               <Tab label="Status dos Serviços" />

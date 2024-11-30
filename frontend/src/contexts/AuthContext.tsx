@@ -1,5 +1,5 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, JSXElementConstructor, ReactElement, ElementType, FC, PropsWithChildren, Component } from 'react';
 import { User, UserRole } from '../types/auth';
 import api from '../services/api';
 
@@ -12,9 +12,26 @@ interface AuthContextType {
   role: UserRole | null;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const defaultContext: AuthContextType = {
+  user: null,
+  loading: true,
+  isAuthenticated: false,
+  login: async () => {
+    throw new Error('login não implementado');
+  },
+  logout: () => {
+    throw new Error('logout não implementado');
+  },
+  role: null
+};
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+const AuthContext = createContext<AuthContextType>(defaultContext);
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps): ReactElement => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<UserRole | null>(null);
@@ -75,23 +92,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
   };
 
-  return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      isAuthenticated: !!user,
-      login, 
-      logout,
-      role
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+  const contextValue: AuthContextType = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    role
+  };
 
-export function useAuth() {
+  return (
+    <Box component={AuthContext.Provider} value={contextValue}>
+      {children}
+    </Box>
+  );
+};
+
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   }
   return context;

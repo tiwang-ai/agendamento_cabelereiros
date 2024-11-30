@@ -16,57 +16,34 @@ interface FeatureProps {
   description: string;
 }
 
-const Feature = ({ icon, title, description }: FeatureProps) => (
-  <Paper
-    sx={{
-      p: 4,
-      height: '100%',
-      transition: 'transform 0.2s',
-      '&:hover': {
-        transform: 'translateY(-8px)'
-      }
-    }}
-  >
-    <Box sx={{ color: 'primary.main', mb: 2 }}>
-      {icon}
-    </Box>
-    <Typography variant="h5" gutterBottom>
-      {title}
-    </Typography>
-    <Typography color="text.secondary">
-      {description}
-    </Typography>
-  </Paper>
-);
-
 const features: FeatureProps[] = [
   {
-    icon: <AutoAwesome sx={{ fontSize: 40 }} />,
+    icon: <AutoAwesome fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'Atendimento Inteligente',
     description: 'IA que entende e responde naturalmente, como um assistente real'
   },
   {
-    icon: <Schedule sx={{ fontSize: 40 }} />,
+    icon: <Schedule fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'Agendamento 24/7',
     description: 'Seus clientes podem agendar a qualquer momento, sem intervenção humana'
   },
   {
-    icon: <WhatsApp sx={{ fontSize: 40 }} />,
+    icon: <WhatsApp fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'Integração WhatsApp',
     description: 'Comunicação direta pelo app mais usado pelos brasileiros'
   },
   {
-    icon: <Analytics sx={{ fontSize: 40 }} />,
+    icon: <Analytics fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'Análises Detalhadas',
     description: 'Acompanhe métricas e crescimento do seu negócio'
   },
   {
-    icon: <Psychology sx={{ fontSize: 40 }} />,
+    icon: <Psychology fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'IA Personalizada',
     description: 'Bot que aprende o perfil do seu salão e clientes'
   },
   {
-    icon: <Payments sx={{ fontSize: 40 }} />,
+    icon: <Payments fontSize="large" sx={{ fontSize: 40 }} />,
     title: 'Gestão Financeira',
     description: 'Controle completo de agendamentos e faturamento'
   }
@@ -88,7 +65,26 @@ const Features = () => {
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>
-              <Feature {...feature} />
+              <Paper
+                sx={{
+                  p: 4,
+                  height: '100%',
+                  transition: 'transform 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-8px)'
+                  }
+                }}
+              >
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  {feature.icon}
+                </Box>
+                <Typography variant="h5" gutterBottom>
+                  {feature.title}
+                </Typography>
+                <Typography color="text.secondary">
+                  {feature.description}
+                </Typography>
+              </Paper>
             </Grid>
           ))}
         </Grid>

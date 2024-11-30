@@ -21,7 +21,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Select
+  Select,
+  SelectChangeEvent
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -48,6 +49,13 @@ interface FinanceStats {
   monthlyRevenue: number;
   pendingPayments: number;
   activeSubscriptions: number;
+}
+
+interface DatePickerChangeEvent {
+  $d?: Date;
+  $y?: number;
+  $M?: number;
+  $D?: number;
 }
 
 const Finance = () => {
@@ -129,8 +137,36 @@ const Finance = () => {
   );
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return <Box>Carregando...</Box>;
   }
+
+  const handleDateStartChange = (newValue: DatePickerChangeEvent | null) => {
+    setDateRange(prev => ({ 
+      ...prev, 
+      start: newValue?.$d || new Date() 
+    }));
+  };
+
+  const handleDateEndChange = (newValue: DatePickerChangeEvent | null) => {
+    setDateRange(prev => ({ 
+      ...prev, 
+      end: newValue?.$d || new Date() 
+    }));
+  };
+
+  const handleTypeChange = (e: SelectChangeEvent<string>) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      type: e.target.value 
+    }));
+  };
+
+  const handleStatusChange = (e: SelectChangeEvent<string>) => {
+    setFilters(prev => ({ 
+      ...prev, 
+      status: e.target.value 
+    }));
+  };
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -180,14 +216,14 @@ const Finance = () => {
                 <DatePicker 
                   label="Data Inicial"
                   value={dateRange.start}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, start: newValue || new Date() }))}
+                  onChange={handleDateStartChange}
                 />
               </Grid>
               <Grid item xs={12} md={3}>
                 <DatePicker 
                   label="Data Final"
                   value={dateRange.end}
-                  onChange={(newValue) => setDateRange(prev => ({ ...prev, end: newValue || new Date() }))}
+                  onChange={handleDateEndChange}
                 />
               </Grid>
               <Grid item xs={12} md={2}>
@@ -196,7 +232,7 @@ const Finance = () => {
                   <Select
                     value={filters.type}
                     label="Tipo"
-                    onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+                    onChange={handleTypeChange}
                   >
                     <MenuItem value="all">Todos</MenuItem>
                     <MenuItem value="income">Receita</MenuItem>
@@ -210,7 +246,7 @@ const Finance = () => {
                   <Select
                     value={filters.status}
                     label="Status"
-                    onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                    onChange={handleStatusChange}
                   >
                     <MenuItem value="all">Todos</MenuItem>
                     <MenuItem value="completed">Concluído</MenuItem>

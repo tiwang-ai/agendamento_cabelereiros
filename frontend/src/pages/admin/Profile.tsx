@@ -1,5 +1,5 @@
 // frontend/src/pages/admin/Profile.tsx
-import { useState } from 'react';
+import { useState, ChangeEvent, FormEvent } from 'react';
 import {
   Container,
   Paper,
@@ -25,7 +25,42 @@ const AdminProfile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      name: e.target.value
+    }));
+  };
+
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      email: e.target.value
+    }));
+  };
+
+  const handlePhoneChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      phone: e.target.value
+    }));
+  };
+
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      password: e.target.value
+    }));
+  };
+
+  const handleConfirmPasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      confirmPassword: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
       await api.put('/api/users/profile/', formData);
@@ -52,7 +87,7 @@ const AdminProfile = () => {
                 fullWidth
                 label="Nome"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={handleNameChange}
                 required
               />
             </Grid>
@@ -62,7 +97,7 @@ const AdminProfile = () => {
                 label="Email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleEmailChange}
                 required
               />
             </Grid>
@@ -72,7 +107,7 @@ const AdminProfile = () => {
                 label="Senha Atual"
                 type="password"
                 value={formData.currentPassword}
-                onChange={(e) => setFormData({ ...formData, currentPassword: e.target.value })}
+                onChange={handlePasswordChange}
               />
             </Grid>
             <Grid item xs={12}>
@@ -81,7 +116,7 @@ const AdminProfile = () => {
                 label="Nova Senha"
                 type="password"
                 value={formData.newPassword}
-                onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                onChange={handlePasswordChange}
               />
             </Grid>
             <Grid item xs={12}>
@@ -90,7 +125,7 @@ const AdminProfile = () => {
                 label="Confirmar Nova Senha"
                 type="password"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={handleConfirmPasswordChange}
               />
             </Grid>
             <Grid item xs={12}>
