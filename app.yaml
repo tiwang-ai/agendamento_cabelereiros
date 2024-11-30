@@ -33,7 +33,7 @@ services:
       repo: seu-usuario/seu-repo
     source_dir: 'frontend'
     build_command: |
-      npm install
+      npm ci
       npm run build:do
     environment_slug: node-js
     output_dir: dist
@@ -43,6 +43,8 @@ services:
     envs:
       - key: VITE_API_URL
         value: ${_self.HOSTNAME}/api
+      - key: NODE_ENV
+        value: production
 
 # Workers para processamento assíncrono
 workers:
