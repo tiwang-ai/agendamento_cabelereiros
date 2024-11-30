@@ -1,49 +1,73 @@
 // frontend/landing/components/Features.tsx
 import React from 'react';
-import { Box, Container, Grid, Paper, Typography } from '@mui/material';
+import { Box, Container, Grid, Paper, Typography, Icon } from '@mui/material';
 import { 
   AutoAwesome, 
   Schedule, 
   WhatsApp, 
   Analytics,
   Psychology,
-  Payments
+  Payments,
+  SvgIconComponent
 } from '@mui/icons-material';
 
 interface FeatureProps {
-  icon: React.ReactNode;
+  icon: SvgIconComponent;
   title: string;
   description: string;
 }
 
+const Feature = ({ icon: IconComponent, title, description }: FeatureProps) => (
+  <Paper
+    sx={{
+      p: 4,
+      height: '100%',
+      transition: 'transform 0.2s',
+      '&:hover': {
+        transform: 'translateY(-8px)'
+      }
+    }}
+  >
+    <Box sx={{ color: 'primary.main', mb: 2 }}>
+      <IconComponent sx={{ fontSize: 40 }} />
+    </Box>
+    <Typography variant="h5" gutterBottom>
+      {title}
+    </Typography>
+    <Typography color="text.secondary">
+      {description}
+    </Typography>
+  </Paper>
+);
+
 const features: FeatureProps[] = [
   {
-    icon: <AutoAwesome fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: AutoAwesome,
     title: 'Atendimento Inteligente',
     description: 'IA que entende e responde naturalmente, como um assistente real'
   },
   {
-    icon: <Schedule fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: Schedule,
     title: 'Agendamento 24/7',
     description: 'Seus clientes podem agendar a qualquer momento, sem intervenção humana'
   },
   {
-    icon: <WhatsApp fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: WhatsApp,
     title: 'Integração WhatsApp',
     description: 'Comunicação direta pelo app mais usado pelos brasileiros'
   },
   {
-    icon: <Analytics fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: Analytics,
     title: 'Análises Detalhadas',
     description: 'Acompanhe métricas e crescimento do seu negócio'
   },
   {
-    icon: <Psychology fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: Psychology,
     title: 'IA Personalizada',
     description: 'Bot que aprende o perfil do seu salão e clientes'
   },
   {
-    icon: <Payments fontSize="large" sx={{ fontSize: 40 }} />,
+    icon: Payments,
     title: 'Gestão Financeira',
     description: 'Controle completo de agendamentos e faturamento'
   }
@@ -65,26 +89,11 @@ const Features = () => {
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>
-              <Paper
-                sx={{
-                  p: 4,
-                  height: '100%',
-                  transition: 'transform 0.2s',
-                  '&:hover': {
-                    transform: 'translateY(-8px)'
-                  }
-                }}
-              >
-                <Box sx={{ color: 'primary.main', mb: 2 }}>
-                  {feature.icon}
-                </Box>
-                <Typography variant="h5" gutterBottom>
-                  {feature.title}
-                </Typography>
-                <Typography color="text.secondary">
-                  {feature.description}
-                </Typography>
-              </Paper>
+              <Feature
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+              />
             </Grid>
           ))}
         </Grid>

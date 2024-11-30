@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, JSXElementConstructor, ReactElement, ElementType, FC, PropsWithChildren, Component } from 'react';
 import { User, UserRole } from '../types/auth';
 import api from '../services/api';
+import { Box } from '@mui/material';
 
 interface AuthContextType {
   user: User | null;
@@ -31,7 +32,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps): ReactElement => {
+export const AuthProvider: FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [role, setRole] = useState<UserRole | null>(null);

@@ -26,6 +26,8 @@ import { SalonService } from '../../services/salons';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { WhatsAppService } from '../../services/whatsapp';
+import React from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 
 interface Salon {
   id: number;
@@ -163,16 +165,19 @@ const SalonsManagement = () => {
               {salons.map((salon) => (
                 <TableRow key={salon.id}>
                   <TableCell>
-                    <Link 
+                    <Box
+                      component={RouterLink}
                       to={`/admin/salons/${salon.id}`}
-                      style={{ 
+                      sx={{ 
                         textDecoration: 'none', 
                         color: 'primary.main',
-                        '&:hover': { textDecoration: 'underline' }
-                      } as React.CSSProperties}
+                        '&:hover': { 
+                          textDecoration: 'underline' 
+                        }
+                      }}
                     >
                       {salon.nome}
-                    </Link>
+                    </Box>
                   </TableCell>
                   <TableCell>{salon.endereco}</TableCell>
                   <TableCell>{salon.telefone}</TableCell>

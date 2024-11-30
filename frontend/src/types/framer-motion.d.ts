@@ -10,7 +10,15 @@ declare module 'framer-motion' {
     initial?: CSSProperties | object;
     animate?: CSSProperties | object;
     exit?: CSSProperties | object;
-    transition?: object;
+    whileHover?: CSSProperties | object;
+    whileTap?: CSSProperties | object;
+    transition?: {
+      type?: string;
+      stiffness?: number;
+      damping?: number;
+      mass?: number;
+      duration?: number;
+    };
     layout?: boolean | string;
     layoutId?: string;
     style?: CSSProperties;

@@ -163,6 +163,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── whatsapp.ts
 │   │   │   ├── onboarding.ts
 │   │   │   ├── global.d.ts
+│   │   │   ├── qrcode.d.ts
 │   │   │   ├── framer-motion.d.ts
 │   │   │   └── auth.ts
 │   │   ├── utils/         # Funções utilitárias

@@ -37,6 +37,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import api from '../../services/api';
+import { SelectChangeEvent } from '@mui/material/Select';
 
 interface Professional {
   id: number;
@@ -198,7 +199,7 @@ const Clients = () => {
     setFormData({ ...formData, email: e.target.value });
   };
 
-  const handleProfissionalChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleProfissionalChange = (e: SelectChangeEvent<string>) => {
     setFormData({ ...formData, profissional_id: e.target.value });
   };
 

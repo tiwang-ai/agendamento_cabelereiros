@@ -1,5 +1,5 @@
 // frontend/src/pages/settings/WhatsAppConnection.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactElement } from 'react';
 import {
   Box,
   Paper,
@@ -27,7 +27,7 @@ interface ConnectionData {
   count?: number;
 }
 
-const TabPanel = (props: TabPanelProps): JSX.Element => {
+const TabPanel = (props: TabPanelProps): ReactElement => {
   const { children, value, index, ...other } = props;
 
   return (
@@ -150,14 +150,13 @@ const WhatsAppConnection = () => {
                     }}>
                       {connectionData?.code ? (
                         <>
-                          <Box sx={{ 
-                            p: 3, 
-                            border: '1px solid #ddd', 
-                            borderRadius: 2,
-                            bgcolor: '#fff',
-                            boxShadow: 1
-                          }}>
-                            <QRCodeSVG value={connectionData.code} size={256} />
+                          <Box component="div">
+                            <Box
+                              component={QRCodeSVG}
+                              value={connectionData.code}
+                              size={256}
+                              style={{ display: 'block', margin: 'auto' }}
+                            />
                           </Box>
                           <Typography variant="body2" color="text.secondary" align="center">
                             Abra o WhatsApp no seu celular e escaneie o QR Code

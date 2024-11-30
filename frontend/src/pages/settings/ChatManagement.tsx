@@ -1,5 +1,5 @@
 // frontend/src/pages/settings/ChatManagement.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -48,9 +48,13 @@ const ChatManagement = () => {
     }
   };
 
-  const handleBotToggle = async (chatId: number, newStatus: boolean) => {
+  const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleBotToggle = async (chatId: number, checked: boolean) => {
     try {
-      await WhatsAppService.toggleBot(chatId, newStatus);
+      await WhatsAppService.toggleBot(chatId, checked);
       await loadChats();
     } catch (error) {
       console.error('Erro ao atualizar status do bot:', error);
@@ -72,7 +76,7 @@ const ChatManagement = () => {
           fullWidth
           placeholder="Buscar por número..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           sx={{ mb: 3 }}
           InputProps={{
             startAdornment: (
@@ -109,7 +113,7 @@ const ChatManagement = () => {
                     <TableCell>
                       <Switch
                         checked={chat.bot_ativo}
-                        onChange={(e) => handleBotToggle(chat.id, e.target.checked)}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => handleBotToggle(chat.id, e.target.checked)}
                       />
                     </TableCell>
                   </TableRow>

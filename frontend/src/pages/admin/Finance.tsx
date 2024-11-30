@@ -25,6 +25,7 @@ import {
   SelectChangeEvent
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
+import { Dayjs } from 'dayjs';
 import {
   AttachMoney as MoneyIcon,
   TrendingUp as TrendingUpIcon,
@@ -51,11 +52,9 @@ interface FinanceStats {
   activeSubscriptions: number;
 }
 
-interface DatePickerChangeEvent {
-  $d?: Date;
-  $y?: number;
-  $M?: number;
-  $D?: number;
+interface DateRange {
+  start: Dayjs | null;
+  end: Dayjs | null;
 }
 
 const Finance = () => {
@@ -63,9 +62,9 @@ const Finance = () => {
   const [stats, setStats] = useState<FinanceStats | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateRange, setDateRange] = useState({
-    start: new Date(),
-    end: new Date()
+  const [dateRange, setDateRange] = useState<DateRange>({
+    start: null,
+    end: null
   });
   const [filters, setFilters] = useState({
     type: 'all',
@@ -82,8 +81,8 @@ const Finance = () => {
       const [statsRes, transactionsRes] = await Promise.all([
         FinanceService.getAdminStats(),
         FinanceService.getAdminTransactions({
-          start_date: dateRange.start.toISOString(),
-          end_date: dateRange.end.toISOString(),
+          startDate: dateRange.start || undefined,
+          endDate: dateRange.end || undefined,
           type: filters.type !== 'all' ? filters.type : undefined,
           status: filters.status !== 'all' ? filters.status : undefined
         })
@@ -140,17 +139,17 @@ const Finance = () => {
     return <Box>Carregando...</Box>;
   }
 
-  const handleDateStartChange = (newValue: DatePickerChangeEvent | null) => {
+  const handleDateStartChange = (newValue: Dayjs | null) => {
     setDateRange(prev => ({ 
       ...prev, 
-      start: newValue?.$d || new Date() 
+      start: newValue
     }));
   };
 
-  const handleDateEndChange = (newValue: DatePickerChangeEvent | null) => {
+  const handleDateEndChange = (newValue: Dayjs | null) => {
     setDateRange(prev => ({ 
       ...prev, 
-      end: newValue?.$d || new Date() 
+      end: newValue
     }));
   };
 

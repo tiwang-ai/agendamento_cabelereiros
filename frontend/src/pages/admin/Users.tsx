@@ -1,5 +1,6 @@
 // src/pages/admin/Users.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
+import { SelectChangeEvent } from '@mui/material/Select';
 import {
   Container,
   Paper,
@@ -197,6 +198,22 @@ const UsersManagement = () => {
     );
   };
 
+  const handleTextFieldChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (e: SelectChangeEvent<string>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -268,28 +285,32 @@ const UsersManagement = () => {
               <TextField
                 fullWidth
                 label="Nome"
+                name="name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={handleTextFieldChange}
               />
               <TextField
                 fullWidth
                 label="Email"
+                name="email"
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={handleTextFieldChange}
               />
               <TextField
                 fullWidth
                 label="Telefone"
+                name="phone"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={handleTextFieldChange}
               />
               <FormControl fullWidth>
                 <InputLabel>Tipo de Usuário</InputLabel>
                 <Select
+                  name="role"
                   value={formData.role}
                   label="Tipo de Usuário"
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+                  onChange={handleSelectChange}
                 >
                   <MenuItem value={UserRole.ADMIN}>Administrador</MenuItem>
                   <MenuItem value={UserRole.OWNER}>Dono do Salão</MenuItem>
@@ -301,9 +322,10 @@ const UsersManagement = () => {
                 <FormControl fullWidth>
                   <InputLabel>Estabelecimento</InputLabel>
                   <Select
+                    name="estabelecimento_id"
                     value={formData.estabelecimento_id}
                     label="Estabelecimento"
-                    onChange={(e) => setFormData({ ...formData, estabelecimento_id: e.target.value })}
+                    onChange={handleSelectChange}
                   >
                     {establishments.map((est) => (
                       <MenuItem key={est.id} value={est.id}>
@@ -316,16 +338,18 @@ const UsersManagement = () => {
               <TextField
                 fullWidth
                 label="Senha"
+                name="password"
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                onChange={handleTextFieldChange}
               />
               <TextField
                 fullWidth
                 label="Confirmar Senha"
+                name="confirmPassword"
                 type="password"
                 value={formData.confirmPassword}
-                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                onChange={handleTextFieldChange}
               />
             </Box>
           </DialogContent>

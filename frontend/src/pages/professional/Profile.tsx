@@ -78,7 +78,7 @@ const Profile = () => {
     }
   };
 
-  const handleInputChange = (field: keyof typeof formData) => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (field: keyof ProfileData) => (e: ChangeEvent<HTMLInputElement>) => {
     setProfileData(prev => ({ ...prev, [field]: e.target.value }));
   };
 

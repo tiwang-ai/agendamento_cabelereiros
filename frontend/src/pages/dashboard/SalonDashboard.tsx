@@ -9,7 +9,8 @@ import {
   Card,
   CardContent,
   IconButton,
-  useTheme
+  useTheme,
+  CircularProgress
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -141,7 +142,11 @@ const SalonDashboard = () => {
   );
 
   if (loading) {
-    return <div>Carregando...</div>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   return (
