@@ -31,14 +31,12 @@ services:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: 'frontend' # Diretório do frontend
+    source_dir: 'frontend'
     build_command: |
       npm install
-      npm install -D eslint-plugin-unused-imports
-      npx eslint . --fix
-      npm run build
+      npm run build:do
     environment_slug: node-js
-    output_dir: dist # Diretório onde o Vite gera os arquivos estáticos
+    output_dir: dist
     routes:
       - path: /
     instance_size_slug: basic-xs
