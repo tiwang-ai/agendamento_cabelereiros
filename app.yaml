@@ -1,0 +1,85 @@
+name: agendamento-salao
+services:
+  # Componente Django Backend
+  - name: web
+    github:
+      branch: main
+      repo: seu-usuario/seu-repo
+    source_dir: "/"  # Diretório raiz do projeto
+    dockerfile_path: Dockerfile  # Se usar Dockerfile
+    build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    run_command: gunicorn agendamento_salao.wsgi:application --workers 4
+    instance_size_slug: basic-s
+    http_port: 8000
+    routes:
+      - path: /api
+        preserve_path_prefix: true
+    envs:
+      - key: DJANGO_SETTINGS_MODULE
+        value: agendamento_salao.settings
+      - key: DEBUG
+        value: "False" 
+      - key: ALLOWED_HOSTS
+        value: ${APP_DOMAIN}
+      - key: DATABASE_URL
+        value: ${DATABASE_URL}
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+
+  # Componente Frontend React/Vite
+  - name: frontend
+    github:
+      branch: main
+      repo: seu-usuario/seu-repo
+    source_dir: "frontend"  # Diretório do frontend
+    build_command: |
+      npm install
+      npm run build
+    environment_slug: node-js
+    output_dir: dist  # Diretório onde o Vite gera os arquivos estáticos
+    routes:
+      - path: /
+    instance_size_slug: basic-xs
+    envs:
+      - key: VITE_API_URL
+        value: ${_self.HOSTNAME}/api
+
+# Workers para processamento assíncrono
+workers:
+  # Worker para processamento de mensagens WhatsApp
+  - name: whatsapp-worker
+    github:
+      branch: main
+      repo: seu-usuario/seu-repo
+    source_dir: "/"
+    build_command: pip install -r requirements.txt
+    run_command: celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp
+    instance_size_slug: basic-s
+    envs:
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+      - key: EVOLUTION_API_URL
+        value: ${EVOLUTION_API_URL}
+      - key: EVOLUTION_API_KEY
+        value: ${EVOLUTION_API_KEY}
+
+  # Worker para tarefas agendadas
+  - name: scheduler
+    github:
+      branch: main
+      repo: seu-usuario/seu-repo
+    source_dir: "/"
+    build_command: pip install -r requirements.txt
+    run_command: celery -A agendamento_salao beat -l info
+    instance_size_slug: basic-xs
+    envs:
+      - key: REDIS_URL
+        value: ${REDIS_URL}
+
+# Banco de dados PostgreSQL
+databases:
+  - engine: PG
+    name: db
+    num_nodes: 1
+    size: db-s-dev-database
+    version: "12"
