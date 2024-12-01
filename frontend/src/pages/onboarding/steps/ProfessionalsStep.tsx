@@ -1,5 +1,5 @@
 // frontend/src/pages/onboarding/steps/ProfessionalsStep.tsx
-import { useState } from 'react';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Box,
   Typography,
@@ -11,7 +11,8 @@ import {
   IconButton,
   Chip
 } from '@mui/material';
-import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { useState } from 'react';
+
 import { OnboardingData } from '../../../types/onboarding';
 
 interface Professional {

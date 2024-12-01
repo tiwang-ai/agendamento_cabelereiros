@@ -1,6 +1,5 @@
 // src/pages/admin/Users.tsx
-import { useState, useEffect, ChangeEvent } from 'react';
-import { SelectChangeEvent } from '@mui/material/Select';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -26,7 +25,9 @@ import {
   Chip,
   Alert
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Lock as LockIcon } from '@mui/icons-material';
+import { SelectChangeEvent } from '@mui/material/Select';
+import { useState, useEffect, ChangeEvent } from 'react';
+
 import api from '../../services/api';
 import { UserService } from '../../services/users';
 import { UserRole } from '../../types/auth';

@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -18,6 +17,8 @@ import {
   CircularProgress
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
+import { useState, useEffect } from 'react';
+
 import { WhatsAppService } from '../../services/whatsapp';
 
 interface SalonStatus {

@@ -1,5 +1,4 @@
 // src/pages/settings/Settings.tsx
-import React, { useState, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -14,8 +13,11 @@ import {
   FormControlLabel,
   Box,
 } from '@mui/material';
-import api from '../../services/api';
+import React, { useState, ChangeEvent } from 'react';
+
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
+
 import WhatsAppConnection from './WhatsAppConnection';
 
 const Settings = () => {

@@ -1,5 +1,6 @@
 // frontend/src/services/permissions.ts
 import { UserRole } from '../types/auth';
+
 import api from './api';
 
 export interface Permission {

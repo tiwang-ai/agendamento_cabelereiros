@@ -1,4 +1,3 @@
-import react, { useState } from 'react';
 import {
   Box,
   Container,
@@ -11,8 +10,9 @@ import {
   Typography,
   Alert
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const steps = ['Informações Básicas', 'Dados do Salão', 'Serviços'];
 

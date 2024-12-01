@@ -1,5 +1,4 @@
 // frontend/src/pages/professional/Profile.tsx
-import { useState, useEffect, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -11,6 +10,8 @@ import {
   Box,
   Alert,
 } from '@mui/material';
+import { useState, useEffect, ChangeEvent } from 'react';
+
 import api from '../../services/api';
 
 interface ProfileData {

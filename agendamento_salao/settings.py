@@ -177,12 +177,29 @@ DEEPINFRA_API_KEY = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 DEEPINFRA_API_KEY = os.getenv("4h47LHC10VwzA5DR6vjHD9gnqZOSaK0")
 
 # Configuração do Celery
-CELERY_BROKER_URL = os.getenv('REDIS_URL')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL')
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'America/Sao_Paulo'
+
+# Configuração das filas do Celery
+CELERY_TASK_QUEUES = {
+    'whatsapp': {
+        'exchange': 'whatsapp',
+        'routing_key': 'whatsapp',
+    },
+    'default': {
+        'exchange': 'default',
+        'routing_key': 'default',
+    },
+}
+
+# Configuração do routing
+CELERY_TASK_ROUTES = {
+    'core.tasks.whatsapp_tasks.*': {'queue': 'whatsapp'},
+}
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # URL do frontend Vite

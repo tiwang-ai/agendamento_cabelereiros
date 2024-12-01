@@ -1,5 +1,4 @@
 // frontend/src/pages/admin/Reports.tsx
-import { useState, ChangeEvent } from 'react';
 import {
   Container,
   Paper,
@@ -14,6 +13,8 @@ import {
   Alert
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
+import { format } from 'date-fns';
+import { useState, ChangeEvent } from 'react';
 import {
   BarChart,
   Bar,
@@ -21,10 +22,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  ResponsiveContainer
+  Legend
 } from 'recharts';
-import { format } from 'date-fns';
+
 import api from '../../services/api';
 
 interface AnalyticsData {

@@ -25,6 +25,8 @@ module.exports = {
   plugins: [
     '@typescript-eslint',
     'react',
+    'react-i18next',
+    'react-refresh',
     'react-hooks',
     'unused-imports',
     'import'

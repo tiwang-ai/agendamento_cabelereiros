@@ -1,5 +1,6 @@
 // frontend/src/components/LanguageSelector.tsx
 import { MenuItem, Select, SelectChangeEvent } from '@mui/material';
+
 import { useLanguage } from '../hooks/useLanguage';
 
 const LanguageSelector = () => {

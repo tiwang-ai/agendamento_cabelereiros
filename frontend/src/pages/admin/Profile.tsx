@@ -1,5 +1,4 @@
 // frontend/src/pages/admin/Profile.tsx
-import { useState, ChangeEvent, FormEvent } from 'react';
 import {
   Container,
   Paper,
@@ -10,6 +9,8 @@ import {
   Alert,
   Box
 } from '@mui/material';
+import { useState, ChangeEvent, FormEvent } from 'react';
+
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 

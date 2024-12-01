@@ -58,12 +58,18 @@ workers:
     run_command: celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp
     instance_size_slug: basic-s
     envs:
+      - key: DJANGO_SETTINGS_MODULE
+        value: agendamento_salao.settings
       - key: REDIS_URL
         value: ${REDIS_URL}
+      - key: DATABASE_URL
+        value: ${DATABASE_URL}
       - key: EVOLUTION_API_URL
         value: ${EVOLUTION_API_URL}
       - key: EVOLUTION_API_KEY
         value: ${EVOLUTION_API_KEY}
+      - key: DEBUG
+        value: 'False'
 
   # Worker para tarefas agendadas
   - name: scheduler

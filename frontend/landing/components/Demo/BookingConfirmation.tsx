@@ -1,6 +1,6 @@
 // frontend/landing/components/Demo/BookingConfirmation.tsx
-import { Box, Paper, Typography, Divider, Avatar } from '@mui/material';
 import { Check as CheckIcon } from '@mui/icons-material';
+import { Box, Paper, Typography, Divider, Avatar } from '@mui/material';
 import { motion } from 'framer-motion';
 
 interface BookingConfirmationProps {

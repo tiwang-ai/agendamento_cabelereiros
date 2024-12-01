@@ -1,6 +1,7 @@
 // src/services/auth.ts
-import api from './api';
 import { UserRole } from '../types/auth';
+
+import api from './api';
 
 interface LoginCredentials {
   email?: string;

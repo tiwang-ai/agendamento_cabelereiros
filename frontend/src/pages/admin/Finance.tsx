@@ -1,5 +1,10 @@
 // src/pages/admin/Finance.tsx
-import { useState, useEffect } from 'react';
+import {
+  AttachMoney as MoneyIcon,
+  TrendingUp as TrendingUpIcon,
+  AccountBalance as AccountIcon,
+  Receipt as ReceiptIcon
+} from '@mui/icons-material';
 import {
   Container,
   Grid,
@@ -16,8 +21,6 @@ import {
   TableRow,
   Chip,
   useTheme,
-  Button,
-  TextField,
   MenuItem,
   FormControl,
   InputLabel,
@@ -26,12 +29,7 @@ import {
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
 import { Dayjs } from 'dayjs';
-import {
-  AttachMoney as MoneyIcon,
-  TrendingUp as TrendingUpIcon,
-  AccountBalance as AccountIcon,
-  Receipt as ReceiptIcon
-} from '@mui/icons-material';
+import { useState, useEffect } from 'react';
 import { FinanceService } from '../../services/finance';
 
 interface Transaction {

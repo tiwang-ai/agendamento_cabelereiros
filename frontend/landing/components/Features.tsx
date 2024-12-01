@@ -1,6 +1,4 @@
 // frontend/landing/components/Features.tsx
-import React from 'react';
-import { Box, Container, Grid, Paper, Typography, Icon } from '@mui/material';
 import { 
   AutoAwesome, 
   Schedule, 
@@ -10,6 +8,8 @@ import {
   Payments,
   SvgIconComponent
 } from '@mui/icons-material';
+import { Box, Container, Grid, Paper, Typography } from '@mui/material';
+import React from 'react';
 
 interface FeatureProps {
   icon: SvgIconComponent;

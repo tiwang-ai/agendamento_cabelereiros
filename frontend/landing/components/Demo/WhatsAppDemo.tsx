@@ -1,11 +1,10 @@
 // frontend/landing/components/Demo/WhatsAppDemo.tsx
-import { useState, ChangeEvent, KeyboardEvent } from 'react';
-import { Box, Paper, Typography, TextField, IconButton, Button, Grid, Card, CardContent, Avatar, Rating } from '@mui/material';
 import { Send as SendIcon, Check as CheckIcon } from '@mui/icons-material';
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import { Box, Paper, Typography, TextField, IconButton, Button, Grid, Card, CardContent, Avatar, Rating } from '@mui/material';
+import ptBR, { format } from 'date-fns';
 import { motion, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
-import { FC, ReactElement } from 'react';
+import { useState, ChangeEvent, KeyboardEvent , FC, ReactElement } from 'react';
+
 import BookingConfirmation from './BookingConfirmation';
 
 interface Message {

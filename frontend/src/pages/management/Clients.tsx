@@ -1,5 +1,12 @@
 // frontend/src/pages/management/Clients.tsx
-import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Search as SearchIcon,
+  WhatsApp as WhatsAppIcon,
+  History as HistoryIcon,
+} from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -27,17 +34,12 @@ import {
   Alert,
   CircularProgress
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Search as SearchIcon,
-  WhatsApp as WhatsAppIcon,
-  History as HistoryIcon,
-} from '@mui/icons-material';
-import { format } from 'date-fns';
-import api from '../../services/api';
 import { SelectChangeEvent } from '@mui/material/Select';
+import { format } from 'date-fns';
+import { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+
+import api from '../../services/api';
+
 
 interface Professional {
   id: number;

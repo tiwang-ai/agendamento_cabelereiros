@@ -1,5 +1,4 @@
 // frontend/src/pages/onboarding/steps/ServicesStep.tsx
-import { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -11,6 +10,8 @@ import {
   FormControlLabel,
   CircularProgress
 } from '@mui/material';
+import { useEffect, useState } from 'react';
+
 import api from '../../../services/api';
 import { OnboardingData } from '../../../types/onboarding';
 

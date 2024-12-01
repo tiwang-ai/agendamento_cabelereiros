@@ -1,5 +1,9 @@
 // frontend/src/pages/management/Finance.tsx
-import { useState, useEffect } from 'react';
+import {
+  AttachMoney as MoneyIcon,
+  TrendingUp as TrendingUpIcon,
+  Receipt as ReceiptIcon
+} from '@mui/icons-material';
 import {
   Container,
   Grid,
@@ -16,14 +20,12 @@ import {
   TableRow,
   Chip,
   useTheme
-} from '@mui/material';
-import {
-  AttachMoney as MoneyIcon,
-  TrendingUp as TrendingUpIcon,
-  Receipt as ReceiptIcon
-} from '@mui/icons-material';
+, Box as MuiBox } from '@mui/material';
+import { useState, useEffect } from 'react';
+
 import { FinanceService } from '../../services/finance';
-import { Box as MuiBox } from '@mui/material';
+
+
 
 interface SalonStats {
   totalRevenue: number;

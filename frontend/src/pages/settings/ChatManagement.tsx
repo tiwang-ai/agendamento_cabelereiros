@@ -1,5 +1,5 @@
 // frontend/src/pages/settings/ChatManagement.tsx
-import { useState, useEffect, ChangeEvent } from 'react';
+import { Search as SearchIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -16,7 +16,8 @@ import {
   InputAdornment,
   CircularProgress
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
+import { useState, useEffect, ChangeEvent } from 'react';
+
 import { WhatsAppService } from '../../services/whatsapp';
 
 interface ChatConfig {

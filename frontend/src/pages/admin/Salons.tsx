@@ -1,5 +1,5 @@
 // src/pages/admin/Salons.tsx
-import { useState, useEffect } from 'react';
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -21,13 +21,12 @@ import {
   Chip,
   Alert
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import React, { useState, useEffect } from 'react';
+import { useNavigate ,  Link as RouterLink } from 'react-router-dom';
+
 import { SalonService } from '../../services/salons';
-import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
-import { WhatsAppService } from '../../services/whatsapp';
-import React from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+
+
 
 interface Salon {
   id: number;

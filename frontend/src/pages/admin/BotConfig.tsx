@@ -1,5 +1,4 @@
 // frontend/src/pages/admin/BotConfig.tsx
-import { useState, useEffect, ChangeEvent } from 'react';
 import {
     Container,
     Paper,
@@ -10,6 +9,8 @@ import {
     Alert,
     CircularProgress
 } from '@mui/material';
+import { useState, useEffect, ChangeEvent } from 'react';
+
 import { BotConfigService } from '../../services/botConfig';
 
 const BotConfig = () => {

@@ -1,11 +1,9 @@
 // src/components/AdminSidebar.tsx
-import { Drawer, List, ListItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   AttachMoney as MoneyIcon,
   Business as BusinessIcon,
-  Settings as SettingsIcon,
   ViewList as PlansIcon,
   Support as SupportIcon,
   WhatsApp as WhatsAppIcon,
@@ -13,6 +11,7 @@ import {
   Group as StaffIcon,
   Chat as ChatIcon
 } from '@mui/icons-material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;

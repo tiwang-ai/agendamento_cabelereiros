@@ -1,5 +1,5 @@
 // frontend/src/pages/professional/History.tsx
-import { useState, useEffect } from 'react';
+import { Search as SearchIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -15,8 +15,9 @@ import {
   TextField,
   InputAdornment
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useState, useEffect } from 'react';
+
 import api from '../../services/api';
 
 interface Appointment {

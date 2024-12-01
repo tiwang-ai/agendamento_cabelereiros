@@ -1,5 +1,9 @@
 // src/pages/management/Professionals.tsx
-import { useState, useEffect } from 'react';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon
+} from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -21,14 +25,11 @@ import {
   Chip,
   Alert
 } from '@mui/material';
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon
-} from '@mui/icons-material';
-import api from '../../services/api';
+import { useState, useEffect , ChangeEvent } from 'react';
+
+
 import { useAuth } from '../../contexts/AuthContext';
-import { ChangeEvent, FormEvent } from 'react';
+import api from '../../services/api';
 
 interface Professional {
   id: number;

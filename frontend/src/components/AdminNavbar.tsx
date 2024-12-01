@@ -4,15 +4,15 @@ import {
   Toolbar,
   Typography,
   IconButton,
-  Button,
   Box,
   Avatar,
   Menu,
   MenuItem
 } from '@mui/material';
 import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+
+import { useAuth } from '../contexts/AuthContext';
 
 const AdminNavbar = () => {
   const { user, logout } = useAuth();

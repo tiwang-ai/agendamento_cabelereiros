@@ -1,5 +1,6 @@
 // frontend/src/pages/onboarding/steps/SalonInfoStep.tsx
 import { Box, TextField, Typography, Grid } from '@mui/material';
+
 import { OnboardingData } from '../../../types/onboarding';
 
 interface Props {

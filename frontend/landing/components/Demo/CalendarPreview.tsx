@@ -1,9 +1,8 @@
 // frontend/landing/components/Demo/CalendarView.tsx
-import React from 'react';
 import { Box, Paper, Typography, Button } from '@mui/material';
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import ptBR, { format } from 'date-fns';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface CalendarViewProps {
   availableSlots: Array<{

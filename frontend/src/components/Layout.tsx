@@ -1,7 +1,7 @@
 // src/components/Layout.tsx
+import { Box } from '@mui/material';
 import { useState, ReactNode } from 'react';
-import { Box, IconButton } from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
+
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 

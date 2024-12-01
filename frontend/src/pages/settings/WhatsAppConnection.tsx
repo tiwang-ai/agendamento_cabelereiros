@@ -1,5 +1,4 @@
 // frontend/src/pages/settings/WhatsAppConnection.tsx
-import React, { useState, useEffect, ReactElement } from 'react';
 import {
   Box,
   Paper,
@@ -12,8 +11,10 @@ import {
   Fade
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
-import { WhatsAppService } from '../../services/whatsapp';
+import React, { useState, useEffect, ReactElement } from 'react';
+
 import { useAuth } from '../../contexts/AuthContext';
+import { WhatsAppService } from '../../services/whatsapp';
 
 interface TabPanelProps {
   children?: React.ReactNode;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Email as EmailIcon, Phone as PhoneIcon } from '@mui/icons-material';
 import {
   Box,
   Container,
@@ -13,8 +13,9 @@ import {
   ToggleButton,
   InputAdornment
 } from '@mui/material';
-import { Email as EmailIcon, Phone as PhoneIcon } from '@mui/icons-material';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import { AuthService } from '../../services/auth';
 import { UserRole } from '../../types/auth';
 

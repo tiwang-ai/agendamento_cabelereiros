@@ -1,12 +1,13 @@
 // src/pages/calendar/Calendar.tsx
-import { useState, useEffect } from 'react';
 import { Container, Paper, Typography, Box } from '@mui/material';
 import { LocalizationProvider, DateCalendar } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import ptBR from 'date-fns/locale/pt-BR';
+import { useState, useEffect } from 'react';
+
 import { useAuth } from '../../contexts/AuthContext';
-import { UserRole } from '../../types/auth';
 import api from '../../services/api';
+import { UserRole } from '../../types/auth';
 
 interface Appointment {
   id: number;

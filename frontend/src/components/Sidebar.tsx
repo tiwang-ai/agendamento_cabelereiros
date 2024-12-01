@@ -1,18 +1,18 @@
 // src/components/Sidebar.tsx
-import { Drawer, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
   Event as CalendarIcon,
   People as PeopleIcon,
   Settings as SettingsIcon,
   ListAlt as ListAltIcon,
-  WhatsApp as WhatsAppIcon,
   Person as ClientsIcon,
   Person as PersonIcon,
   Chat as ChatIcon,
   AttachMoney as MoneyIcon
 } from '@mui/icons-material';
+import { Drawer, List, ListItem, ListItemIcon, ListItemText } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types/auth';
 

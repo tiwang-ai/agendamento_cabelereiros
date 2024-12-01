@@ -1,7 +1,7 @@
 // frontend/landing/components/Demo/ProfessionalsView.tsx
-import React from 'react';
 import { Grid, Card, CardContent, Avatar, Typography, Box, Rating } from '@mui/material';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface Professional {
   id: number;

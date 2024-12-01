@@ -1,6 +1,7 @@
 // frontend/src/pages/onboarding/steps/PaymentStep.tsx
-import { useEffect, useState } from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
+import { useEffect, useState } from 'react';
+
 import { PaymentService } from '../../../services/payment';
 
 declare global {

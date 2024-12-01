@@ -1,6 +1,4 @@
 // src/pages/admin/SalonDetails.tsx
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import {
   Container,
   Paper,
@@ -19,6 +17,9 @@ import {
   TableRow,
   Chip,
 } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+
 import api from '../../services/api';
 
 interface TabPanelProps {

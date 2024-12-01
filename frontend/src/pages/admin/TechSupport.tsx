@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -19,7 +19,8 @@ import {
   CircularProgress,
   Button
 } from '@mui/material';
-import { Refresh as RefreshIcon } from '@mui/icons-material';
+import { useState, useEffect } from 'react';
+
 import api from '../../services/api';
 
 interface TabPanelProps {

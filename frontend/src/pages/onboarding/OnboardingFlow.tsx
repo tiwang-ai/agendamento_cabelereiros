@@ -1,12 +1,15 @@
 // src/pages/onboarding/OnboardingFlow.tsx
-import { useState } from 'react';
 import { Box, Stepper, Step, StepLabel, Button, Container, Paper } from '@mui/material';
-import api from '../../services/api';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import SalonInfoStep from './steps/SalonInfoStep';
-import ProfessionalsStep from './steps/ProfessionalsStep';
-import ServicesStep from './steps/ServicesStep';
+
+import api from '../../services/api';
+
+
 import PaymentStep from './steps/PaymentStep';
+import ProfessionalsStep from './steps/ProfessionalsStep';
+import SalonInfoStep from './steps/SalonInfoStep';
+import ServicesStep from './steps/ServicesStep';
 
 interface OnboardingData {
   // Dados básicos já coletados no registro

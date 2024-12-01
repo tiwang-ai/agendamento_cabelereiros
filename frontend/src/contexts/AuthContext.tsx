@@ -1,8 +1,9 @@
 // src/contexts/AuthContext.tsx
-import { createContext, useContext, useState, useEffect, ReactNode, JSXElementConstructor, ReactElement, ElementType, FC, PropsWithChildren, Component } from 'react';
-import { User, UserRole } from '../types/auth';
-import api from '../services/api';
 import { Box } from '@mui/material';
+import { createContext, useContext, useState, useEffect, ReactNode, FC } from 'react';
+
+import api from '../services/api';
+import { User, UserRole } from '../types/auth';
 
 interface AuthContextType {
   user: User | null;

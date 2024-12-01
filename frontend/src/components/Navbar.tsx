@@ -1,7 +1,8 @@
 // src/components/Navbar.tsx
-import { AppBar, Toolbar, Typography, IconButton, Button, Box } from '@mui/material';
 import { Menu as MenuIcon, ExitToApp as LogoutIcon } from '@mui/icons-material';
+import { AppBar, Toolbar, Typography, IconButton, Button, Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+
 import LanguageSelector from './LanguageSelector';
 
 interface NavbarProps {

@@ -1,7 +1,7 @@
 // frontend/landing/components/Hero.tsx
 import { Box, Container, Typography, Button, useTheme } from '@mui/material';
-import { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { lazy, Suspense } from 'react';
 
 const WhatsAppDemo = lazy(() => import('./Demo/WhatsAppDemo'));
 

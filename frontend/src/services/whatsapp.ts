@@ -1,6 +1,7 @@
 // frontend/src/services/whatsapp.ts
-import api from './api';
 import { QRCodeResponse, WhatsAppStatus } from '../types/whatsapp';
+
+import api from './api';
 
 export const WhatsAppService = {
   getAllInstances: async () => {

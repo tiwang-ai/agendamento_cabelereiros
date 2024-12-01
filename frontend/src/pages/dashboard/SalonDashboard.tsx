@@ -1,5 +1,9 @@
 // src/pages/dashboard/SalonDashboard.tsx
-import { useState, useEffect } from 'react';
+import {
+  Person as PersonIcon,
+  Event as EventIcon,
+  AttachMoney as MoneyIcon,
+} from '@mui/icons-material';
 import {
   Box,
   Container,
@@ -12,11 +16,8 @@ import {
   useTheme,
   CircularProgress
 } from '@mui/material';
-import {
-  Person as PersonIcon,
-  Event as EventIcon,
-  AttachMoney as MoneyIcon,
-} from '@mui/icons-material';
+import { useState, useEffect } from 'react';
+
 import AppointmentsTable from '../../components/AppointmentsTable';
 import api from '../../services/api';
 

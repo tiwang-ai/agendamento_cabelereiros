@@ -1,4 +1,5 @@
 // src/components/AppointmentsTable.tsx
+import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import {
   Table,
   TableBody,
@@ -11,9 +12,8 @@ import {
   IconButton,
   useTheme
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import ptBR, { format } from 'date-fns';
+
 
 interface Appointment {
   id: string;

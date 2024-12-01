@@ -1,5 +1,9 @@
 // frontend/src/pages/professional/Agenda.tsx
-import { useState, useEffect } from 'react';
+import {
+  Event as EventIcon,
+  AccessTime as TimeIcon,
+  Person as PersonIcon
+} from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -15,13 +19,9 @@ import {
   DialogActions,
   Button
 } from '@mui/material';
-import {
-  Event as EventIcon,
-  AccessTime as TimeIcon,
-  Person as PersonIcon
-} from '@mui/icons-material';
-import { format } from 'date-fns';
-import ptBR from 'date-fns/locale/pt-BR';
+import ptBR, { format } from 'date-fns';
+import { useState, useEffect } from 'react';
+
 import api from '../../services/api';
 
 interface Appointment {
