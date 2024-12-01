@@ -5,7 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -21,12 +21,19 @@
     },
     "typeRoots": [
       "./node_modules/@types",
-      "./src/types"
+      "./src/types",
+      "./node_modules/vite"
     ],
-    "types": ["react", "node", "vite/client"],
+    "types": ["node", "react", "react-dom"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },
-  "include": ["src", "landing", "src/global.d.ts", "src/types/*.d.ts"],
+  "include": [
+    "src",
+    "landing",
+    "src/global.d.ts",
+    "src/types/*.d.ts",
+    "vite.config.ts"
+  ],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

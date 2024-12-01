@@ -21,16 +21,10 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           material: ['@mui/material', '@mui/icons-material'],
-          dateFns: ['date-fns', 'date-fns/locale/pt-BR'],
+          dateFns: ['date-fns'],
           motion: ['framer-motion']
         }
       }
-    }
-  },
-  optimizeDeps: {
-    include: ['date-fns', 'date-fns/locale/pt-BR', 'framer-motion'],
-    esbuildOptions: {
-      target: 'es2020'
     }
   },
   server: {
