@@ -1,8 +1,6 @@
-import { HTMLMotionProps } from 'framer-motion'
+import { ComponentType, ReactNode, CSSProperties } from 'react';
 
 declare module 'framer-motion' {
-  import * as React from 'react';
-
   export interface MotionProps {
     initial?: any;
     animate?: any;
@@ -11,14 +9,14 @@ declare module 'framer-motion' {
     variants?: any;
     layout?: boolean | string;
     layoutId?: string;
-    style?: React.CSSProperties;
+    style?: CSSProperties;
     className?: string;
     onAnimationStart?: () => void;
     onAnimationComplete?: () => void;
   }
 
   export interface AnimatePresenceProps {
-    children?: React.ReactNode;
+    children?: ReactNode;
     custom?: any;
     initial?: boolean;
     mode?: "sync" | "wait" | "popLayout";
@@ -26,20 +24,9 @@ declare module 'framer-motion' {
     presenceAffectsLayout?: boolean;
   }
 
-  export interface LazyMotionProps {
-    children?: React.ReactNode;
-    features?: any;
-    strict?: boolean;
-  }
-
   export const motion: {
-    [key in keyof JSX.IntrinsicElements]: React.ForwardRefExoticComponent<
-      MotionProps & JSX.IntrinsicElements[key]
-    >;
+    [K in keyof JSX.IntrinsicElements]: ComponentType<MotionProps & JSX.IntrinsicElements[K]>;
   };
 
-  export const AnimatePresence: React.FC<AnimatePresenceProps>;
-  export const LazyMotion: React.FC<LazyMotionProps>;
-  export const domAnimation: any;
-  export const m: typeof motion;
+  export const AnimatePresence: ComponentType<AnimatePresenceProps>;
 } 

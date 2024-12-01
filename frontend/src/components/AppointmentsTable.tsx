@@ -12,7 +12,8 @@ import {
   IconButton,
   useTheme
 } from '@mui/material';
-import ptBR, { format } from 'date-fns';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 interface Appointment {

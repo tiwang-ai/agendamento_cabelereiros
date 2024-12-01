@@ -55,7 +55,7 @@ workers:
       repo: seu-usuario/seu-repo
     source_dir: '/'
     build_command: pip install -r requirements.txt
-    run_command: celery -A agendamento_salao worker --pool=solo -l info -Q whatsapp
+    run_command: celery -A agendamento_salao worker --pool=solo -l info -Q whatsapp --without-gossip --without-mingle --without-heartbeat
     instance_size_slug: basic-s
     envs:
       - key: DJANGO_SETTINGS_MODULE

@@ -11,17 +11,33 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    sourcemap: true,
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    },
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom', '@mui/material', 'framer-motion'],
-          utils: ['date-fns', 'axios'],
-          'framer-motion': ['framer-motion']
+          vendor: ['react', 'react-dom'],
+          material: ['@mui/material', '@mui/icons-material'],
+          dateFns: ['date-fns'],
+          motion: ['framer-motion']
         }
       }
     }
   },
   optimizeDeps: {
-    include: ['framer-motion']
+    include: ['date-fns', 'framer-motion']
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
   }
 })
