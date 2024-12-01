@@ -23,7 +23,7 @@
       "./node_modules/@types",
       "./src/types"
     ],
-    "types": ["react", "node"],
+    "types": ["react", "node", "vite/client"],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true
   },

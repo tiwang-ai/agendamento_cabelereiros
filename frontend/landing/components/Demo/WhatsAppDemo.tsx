@@ -1,7 +1,8 @@
 // frontend/landing/components/Demo/WhatsAppDemo.tsx
 import { Send as SendIcon, Check as CheckIcon } from '@mui/icons-material';
 import { Box, Paper, Typography, TextField, IconButton, Button, Grid, Card, CardContent, Avatar, Rating } from '@mui/material';
-import ptBR, { format } from 'date-fns';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { motion, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
 import { useState, ChangeEvent, KeyboardEvent , FC, ReactElement } from 'react';
 

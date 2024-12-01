@@ -57,6 +57,7 @@ workers:
     build_command: pip install -r requirements.txt
     run_command: celery -A agendamento_salao worker --pool=solo -l info -Q whatsapp
     instance_size_slug: basic-s
+    instance_count: 1
     envs:
       - key: DJANGO_SETTINGS_MODULE
         value: agendamento_salao.settings
@@ -75,9 +76,11 @@ workers:
       - key: ALLOWED_HOSTS
         value: ${APP_DOMAIN}
     health_check:
-      http_path: /health
       initial_delay_seconds: 30
       period_seconds: 60
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
 
   # Worker para tarefas agendadas
   - name: scheduler
