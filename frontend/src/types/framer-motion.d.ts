@@ -1,44 +1,45 @@
-declare module 'framer-motion' {
-  import { ComponentType, ReactNode, CSSProperties, Component } from 'react';
+import { HTMLMotionProps } from 'framer-motion'
 
-  export interface AnimatePresenceProps {
-    children: ReactNode;
-    mode?: 'sync' | 'wait' | 'popLayout';
-  }
+declare module 'framer-motion' {
+  import * as React from 'react';
 
   export interface MotionProps {
-    initial?: CSSProperties | object;
-    animate?: CSSProperties | object;
-    exit?: CSSProperties | object;
-    whileHover?: CSSProperties | object;
-    whileTap?: CSSProperties | object;
-    transition?: {
-      type?: string;
-      stiffness?: number;
-      damping?: number;
-      mass?: number;
-      duration?: number;
-    };
+    initial?: any;
+    animate?: any;
+    exit?: any;
+    transition?: any;
+    variants?: any;
     layout?: boolean | string;
     layoutId?: string;
-    style?: CSSProperties;
+    style?: React.CSSProperties;
     className?: string;
-    children?: ReactNode;
+    onAnimationStart?: () => void;
+    onAnimationComplete?: () => void;
+  }
+
+  export interface AnimatePresenceProps {
+    children?: React.ReactNode;
+    custom?: any;
+    initial?: boolean;
+    mode?: "sync" | "wait" | "popLayout";
+    onExitComplete?: () => void;
+    presenceAffectsLayout?: boolean;
   }
 
   export interface LazyMotionProps {
-    features: any;
-    children: ReactNode;
+    children?: React.ReactNode;
+    features?: any;
     strict?: boolean;
   }
 
-  export const AnimatePresence: ComponentType<AnimatePresenceProps>;
-  export const LazyMotion: ComponentType<LazyMotionProps>;
-  export const domAnimation: any;
-  
   export const motion: {
-    div: ComponentType<MotionProps & React.HTMLAttributes<HTMLDivElement>>;
-    span: ComponentType<MotionProps & React.HTMLAttributes<HTMLSpanElement>>;
-    button: ComponentType<MotionProps & React.HTMLAttributes<HTMLButtonElement>>;
+    [key in keyof JSX.IntrinsicElements]: React.ForwardRefExoticComponent<
+      MotionProps & JSX.IntrinsicElements[key]
+    >;
   };
+
+  export const AnimatePresence: React.FC<AnimatePresenceProps>;
+  export const LazyMotion: React.FC<LazyMotionProps>;
+  export const domAnimation: any;
+  export const m: typeof motion;
 } 
