@@ -1,6 +1,7 @@
 // frontend/landing/components/Demo/CalendarView.tsx
 import { Box, Paper, Typography, Button } from '@mui/material';
-import ptBR, { format } from 'date-fns';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import React from 'react';
 

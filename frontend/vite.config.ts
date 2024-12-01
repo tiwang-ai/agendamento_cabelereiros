@@ -17,6 +17,7 @@ export default defineConfig({
       transformMixedEsModules: true
     },
     rollupOptions: {
+      external: ['date-fns/locale'],
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
@@ -28,7 +29,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    include: ['date-fns', 'framer-motion']
+    include: ['date-fns', 'date-fns/locale', 'framer-motion']
   },
   server: {
     port: 5173,
