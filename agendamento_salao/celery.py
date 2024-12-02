@@ -3,38 +3,31 @@ from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
 from celery.schedules import crontab
+from kombu import Queue, Exchange
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'agendamento_salao.settings')
 app = Celery('agendamento_salao')
 
-# Configurações específicas para o ambiente de produção
+# Configurações específicas para o Redis do Upstash
 app.conf.update(
     broker_url=os.getenv('REDIS_URL'),
     result_backend=os.getenv('REDIS_URL'),
-    worker_max_tasks_per_child=1000,
-    worker_prefetch_multiplier=1,
-    task_acks_late=True,
-    task_reject_on_worker_lost=True,
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='America/Sao_Paulo',
-    enable_utc=True,
     broker_connection_retry_on_startup=True,
-    broker_connection_max_retries=10,
-    worker_pool_restarts=True,
-    task_queues={
-        'whatsapp': {
-            'exchange': 'whatsapp',
-            'routing_key': 'whatsapp',
-        },
-        'default': {
-            'exchange': 'default',
-            'routing_key': 'default',
-        },
+    broker_pool_limit=None,  # Desativa o limite de pool para conexões
+    redis_max_connections=20,  # Limite máximo de conexões
+    broker_transport_options={
+        'visibility_timeout': 3600,  # 1 hora
+        'socket_timeout': 30,        # 30 segundos
+        'socket_connect_timeout': 30,
+        'socket_keepalive': True,
+        'retry_on_timeout': True
     },
+    worker_concurrency=2,  # Reduz a concorrência para evitar muitas conexões
+    task_queues=(
+        Queue('whatsapp', Exchange('whatsapp'), routing_key='whatsapp'),
+    ),
     task_routes={
-        'core.tasks.whatsapp_tasks.*': {'queue': 'whatsapp'},
+        'core.tasks.*': {'queue': 'whatsapp'},
     }
 )
 

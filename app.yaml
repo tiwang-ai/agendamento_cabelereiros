@@ -5,14 +5,16 @@ services:
     github:
       branch: main
       repo: seu-usuario/seu-repo
-    source_dir: '/' # Diretório raiz do projeto
-    dockerfile_path: Dockerfile # Se usar Dockerfile
+    source_dir: '/'
+    dockerfile_path: Dockerfile
     build_command: pip install -r requirements.txt && python manage.py collectstatic --noinput
     run_command: gunicorn agendamento_salao.wsgi:application --workers 4
     instance_size_slug: basic-s
     http_port: 8000
     routes:
       - path: /api
+        preserve_path_prefix: true
+      - path: /django-admin
         preserve_path_prefix: true
     envs:
       - key: DJANGO_SETTINGS_MODULE
@@ -26,22 +28,24 @@ services:
       - key: REDIS_URL
         value: ${REDIS_URL}
 
-  # Componente Frontend React/Vite
+  # Frontend (React/Vite)
   - name: frontend
     github:
       branch: main
       repo: seu-usuario/seu-repo
     source_dir: 'frontend'
     environment_slug: node-js
-    build_command: npm run build:do
-    run_command: npm start
-    output_dir: dist
+    build_command: npm ci && npm run build
+    run_command: npm run preview -- --host 0.0.0.0 --port 8080
+    instance_size_slug: basic-xs
     routes:
       - path: /
-    instance_size_slug: basic-xs
+      - path: /*
     envs:
+      - key: PORT
+        value: "3000"
       - key: VITE_API_URL
-        value: ${_self.HOSTNAME}/api
+        value: "https://${APP_DOMAIN}"
       - key: NODE_ENV
         value: production
 
@@ -54,7 +58,14 @@ workers:
       repo: seu-usuario/seu-repo
     source_dir: '/'
     build_command: pip install -r requirements.txt
-    run_command: celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp
+    run_command: >
+      celery -A agendamento_salao worker 
+      --pool=gevent 
+      --concurrency=2
+      -l info 
+      -Q whatsapp 
+      --without-heartbeat 
+      --without-gossip
     instance_size_slug: basic-s
     instance_count: 1
     envs:

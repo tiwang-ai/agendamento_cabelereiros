@@ -4,10 +4,23 @@ import path from 'path'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    port: parseInt(process.env.PORT || '3000'),
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  },
+  preview: {
+    port: parseInt(process.env.PORT || '3000'),
+  },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.resolve(__dirname, './src'),
+    },
   },
   build: {
     outDir: 'dist',
@@ -31,16 +44,6 @@ export default defineConfig({
     include: ['date-fns', 'date-fns/locale/pt-BR', 'framer-motion', 'gevent'],
     esbuildOptions: {
       target: 'es2020'
-    }
-  },
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: process.env.VITE_API_URL || 'http://localhost:8000',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
     }
   }
 })
