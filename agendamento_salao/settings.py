@@ -204,6 +204,8 @@ CELERY_TASK_ROUTES = {
 
 CORS_ALLOWED_ORIGINS = [
     f"https://{os.getenv('APP_DOMAIN')}",
+    "http://localhost:3000",
+    "http://localhost:5173"
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -253,4 +255,28 @@ CORS_ALLOW_CREDENTIALS = True
 
 CSRF_TRUSTED_ORIGINS = [
     f"https://{os.getenv('APP_DOMAIN')}",
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
+
+# Adicione estas configurações
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
 ]

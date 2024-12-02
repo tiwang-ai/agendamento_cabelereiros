@@ -1,7 +1,26 @@
 // src/services/auth.ts
 import { UserRole } from '../types/auth';
 
-import api from './api';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Interceptor para adicionar token
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 interface LoginCredentials {
   email?: string;
@@ -32,7 +51,7 @@ export const AuthService = {
         password: '***'
       });
 
-      const response = await api.post<LoginResponse>('/auth/login/', {
+      const response = await axiosInstance.post<LoginResponse>('/auth/login/', {
         ...(credentials.email ? { email: credentials.email } : {}),
         ...(credentials.phone ? { phone: credentials.phone } : {}),
         password: credentials.password
@@ -49,7 +68,7 @@ export const AuthService = {
           phone: response.data.phone
         }));
         
-        api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
       }
       
       return response.data;
@@ -63,6 +82,6 @@ export const AuthService = {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('userData');
-    delete api.defaults.headers.common['Authorization'];
+    delete axiosInstance.defaults.headers.common['Authorization'];
   }
 };
