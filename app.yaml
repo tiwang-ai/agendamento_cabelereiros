@@ -32,10 +32,9 @@ services:
       branch: main
       repo: seu-usuario/seu-repo
     source_dir: 'frontend'
-    build_command: |
-      npm ci
-      npm run build:do
     environment_slug: node-js
+    build_command: npm run build:do
+    run_command: npm start
     output_dir: dist
     routes:
       - path: /

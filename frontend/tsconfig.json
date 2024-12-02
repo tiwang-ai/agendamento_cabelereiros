@@ -32,8 +32,8 @@
     "src",
     "landing",
     "src/global.d.ts",
-    "src/types/*.d.ts",
-    "vite.config.ts"
+    "src/types/*.d.ts"
   ],
+  "exclude": ["vite.config.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
