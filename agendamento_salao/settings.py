@@ -239,19 +239,12 @@ X_FRAME_OPTIONS = 'DENY'
 # Configurações do Redis
 REDIS_URL = os.getenv('REDIS_URL')
 CACHES = {
-    'default': {
-        'BACKEND': 'django_redis.cache.RedisCache',
-        'LOCATION': REDIS_URL,
-        'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'SOCKET_CONNECT_TIMEOUT': 30,
-            'SOCKET_TIMEOUT': 30,
-            'RETRY_ON_TIMEOUT': True,
-            'CONNECTION_POOL_CLASS': 'redis.connection.BlockingConnectionPool',
-            'CONNECTION_POOL_CLASS_KWARGS': {
-                'max_connections': 50,
-                'timeout': 20,
-            }
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.getenv('redis://default:********@next-barnacle-22762.upstash.io:6379', 'redis://localhost:6379/1'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "IGNORE_EXCEPTIONS": True,
         }
     }
 }
