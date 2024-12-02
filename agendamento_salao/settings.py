@@ -96,7 +96,7 @@ WSGI_APPLICATION = 'agendamento_salao.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = os.getenv('postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require', 'sqlite:///db.sqlite3')
+DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require')
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -113,6 +113,12 @@ if os.getenv('BUILD_PHASE', 'False') == 'True':
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
         }
+    }
+
+if os.getenv('DJANGO_RESET_DB', 'False') == 'True':
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+        'options': '-c search_path=public'
     }
 
 

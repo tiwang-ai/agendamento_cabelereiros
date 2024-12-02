@@ -27,3 +27,7 @@ npm-debug.log*
 # Media e Static
 media/
 static/
+
+# Migrations
+migrations/*.py
+!migrations/__init__.py
