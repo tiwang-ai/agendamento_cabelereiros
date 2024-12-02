@@ -51,6 +51,8 @@ import mercadopago
 
 User = get_user_model()
 
+evolution_api = EvolutionAPI()
+
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         try:
@@ -226,7 +228,7 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
 
         numero_cliente = agendamento['cliente']['telefone']
         mensagem = f"Olá, {agendamento['cliente']['nome']}! Seu agendamento para o serviço {agendamento['servico']} está confirmado para o dia {agendamento['data_agendamento']} às {agendamento['horario']}."
-        enviar_mensagem_whatsapp(numero_cliente, mensagem)
+        evolution_api.enviar_mensagem_whatsapp(numero_cliente, mensagem)
         # Se o horário estiver disponível, continue com a criação do agendamento
         return super().create(request, *args, **kwargs)
     

@@ -2,8 +2,9 @@ import requests
 from celery import shared_task
 from datetime import datetime, timedelta
 from .models import Agendamento, Cliente, Estabelecimento, Interacao
-from .views import enviar_mensagem_whatsapp
+from .integrations.evolution import EvolutionAPI
 
+evolution_api = EvolutionAPI()
 
 @shared_task
 def enviar_lembrete_agendamento():
@@ -18,7 +19,7 @@ def enviar_lembrete_agendamento():
     for agendamento in agendamentos:
         numero_cliente = agendamento.cliente.telefone
         mensagem = f"Olá, {agendamento.cliente.nome}! Lembre-se de que você tem um agendamento amanhã às {agendamento.horario} para {agendamento.servico}."
-        enviar_mensagem_whatsapp(numero_cliente, mensagem)
+        evolution_api.enviar_mensagem_whatsapp(numero_cliente, mensagem)
 
 
 
@@ -67,7 +68,7 @@ def enviar_mensagem_aniversario():
     for cliente in clientes_aniversariantes:
         numero_cliente = cliente.whatsapp
         mensagem = f"Feliz Aniversário, {cliente.nome}! 🎉 Toda a equipe deseja um dia maravilhoso para você! Aproveite com muita alegria!"
-        enviar_mensagem_whatsapp(numero_cliente, mensagem)
+        evolution_api.enviar_mensagem_whatsapp(numero_cliente, mensagem)
 
 @shared_task
 def enviar_mensagem_pos_atendimento():
@@ -81,7 +82,7 @@ def enviar_mensagem_pos_atendimento():
         cliente = agendamento.cliente
         numero_cliente = cliente.whatsapp
         mensagem = f"Olá, {cliente.nome}! Esperamos que tenha gostado do seu atendimento de {agendamento.servico}. Agradecemos a sua preferência!"
-        enviar_mensagem_whatsapp(numero_cliente, mensagem)
+        evolution_api.enviar_mensagem_whatsapp(numero_cliente, mensagem)
 
 
 @shared_task
@@ -108,4 +109,4 @@ def generate_weekly_report():
         """
 
         # Enviar relatório via WhatsApp para o salão
-        enviar_mensagem_whatsapp(salao.numero_whatsapp, relatorio)
+        evolution_api.enviar_mensagem_whatsapp(salao.numero_whatsapp, relatorio)

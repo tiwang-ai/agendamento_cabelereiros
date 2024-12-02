@@ -173,7 +173,6 @@ EVOLUTION_API_TOKEN = "seu_token_de_autenticacao"
 # Configurações da API do Deep Infra
 DEEP_INFRA_API_URL = "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3.1-8B-Instruct"
 DEEP_INFRA_API_TOKEN = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
-DEEPINFRA_API_KEY = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 DEEPINFRA_API_KEY = os.getenv("4h47LHC10VwzA5DR6vjHD9gnqZOSaK0")
 
 # Configuração do Celery

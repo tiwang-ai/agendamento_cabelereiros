@@ -194,6 +194,26 @@ class EvolutionAPI:
             print(f"Erro ao conectar instância: {str(e)}")
             return {"error": str(e)}
 
+    def enviar_mensagem_whatsapp(self, numero_cliente, mensagem):
+        """
+        Envia uma mensagem para um número específico via WhatsApp usando a Evolution API.
+        """
+        try:
+            payload = {
+                "numero": numero_cliente,
+                "mensagem": mensagem
+            }
+            response = requests.post(
+                f"{self.base_url}/message/text",
+                json=payload,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Erro ao enviar mensagem WhatsApp: {str(e)}")
+            return None
+
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:
     """
