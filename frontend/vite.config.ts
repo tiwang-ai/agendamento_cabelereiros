@@ -11,28 +11,12 @@ export default defineConfig({
         target: process.env.VITE_API_URL || 'http://localhost:8000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
-      },
-      '/django-admin': {
-        target: process.env.VITE_API_URL || 'http://localhost:8000',
-        changeOrigin: true
       }
     }
-  },
-  preview: {
-    port: parseInt(process.env.PORT || '3000'),
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-    },
   },
   build: {
     outDir: 'dist',
     sourcemap: true,
-    commonjsOptions: {
-      include: [/node_modules/],
-      transformMixedEsModules: true
-    },
     rollupOptions: {
       output: {
         manualChunks: {
@@ -44,10 +28,7 @@ export default defineConfig({
       }
     }
   },
-  optimizeDeps: {
-    include: ['date-fns', 'date-fns/locale/pt-BR', 'framer-motion', 'gevent'],
-    esbuildOptions: {
-      target: 'es2020'
-    }
+  define: {
+    'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL)
   }
 })

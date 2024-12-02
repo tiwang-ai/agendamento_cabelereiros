@@ -35,11 +35,17 @@ static_sites:
       branch: main
       repo: seu-usuario/seu-repo
     source_dir: 'frontend'
-    build_command: npm run build:do
+    build_command: npm run build
     output_dir: dist
     routes:
-      - path: /
+      - path: /api
+        preserve_path_prefix: true
+        pass_through: true
+      - path: /django-admin
+        preserve_path_prefix: true
+        pass_through: true
       - path: /*
+        rewrite: /
     envs:
       - key: VITE_API_URL
         value: ${_self.HOSTNAME}/api
