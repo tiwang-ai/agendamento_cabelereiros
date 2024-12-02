@@ -99,11 +99,17 @@ WSGI_APPLICATION = 'agendamento_salao.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require')
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'defaultdb',
+        'USER': 'doadmin',
+        'PASSWORD': 'AVNS_EJ9-aplM6wWoGKsogZ8',
+        'HOST': 'cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com',
+        'PORT': '25060',
+        'OPTIONS': {
+            'connect_timeout': 10,
+        },
+    }
 }
 
 # Permitir fallback para SQLite durante build
