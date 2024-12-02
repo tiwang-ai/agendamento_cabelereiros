@@ -44,7 +44,7 @@ static_sites:
       - key: VITE_API_URL
         value: ${_self.HOSTNAME}/api
       - key: PORT
-        value: "10000"
+        value: '10000'
 
 # Workers para processamento assíncrono
 workers:

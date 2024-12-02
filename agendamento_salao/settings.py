@@ -203,7 +203,7 @@ CELERY_TASK_ROUTES = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # URL do frontend Vite
+    f"https://{os.getenv('APP_DOMAIN')}",
 ]
 
 AUTH_USER_MODEL = 'core.User'
@@ -248,3 +248,9 @@ CACHES = {
         }
     }
 }
+
+CORS_ALLOW_CREDENTIALS = True
+
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{os.getenv('APP_DOMAIN')}",
+]
