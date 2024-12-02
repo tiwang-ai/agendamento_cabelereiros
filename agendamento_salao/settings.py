@@ -120,6 +120,20 @@ if os.getenv('BUILD_PHASE', 'False') == 'True':
             'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'defaultdb',
+            'USER': 'doadmin',
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': '25060',
+            'OPTIONS': {
+                'sslmode': 'require',
+            },
+        }
+    }
 
 if os.getenv('DJANGO_RESET_DB', 'False') == 'True':
     DATABASES['default']['OPTIONS'] = {
