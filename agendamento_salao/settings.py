@@ -96,7 +96,7 @@ WSGI_APPLICATION = 'agendamento_salao.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///db.sqlite3')
+DATABASE_URL = os.getenv('postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require', 'sqlite:///db.sqlite3')
 
 DATABASES = {
     'default': dj_database_url.config(
