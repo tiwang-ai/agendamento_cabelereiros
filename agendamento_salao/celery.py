@@ -7,11 +7,10 @@ from celery.schedules import crontab
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'agendamento_salao.settings')
 app = Celery('agendamento_salao')
 
-# Configuração básica do Celery
-app.config_from_object('django.conf:settings', namespace='CELERY')
-
 # Configurações específicas para o ambiente de produção
 app.conf.update(
+    broker_url=os.getenv('REDIS_URL'),
+    result_backend=os.getenv('REDIS_URL'),
     worker_max_tasks_per_child=1000,
     worker_prefetch_multiplier=1,
     task_acks_late=True,
@@ -23,6 +22,7 @@ app.conf.update(
     enable_utc=True,
     broker_connection_retry_on_startup=True,
     broker_connection_max_retries=10,
+    worker_pool_restarts=True,
     task_queues={
         'whatsapp': {
             'exchange': 'whatsapp',
