@@ -99,16 +99,18 @@ WSGI_APPLICATION = 'agendamento_salao.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require')
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=DATABASE_URL,
-        conn_max_age=600,
-        conn_health_checks=True,
-        ssl_require=True,
-        options={
+    'default': {
+        **dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+            ssl_require=True,
+        ),
+        'OPTIONS': {
             'sslmode': 'require',
             'options': '-c search_path=public'
         }
-    )
+    }
 }
 
 if os.getenv('BUILD_PHASE', 'False') == 'True':
