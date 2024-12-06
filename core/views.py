@@ -49,11 +49,6 @@ from django.contrib.auth import authenticate
 
 import mercadopago
 
-from django.db import connections
-from django.db.utils import OperationalError
-from redis import Redis
-from django.conf import settings
-
 User = get_user_model()
 
 evolution_api = EvolutionAPI()
@@ -1288,26 +1283,3 @@ def bot_config(request):
         return Response({
             'error': str(e)
         }, status=500)
-
-def health_check(request):
-    # Verifica conexão com banco de dados
-    try:
-        connections['default'].cursor()
-        db_status = True
-    except OperationalError:
-        db_status = False
-    
-    # Verifica conexão com Redis
-    try:
-        redis = Redis.from_url(settings.REDIS_URL)
-        redis_status = redis.ping()
-    except:
-        redis_status = False
-    
-    status = {
-        'database': db_status,
-        'redis': redis_status,
-        'status': 'healthy' if (db_status and redis_status) else 'unhealthy'
-    }
-    
-    return JsonResponse(status)
