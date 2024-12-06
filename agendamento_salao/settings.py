@@ -99,39 +99,19 @@ WSGI_APPLICATION = 'agendamento_salao.wsgi.application'
 DATABASE_URL = os.getenv('DATABASE_URL', 'postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require')
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'defaultdb',
-        'USER': 'doadmin',
-        'PASSWORD': 'AVNS_EJ9-aplM6wWoGKsogZ8',
-        'HOST': 'cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com',
-        'PORT': '25060',
-        'OPTIONS': {
-            'connect_timeout': 30,
-        },
-    }
+    'default': dj_database_url.config(
+        default=DATABASE_URL,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=True
+    )
 }
 
-# Permitir fallback para SQLite durante build
 if os.getenv('BUILD_PHASE', 'False') == 'True':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
             'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'defaultdb',
-            'USER': 'doadmin',
-            'PASSWORD': os.getenv('DB_PASSWORD'),
-            'HOST': os.getenv('DB_HOST'),
-            'PORT': '25060',
-            'OPTIONS': {
-                'sslmode': 'require',
-            },
         }
     }
 
