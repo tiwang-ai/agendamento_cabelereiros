@@ -107,7 +107,7 @@ DATABASES = {
         'HOST': 'cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com',
         'PORT': '25060',
         'OPTIONS': {
-            'connect_timeout': 10,
+            'connect_timeout': 30,
         },
     }
 }
@@ -306,3 +306,7 @@ CORS_ALLOW_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+DJANGO_SUPERUSER_EMAIL = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@exemplo.com')
+DJANGO_SUPERUSER_PASSWORD = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'SuaSenhaSegura123!')
+DJANGO_SUPERUSER_NAME = os.getenv('DJANGO_SUPERUSER_NAME', 'Admin')

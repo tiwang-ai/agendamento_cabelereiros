@@ -43,9 +43,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('RECEPTIONIST', 'Recepcionista')
     )
     
-    email = models.EmailField(unique=True, null=True, blank=True)
+    email = models.EmailField(
+        unique=True,
+        verbose_name='E-mail'
+    )
     phone = models.CharField(max_length=15, blank=True)
-    name = models.CharField(max_length=255)
+    name = models.CharField(
+        max_length=255,
+        verbose_name='Nome'
+    )
     role = models.CharField(max_length=20, choices=ROLES, default='OWNER')
     estabelecimento = models.ForeignKey('Estabelecimento', on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
