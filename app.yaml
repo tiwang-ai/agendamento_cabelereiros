@@ -33,6 +33,13 @@ services:
         value: 'True'
       - key: DJANGO_COLLECTSTATIC
         value: 'True'
+    depends_on:
+      - name: database
+      - name: redis
+    health_check:
+      http_path: /health/
+      initial_delay_seconds: 30
+      period_seconds: 10
 
 static_sites:
   # Frontend (React/Vite)

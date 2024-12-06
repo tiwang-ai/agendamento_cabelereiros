@@ -103,7 +103,11 @@ DATABASES = {
         default=DATABASE_URL,
         conn_max_age=600,
         conn_health_checks=True,
-        ssl_require=True
+        ssl_require=True,
+        options={
+            'sslmode': 'require',
+            'options': '-c search_path=public'
+        }
     )
 }
 
@@ -287,6 +291,21 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-DJANGO_SUPERUSER_EMAIL = os.getenv('DJANGO_SUPERUSER_EMAIL', 'admin@exemplo.com')
-DJANGO_SUPERUSER_PASSWORD = os.getenv('DJANGO_SUPERUSER_PASSWORD', 'SuaSenhaSegura123!')
-DJANGO_SUPERUSER_NAME = os.getenv('DJANGO_SUPERUSER_NAME', 'Admin')
+# Configurações de URLs base
+BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://app.agendacabelereiro.com.br')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://app.agendacabelereiro.com.br')
+API_BASE_URL = f"{BACKEND_BASE_URL}/api"
+
+# Ajuste nas configurações de CORS e CSRF
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_BASE_URL,
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    FRONTEND_BASE_URL,
+    BACKEND_BASE_URL,
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
