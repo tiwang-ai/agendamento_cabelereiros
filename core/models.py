@@ -5,19 +5,33 @@ from django.utils import timezone
 
 class UserManager(BaseUserManager):
     def create_user(self, email=None, password=None, **extra_fields):
-        if not (email or extra_fields.get('phone')):
+        if not email and not extra_fields.get('phone'):
             raise ValueError('Email ou telefone é obrigatório')
         
         if email:
             email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save()
+            # Verifica se já existe usuário com este email
+            if self.filter(email=email).exists():
+                raise ValueError('email already taken')
+        
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
+        
+        if password:
+            user.set_password(password)
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email é obrigatório para superuser')
+            
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'ADMIN')
+        
         return self.create_user(email, password, **extra_fields)
 
     def get_by_natural_key(self, username):
