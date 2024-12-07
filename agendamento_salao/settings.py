@@ -295,8 +295,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # URLs base
-BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'cabelereiro-ia-dtnxh.ondigitalocean.app')
-FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'cabelereiro-ia-dtnxh.ondigitalocean.app')
+BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
 API_BASE_URL = f"{BACKEND_BASE_URL}/api"
 
 # Ajuste nas configurações de CORS e CSRF
