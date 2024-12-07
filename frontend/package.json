@@ -1,0 +1,73 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "vite preview --host 0.0.0.0 --port $PORT",
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "build:do": "npm ci && npm run build",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint:fix": "eslint . --ext ts,tsx --fix",
+    "preview": "vite preview --host 0.0.0.0",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.9",
+    "@mui/material": "^5.14.10",
+    "@mui/x-date-pickers": "^6.14.0",
+    "@react-oauth/google": "^0.11.1",
+    "axios": "^1.5.0",
+    "date-fns": "^2.30.0",
+    "date-fns-tz": "^2.0.0",
+    "framer-motion": "^10.18.0",
+    "i18next": "^23.16.8",
+    "qrcode.react": "^3.1.0",
+    "react": "^18.2.0",
+    "react-big-calendar": "^1.8.2",
+    "react-dom": "^18.2.0",
+    "react-i18next": "^13.5.0",
+    "react-router-dom": "^6.16.0",
+    "recharts": "2.1.12"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/eslint-parser": "^7.23.3",
+    "@babel/preset-react": "^7.23.3",
+    "@types/date-arithmetic": "^4.1.4",
+    "@types/node": "^20.17.9",
+    "@types/qrcode.react": "^1.0.2",
+    "@types/react": "^18.2.15",
+    "@types/react-big-calendar": "^1.16.0",
+    "@types/react-dom": "^18.3.1",
+    "@types/recharts": "^1.8.29",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.0.3",
+    "enhanced-resolve": "^5.17.1",
+    "eslint": "^8.45.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import": "^2.29.1",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
+    "eslint-plugin-unused-imports": "^3.0.0",
+    "get-tsconfig": "^4.8.1",
+    "qrcode.react": "^4.1.0",
+    "recharts": "^2.13.3",
+    "typescript": "^5.7.2",
+    "vite": "4.5.5"
+  },
+  "resolutions": {
+    "date-fns": "^2.30.0",
+    "framer-motion": "^10.18.0"
+  }
+}

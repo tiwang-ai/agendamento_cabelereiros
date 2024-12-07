@@ -1,0 +1,33 @@
+# Ambiente virtual
+venv/
+env/
+
+# Arquivos de ambiente
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+db.sqlite3
+
+# Node
+node_modules/
+/frontend/build/
+/frontend/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Media e Static
+media/
+static/
+
+# Migrations
+migrations/*.py
+!migrations/__init__.py

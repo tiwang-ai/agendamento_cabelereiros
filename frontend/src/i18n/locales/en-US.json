@@ -1,0 +1,56 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "appointments": "Appointments",
+    "clients": "Clients",
+    "revenue": "Revenue",
+    "professionals": "Professionals"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "new": "New Appointment",
+    "status": {
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "completed": "Completed"
+    }
+  },
+  "clients": {
+    "title": "Clients",
+    "new": "New Client",
+    "edit": "Edit Client",
+    "details": "Client Details"
+  },
+  "professionals": {
+    "title": "Professionals",
+    "new": "New Professional",
+    "edit": "Edit Professional",
+    "schedule": "Schedule"
+  },
+  "settings": {
+    "title": "Settings",
+    "profile": "Profile",
+    "whatsapp": "WhatsApp",
+    "notifications": "Notifications"
+  }
+}
