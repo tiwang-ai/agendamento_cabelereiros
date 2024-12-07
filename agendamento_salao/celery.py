@@ -10,8 +10,8 @@ app = Celery('agendamento_salao')
 
 # Configurações específicas para o Redis do Upstash
 app.conf.update(
-    broker_url=os.getenv('REDIS_URL'),
-    result_backend=os.getenv('REDIS_URL'),
+    broker_url=os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379'),
+    result_backend=os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379'),
     broker_connection_retry_on_startup=True,
     broker_pool_limit=None,  # Desativa o limite de pool para conexões
     redis_max_connections=20,  # Limite máximo de conexões

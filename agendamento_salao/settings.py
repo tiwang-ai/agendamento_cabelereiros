@@ -256,7 +256,7 @@ REDIS_URL = os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.getenv('redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379', 'redis://localhost:6379/1'),
+        "LOCATION": os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379'),
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             "IGNORE_EXCEPTIONS": True,
@@ -295,8 +295,8 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # URLs base
-BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
-FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
+BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'cabelereiro-ia-dtnxh.ondigitalocean.app')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'cabelereiro-ia-dtnxh.ondigitalocean.app')
 API_BASE_URL = f"{BACKEND_BASE_URL}/api"
 
 # Ajuste nas configurações de CORS e CSRF
