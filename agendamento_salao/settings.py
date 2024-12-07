@@ -15,9 +15,6 @@ DEBUG = "True"
 
 ALLOWED_HOSTS = [
     'cabelereiro-api.onrender.com',
-    'localhost',
-    '127.0.0.1',
-    # Adicione outros domínios que você precisa
 ]
 
 INSTALLED_APPS = [
