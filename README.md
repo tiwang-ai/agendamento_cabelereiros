@@ -706,4 +706,3 @@ Relacionamentos:
 4. **Backup**:
    - Configure backups automáticos do banco de dados
    - Mantenha cópias dos arquivos de mídia
-wadwadwa

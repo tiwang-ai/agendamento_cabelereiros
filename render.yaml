@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: agendamento-salao-backend
+    name: cabelereiro-api
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn agendamento_salao.wsgi:application
@@ -9,27 +9,19 @@ services:
         value: 3.8.0
       - key: DATABASE_URL
         fromDatabase:
-          name: agendamento-db
+          name: postgres
           property: connectionString
       - key: REDIS_URL
         fromService:
-          name: redis-queue
           type: redis
+          name: cache
           property: connectionString
 
   - type: worker
-    name: agendamento-salao-worker
+    name: celery-worker
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A agendamento_salao worker --pool=solo -l info
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.8.0
-
-  - type: redis
-    name: redis-queue
-    ipAllowList: []
-    plan: free
+    startCommand: celery -A agendamento_salao worker --pool=gevent -l info
 
 databases:
   - name: agendamento-db

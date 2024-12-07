@@ -13,7 +13,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = "True"
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [
+    'cabelereiro-api.onrender.com',
+    'localhost',
+    '127.0.0.1',
+    # Adicione outros domínios que você precisa
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -282,6 +287,3 @@ MERCADOPAGO_PUBLIC_KEY = os.getenv("MERCADOPAGO_PUBLIC_KEY", "YOUR_PUBLIC_KEY")
 WHATSAPP_INSTANCE_URL = f"{EVOLUTION_API_URL}/instance"
 WHATSAPP_MESSAGE_URL = f"{EVOLUTION_API_URL}/message"
 WHATSAPP_STATUS_URL = f"{EVOLUTION_API_URL}/status"
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
