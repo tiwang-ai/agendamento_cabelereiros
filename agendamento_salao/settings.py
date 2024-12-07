@@ -36,6 +36,9 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticated",
+    ),
 }
 
 SIMPLE_JWT = {
@@ -178,7 +181,7 @@ CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = "America/Sao_Paulo"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_BROKER_CONNECTION_MAX_RETRIES = 10
+CELERY_BROKER_CONNECTION_MAX_RETRIES = 3
 CELERY_BROKER_CONNECTION_TIMEOUT = 30
 
 CELERY_TASK_QUEUES = {
@@ -207,7 +210,7 @@ CACHES = {
             "SOCKET_CONNECT_TIMEOUT": 30,
             "SOCKET_TIMEOUT": 30,
             "RETRY_ON_TIMEOUT": True,
-            "MAX_CONNECTIONS": 100,
+            "MAX_CONNECTIONS": 10,
             "CONNECTION_POOL_KWARGS": {"max_retries": 3},
         },
         "KEY_PREFIX": "agendamento_salao",
@@ -216,9 +219,9 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "https://cabelereiro-ia-dtnxh.ondigitalocean.app",
     "http://localhost:3000",
     "http://localhost:5173",
+    "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
 ]
 
 CORS_ALLOW_CREDENTIALS = True

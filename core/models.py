@@ -2,27 +2,23 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
 from django.utils import timezone
+from django.db import IntegrityError
 
 class UserManager(BaseUserManager):
     def create_user(self, email=None, password=None, **extra_fields):
         if not email and not extra_fields.get('phone'):
             raise ValueError('Email ou telefone é obrigatório')
         
-        if email:
-            email = self.normalize_email(email)
-            # Verifica se já existe usuário com este email
-            if self.filter(email=email).exists():
-                raise ValueError('email already taken')
-        
-        user = self.model(
-            email=email,
-            **extra_fields
-        )
-        
-        if password:
-            user.set_password(password)
-        user.save(using=self._db)
-        return user
+        try:
+            if email:
+                email = self.normalize_email(email)
+                user = self.model(email=email, **extra_fields)
+                if password:
+                    user.set_password(password)
+                user.save(using=self._db)
+                return user
+        except IntegrityError:
+            raise ValueError('email already taken')
 
     def create_superuser(self, email, password=None, **extra_fields):
         if not email:
@@ -31,8 +27,10 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'ADMIN')
+        extra_fields.setdefault('name', 'Admin')
         
-        return self.create_user(email, password, **extra_fields)
+        user = self.create_user(email, password, **extra_fields)
+        return user
 
     def get_by_natural_key(self, username):
         """
