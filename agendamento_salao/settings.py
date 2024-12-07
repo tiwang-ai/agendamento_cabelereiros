@@ -81,35 +81,37 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "agendamento_salao.wsgi.application"
 
-# Configuração melhorada do banco de dados
+# Configuração do banco de dados com maior resiliência
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
 )
 
-DATABASES = {
-    "default": {
-        **dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            conn_health_checks=True,
-            ssl_require=True,
-        ),
+db_config = dj_database_url.config(
+    default=DATABASE_URL,
+    conn_max_age=0,  # Desativa conexões persistentes
+    conn_health_checks=True,
+    ssl_require=True,
+)
+
+db_config.update(
+    {
         "OPTIONS": {
             "sslmode": "require",
             "options": "-c search_path=public",
             "keepalives": 1,
-            "keepalives_idle": 60,  # Aumentado para 60 segundos
+            "keepalives_idle": 30,
             "keepalives_interval": 10,
             "keepalives_count": 5,
-            "connect_timeout": 30,  # Aumentado para 30 segundos
-            "retries": 5,  # Número de tentativas de reconexão
-            "retry_delay": 5,  # Delay entre tentativas em segundos
+            "connect_timeout": 30,
         },
-        "CONN_MAX_AGE": 0,  # Força novas conexões
-        "ATOMIC_REQUESTS": True,  # Transações atômicas por request
+        "TEST": {
+            "MIRROR": "default",
+        },
     }
-}
+)
+
+DATABASES = {"default": db_config}
 
 if os.getenv("BUILD_PHASE", "False") == "True":
     DATABASES = {
@@ -117,12 +119,6 @@ if os.getenv("BUILD_PHASE", "False") == "True":
             "ENGINE": "django.db.backends.sqlite3",
             "NAME": BASE_DIR / "db.sqlite3",
         }
-    }
-
-if os.getenv("DJANGO_RESET_DB", "False") == "True":
-    DATABASES["default"]["OPTIONS"] = {
-        "sslmode": "require",
-        "options": "-c search_path=public",
     }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -156,7 +152,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 EVOLUTION_API_URL = os.getenv(
     "EVOLUTION_API_URL", "https://evo-evolution.vaekfu.easypanel.io:8080/api/"
 )
-EVOLUTION_API_TOKEN = os.getenv("EVOLUTION_API_KEY", "429683C4C977415CAAFCCE10F7D57E11")
+EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "429683C4C977415CAAFCCE10F7D57E11")
+EVOLUTION_API_TOKEN = (
+    EVOLUTION_API_KEY  # Mantendo ambas as variáveis para compatibilidade
+)
 
 # Configurações da API do Deep Infra
 DEEP_INFRA_API_URL = (
@@ -166,12 +165,13 @@ DEEP_INFRA_API_TOKEN = os.getenv(
     "DEEP_INFRA_API_TOKEN", "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 )
 
-# Configuração melhorada do Celery e Redis
+# Configuração do Redis
 REDIS_URL = os.getenv(
     "REDIS_URL",
     "redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379",
 )
 
+# Configuração do Celery
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 CELERY_ACCEPT_CONTENT = ["json"]
