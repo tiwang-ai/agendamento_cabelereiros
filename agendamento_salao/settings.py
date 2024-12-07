@@ -81,37 +81,38 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "agendamento_salao.wsgi.application"
 
-# Configuração do banco de dados com maior resiliência
+# Configuração do banco de dados Neon
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://doadmin:AVNS_EJ9-aplM6wWoGKsogZ8@cabelereiro-db-do-user-18173817-0.j.db.ondigitalocean.com:25060/defaultdb?sslmode=require",
+    "postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require",
 )
 
-db_config = dj_database_url.config(
-    default=DATABASE_URL,
-    conn_max_age=0,  # Desativa conexões persistentes
-    conn_health_checks=True,
-    ssl_require=True,
-)
-
-db_config.update(
-    {
+db_config = {
+    "default": {
+        **dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=0,  # Importante para serverless
+            ssl_require=True,
+        ),
         "OPTIONS": {
             "sslmode": "require",
-            "options": "-c search_path=public",
-            "keepalives": 1,
-            "keepalives_idle": 30,
-            "keepalives_interval": 10,
-            "keepalives_count": 5,
-            "connect_timeout": 30,
+            "target_session_attrs": "read-write",
+            "application_name": "agendamento_salao",
         },
+        "POOL_OPTIONS": {
+            "POOL_SIZE": 20,  # Ajuste baseado na necessidade
+            "MAX_OVERFLOW": 10,
+            "RECYCLE": 300,  # 5 minutos
+        },
+        "CONN_MAX_AGE": 0,  # Desativa conexões persistentes
+        "CONN_HEALTH_CHECKS": True,
         "TEST": {
             "MIRROR": "default",
         },
     }
-)
+}
 
-DATABASES = {"default": db_config}
+DATABASES = db_config
 
 if os.getenv("BUILD_PHASE", "False") == "True":
     DATABASES = {
@@ -153,9 +154,7 @@ EVOLUTION_API_URL = os.getenv(
     "EVOLUTION_API_URL", "https://evo-evolution.vaekfu.easypanel.io:8080/api/"
 )
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "429683C4C977415CAAFCCE10F7D57E11")
-EVOLUTION_API_TOKEN = (
-    EVOLUTION_API_KEY  # Mantendo ambas as variáveis para compatibilidade
-)
+EVOLUTION_API_TOKEN = EVOLUTION_API_KEY
 
 # Configurações da API do Deep Infra
 DEEP_INFRA_API_URL = (

@@ -39,7 +39,7 @@ services:
       - key: ALLOWED_HOSTS
         value: ${APP_DOMAIN}
       - key: DATABASE_URL
-        value: ${DATABASE_URL}
+        value: 'postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require'
       - key: REDIS_URL
         value: ${REDIS_URL}
       - key: BUILD_PHASE
@@ -66,9 +66,6 @@ services:
         value: 'https://cabelereiro-ia-dtnxh.ondigitalocean.app'
       - key: FRONTEND_BASE_URL
         value: 'https://cabelereiro-ia-dtnxh.ondigitalocean.app'
-    depends_on:
-      - name: database
-      - name: redis
     health_check:
       http_path: /health/
       initial_delay_seconds: 60
@@ -133,7 +130,7 @@ workers:
       - key: REDIS_URL
         value: ${REDIS_URL}
       - key: DATABASE_URL
-        value: ${DATABASE_URL}
+        value: 'postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require'
       - key: EVOLUTION_API_URL
         value: ${EVOLUTION_API_URL}
       - key: EVOLUTION_API_KEY
@@ -162,34 +159,8 @@ workers:
       - key: REDIS_URL
         value: ${REDIS_URL}
       - key: DATABASE_URL
-        value: ${DATABASE_URL}
+        value: 'postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require'
       - key: DJANGO_SETTINGS_MODULE
         value: agendamento_salao.settings
       - key: SECRET_KEY
         value: ${SECRET_KEY}
-
-# Banco de dados PostgreSQL
-databases:
-  - engine: PG
-    name: db
-    num_nodes: 1
-    size: db-s-dev-database
-    version: '12'
-    config:
-      max_connections: 100
-      shared_buffers: 256MB
-      effective_cache_size: 768MB
-      maintenance_work_mem: 64MB
-      checkpoint_completion_target: 0.9
-      wal_buffers: 7864kB
-      default_statistics_target: 100
-      random_page_cost: 1.1
-      effective_io_concurrency: 200
-      work_mem: 2621kB
-      min_wal_size: 1GB
-      max_wal_size: 4GB
-      statement_timeout: 30000 # 30 segundos
-      idle_in_transaction_session_timeout: 300000 # 5 minutos
-      tcp_keepalives_idle: 60
-      tcp_keepalives_interval: 10
-      tcp_keepalives_count: 5
