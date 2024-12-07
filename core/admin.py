@@ -27,14 +27,22 @@ class CustomUserAdmin(UserAdmin):
 
     def save_model(self, request, obj, form, change):
         try:
+            # Verifica conexão com banco
             with connection.cursor() as cursor:
-                cursor.execute("SELECT current_database(), current_schema();")
-                db_info = cursor.fetchone()
-                print(f"Database: {db_info[0]}, Schema: {db_info[1]}")
-            
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public'
+                        AND table_name = 'core_user'
+                    );
+                """)
+                table_exists = cursor.fetchone()[0]
+                print(f"Tabela core_user existe: {table_exists}")
+                
             super().save_model(request, obj, form, change)
+            
         except Exception as e:
-            print(f"Error saving user: {str(e)}")
+            print(f"Erro ao salvar usuário: {str(e)}")
             raise
 
 @admin.register(Profissional)

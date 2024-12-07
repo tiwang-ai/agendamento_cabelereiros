@@ -1,6 +1,7 @@
 # core/middleware.py
 from django.utils import timezone
 from .models import User, BotConfig, Estabelecimento
+from django.db import connection
 
 class ActivityMiddleware:
     def __init__(self, get_response):
@@ -49,3 +50,12 @@ class WhatsAppMiddleware:
             except Exception as e:
                 print(f"Erro no middleware: {str(e)}")
         return None
+
+class DBMonitorMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        response = self.get_response(request)
+        print(f"Queries executadas: {len(connection.queries)}")
+        return response

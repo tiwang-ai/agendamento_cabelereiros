@@ -33,15 +33,28 @@ class UserManager(BaseUserManager):
         if not email:
             raise ValueError('Email é obrigatório para superuser')
         
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('role', 'ADMIN')
-        extra_fields.setdefault('name', 'Admin')
-        extra_fields.setdefault('is_active', True)
-        
         try:
-            return self.create_user(email, password, **extra_fields)
+            # Verifica se já existe um superuser
+            if self.filter(is_superuser=True).exists():
+                raise ValueError('Já existe um superuser cadastrado')
+            
+            extra_fields.setdefault('is_staff', True)
+            extra_fields.setdefault('is_superuser', True)
+            extra_fields.setdefault('role', 'ADMIN')
+            extra_fields.setdefault('name', 'Admin')
+            extra_fields.setdefault('is_active', True)
+            
+            # Força a criação mesmo se o email existir
+            user = self.model(
+                email=self.normalize_email(email),
+                **extra_fields
+            )
+            user.set_password(password)
+            user.save(using=self._db)
+            return user
+            
         except Exception as e:
+            print(f"Erro detalhado: {str(e)}")
             raise ValueError(f'Erro ao criar superuser: {str(e)}')
 
     def get_by_natural_key(self, username):
