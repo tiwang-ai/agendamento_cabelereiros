@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import User, Estabelecimento, Profissional, Cliente, Servico, Agendamento
+from django.db import connection
 
 class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'name', 'role', 'is_staff')
@@ -23,6 +24,18 @@ class CustomUserAdmin(UserAdmin):
 
     search_fields = ('email', 'name')
     ordering = ('email',)
+
+    def save_model(self, request, obj, form, change):
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT current_database(), current_schema();")
+                db_info = cursor.fetchone()
+                print(f"Database: {db_info[0]}, Schema: {db_info[1]}")
+            
+            super().save_model(request, obj, form, change)
+        except Exception as e:
+            print(f"Error saving user: {str(e)}")
+            raise
 
 @admin.register(Profissional)
 class ProfissionalAdmin(admin.ModelAdmin):
