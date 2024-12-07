@@ -9,28 +9,40 @@ class UserManager(BaseUserManager):
         if not email and not extra_fields.get('phone'):
             raise ValueError('Email ou telefone é obrigatório')
         
+        if email:
+            email = self.normalize_email(email)
+            # Verifica se já existe um usuário com este email
+            if self.filter(email=email).exists():
+                raise ValueError('Email já está em uso')
+                
+        user = self.model(
+            email=email,
+            **extra_fields
+        )
+        
+        if password:
+            user.set_password(password)
+        
         try:
-            if email:
-                email = self.normalize_email(email)
-                user = self.model(email=email, **extra_fields)
-                if password:
-                    user.set_password(password)
-                user.save(using=self._db)
-                return user
-        except IntegrityError:
-            raise ValueError('email already taken')
+            user.save(using=self._db)
+            return user
+        except IntegrityError as e:
+            raise ValueError(f'Erro ao criar usuário: {str(e)}')
 
     def create_superuser(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError('Email é obrigatório para superuser')
-            
+        
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('role', 'ADMIN')
         extra_fields.setdefault('name', 'Admin')
+        extra_fields.setdefault('is_active', True)
         
-        user = self.create_user(email, password, **extra_fields)
-        return user
+        try:
+            return self.create_user(email, password, **extra_fields)
+        except Exception as e:
+            raise ValueError(f'Erro ao criar superuser: {str(e)}')
 
     def get_by_natural_key(self, username):
         """
@@ -57,6 +69,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     
     email = models.EmailField(
         unique=True,
+        null=True,
+        blank=True,
         verbose_name='E-mail'
     )
     phone = models.CharField(max_length=15, blank=True)

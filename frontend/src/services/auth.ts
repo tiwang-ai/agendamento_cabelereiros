@@ -3,7 +3,7 @@ import { UserRole } from '../types/auth';
 
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://cabelereiro-ia-dtnxh.ondigitalocean.app/api';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
