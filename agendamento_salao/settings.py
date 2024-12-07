@@ -188,8 +188,8 @@ DEEP_INFRA_API_TOKEN = "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
 DEEPINFRA_API_KEY = os.getenv("4h47LHC10VwzA5DR6vjHD9gnqZOSaK0")
 
 # Configuração do Celery
-CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_BROKER_URL = os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379')
+CELERY_RESULT_BACKEND = os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -215,7 +215,7 @@ CELERY_TASK_ROUTES = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    f"https://{os.getenv('APP_DOMAIN')}",
+    "https://cabelereiro-ia-dtnxh.ondigitalocean.app",
     "http://localhost:3000",
     "http://localhost:5173"
 ]
@@ -229,13 +229,13 @@ AUTHENTICATION_BACKENDS = [
 
 MERCADOPAGO_ACCESS_TOKEN = 'YOUR_ACCESS_TOKEN'
 MERCADOPAGO_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'
-FRONTEND_URL = 'http://localhost:5173'  # URL do frontend
+FRONTEND_URL = 'https://cabelereiro-ia-dtnxh.ondigitalocean.app'  # URL do frontend
 
 # Configurações da Evolution API
 EVOLUTION_API_URL = os.getenv('EVOLUTION_API_URL', 'https://api.agendacabelereiro.com.br')
 EVOLUTION_API_KEY = os.getenv('EVOLUTION_API_KEY', '429683C4C977415CAAFCCE10F7D57E11')
 EVOLUTION_API_TOKEN = EVOLUTION_API_KEY
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:8000')
+BACKEND_URL = os.getenv('BACKEND_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app/api')
 
 # Configurações específicas do WhatsApp
 WHATSAPP_INSTANCE_URL = f"{EVOLUTION_API_URL}/instance"
@@ -251,7 +251,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
 # Configurações do Redis
-REDIS_URL = os.getenv('REDIS_URL')
+REDIS_URL = os.getenv('REDIS_URL', 'redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379')
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -293,9 +294,9 @@ CORS_ALLOW_HEADERS = [
     'x-requested-with',
 ]
 
-# Configurações de URLs base
-BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://app.agendacabelereiro.com.br')
-FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://app.agendacabelereiro.com.br')
+# URLs base
+BACKEND_BASE_URL = os.getenv('BACKEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
+FRONTEND_BASE_URL = os.getenv('FRONTEND_BASE_URL', 'https://cabelereiro-ia-dtnxh.ondigitalocean.app')
 API_BASE_URL = f"{BACKEND_BASE_URL}/api"
 
 # Ajuste nas configurações de CORS e CSRF
