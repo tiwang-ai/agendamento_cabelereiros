@@ -6,16 +6,17 @@ services:
     startCommand: gunicorn agendamento_salao.wsgi:application
     envVars:
       - key: PYTHON_VERSION
-        value: 3.8.0
+        value: 3.11.0
       - key: DATABASE_URL
-        fromDatabase:
-          name: postgres
-          property: connectionString
+        value: postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: cache
-          property: connectionString
+        value: rediss://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379
+      - key: ALLOWED_HOSTS
+        value: cabelereiro-api.onrender.com
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SETTINGS_MODULE
+        value: agendamento_salao.settings
 
   - type: worker
     name: celery-worker

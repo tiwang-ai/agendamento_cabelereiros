@@ -15,6 +15,8 @@ DEBUG = "True"
 
 ALLOWED_HOSTS = [
     'cabelereiro-api.onrender.com',
+    'localhost',
+    '127.0.0.1',
 ]
 
 INSTALLED_APPS = [
@@ -221,9 +223,9 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://cabelereiro-n69davhc3-egmkts-projects.vercel.app",
     "http://localhost:5173",
-    "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
+    "http://localhost:3000"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -249,19 +251,9 @@ CORS_ALLOW_HEADERS = [
 ]
 
 # URLs base e configurações de domínio
-BACKEND_BASE_URL = os.getenv(
-    "BACKEND_BASE_URL", "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
-)
-FRONTEND_BASE_URL = os.getenv(
-    "FRONTEND_BASE_URL", "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
-)
-API_BASE_URL = f"{BACKEND_BASE_URL}/api"
-
 CSRF_TRUSTED_ORIGINS = [
-    FRONTEND_BASE_URL,
-    BACKEND_BASE_URL,
-    "http://localhost:3000",
-    "http://localhost:5173",
+    "https://cabelereiro-api.onrender.com",
+    "https://cabelereiro-n69davhc3-egmkts-projects.vercel.app"
 ]
 
 # Configurações de segurança
