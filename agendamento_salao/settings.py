@@ -11,12 +11,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-DEBUG = "True"
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
     'cabelereiro-api.onrender.com',
     'localhost',
     '127.0.0.1',
+    os.getenv('ALLOWED_HOSTS', '').split(',')
 ]
 
 INSTALLED_APPS = [
@@ -223,9 +224,10 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "https://cabelereiro-n69davhc3-egmkts-projects.vercel.app",
+    "https://seu-frontend.vercel.app",
     "http://localhost:5173",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    *os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
 ]
 
 CORS_ALLOW_CREDENTIALS = True

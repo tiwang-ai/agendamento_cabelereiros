@@ -5,24 +5,29 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn agendamento_salao.wsgi:application
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
+      - key: ENVIRONMENT
+        value: production
       - key: DATABASE_URL
         value: postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require
       - key: REDIS_URL
-        value: rediss://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379
+        value: redis://default:AVjqAAIjcDE2NDI5MTJhNjU2NjA0MWI0YWZlYWE4NGI4NmYxYTg0M3AxMA@next-barnacle-22762.upstash.io:6379
       - key: ALLOWED_HOSTS
         value: cabelereiro-api.onrender.com
       - key: DEBUG
         value: "False"
       - key: DJANGO_SETTINGS_MODULE
         value: agendamento_salao.settings
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://cabelereiro-ia-dtnxh.ondigitalocean.app
 
   - type: worker
     name: celery-worker
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: celery -A agendamento_salao worker --pool=gevent -l info
+    envVars:
+      - key: ENVIRONMENT
+        value: production
 
 databases:
   - name: agendamento-db

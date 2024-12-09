@@ -97,7 +97,7 @@ static_sites:
         rewrite: /
     envs:
       - key: VITE_API_URL
-        value: ${_self.HOSTNAME}/api
+        value: https://cabelereiro-api.onrender.com
       - key: PORT
         value: '10000'
 
