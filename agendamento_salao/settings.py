@@ -224,7 +224,7 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "https://seu-frontend.vercel.app",
+    "https://cabelereiro-ia-dtnxh.ondigitalocean.app",
     "http://localhost:5173",
     "http://localhost:3000",
     *os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
@@ -255,7 +255,7 @@ CORS_ALLOW_HEADERS = [
 # URLs base e configurações de domínio
 CSRF_TRUSTED_ORIGINS = [
     "https://cabelereiro-api.onrender.com",
-    "https://cabelereiro-n69davhc3-egmkts-projects.vercel.app"
+    "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
 ]
 
 # Configurações de segurança
