@@ -1,0 +1,28 @@
+{
+  "services": {
+    "web": {
+      "name": "cabelereiro-api",
+      "startCommand": "python manage.py migrate && gunicorn agendamento_salao.wsgi:application",
+      "buildCommand": "pip install -r requirements.txt && python manage.py collectstatic --noinput",
+      "healthcheckPath": "/admin/login/",
+      "healthcheckTimeout": 100,
+      "port": 8000
+    },
+    "worker": {
+      "name": "celery-worker",
+      "startCommand": "celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp --without-heartbeat --without-gossip",
+      "buildCommand": "pip install -r requirements.txt",
+      "healthcheckPath": "/",
+      "healthcheckTimeout": 100,
+      "port": 8000
+    },
+    "scheduler": {
+      "name": "celery-scheduler",
+      "startCommand": "celery -A agendamento_salao beat -l info",
+      "buildCommand": "pip install -r requirements.txt",
+      "healthcheckPath": "/",
+      "healthcheckTimeout": 100,
+      "port": 8000
+    }
+  }
+}

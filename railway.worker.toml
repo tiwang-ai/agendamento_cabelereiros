@@ -1,0 +1,11 @@
+[build]
+builder = "nixpacks"
+buildCommand = "pip install -r requirements.txt"
+
+[deploy]
+startCommand = "celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp --without-heartbeat --without-gossip"
+healthcheckPath = "/"
+healthcheckTimeout = 100
+
+[service]
+internalPort = 8000

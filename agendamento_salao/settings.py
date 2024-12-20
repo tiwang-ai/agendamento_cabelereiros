@@ -9,12 +9,13 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# 5*1_3&i#*knmxj%o)%&lbpmj1$5-7zu6b@*$f37##1&i672#kr
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
-    'cabelereiro-api.onrender.com',
+    '*.railway.app',
     'localhost',
     '127.0.0.1',
     os.getenv('ALLOWED_HOSTS', '').split(',')
@@ -188,6 +189,9 @@ CELERY_TIMEZONE = "America/Sao_Paulo"
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_BROKER_CONNECTION_MAX_RETRIES = 1
 CELERY_BROKER_CONNECTION_TIMEOUT = 30
+CELERY_WORKER_CONCURRENCY = 2
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 1000
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 512000
 
 CELERY_TASK_QUEUES = {
     "whatsapp": {
@@ -224,10 +228,9 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "https://cabelereiro-ia-dtnxh.ondigitalocean.app",
+    "https://*.vercel.app",
     "http://localhost:5173",
-    "http://localhost:3000",
-    *os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
+    "http://localhost:3000"
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -254,12 +257,13 @@ CORS_ALLOW_HEADERS = [
 
 # URLs base e configurações de domínio
 CSRF_TRUSTED_ORIGINS = [
-    "https://cabelereiro-api.onrender.com",
-    "https://cabelereiro-ia-dtnxh.ondigitalocean.app"
+    "https://*.railway.app",
+    "https://*.vercel.app"
 ]
 
 # Configurações de segurança
 SECURE_SSL_REDIRECT = not DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 SECURE_BROWSER_XSS_FILTER = True
