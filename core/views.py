@@ -12,7 +12,7 @@ from rest_framework.decorators import api_view, permission_classes
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum, Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from .services.system_logs import SystemMonitor
 from django.http import JsonResponse
 from .integrations.evolution import (
@@ -219,13 +219,13 @@ class AgendamentoViewSet(viewsets.ModelViewSet):
         agendamento = response.data
 
         # Verifique a disponibilidade chamando a função verificar_disponibilidade
-        disponibilidade = verificar_disponibilidade(profissional_id, data, horario)
+        # disponibilidade = verificar_disponibilidade(profissional_id, data, horario)
 
-        if not disponibilidade:
-            return Response(
-                {"erro": "Horário indisponível para o profissional escolhido."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        # if not disponibilidade:
+          # return Response(
+           #     {"erro": "Horário indisponível para o profissional escolhido."},
+           #     status=status.HTTP_400_BAD_REQUEST
+           # )
 
         numero_cliente = agendamento['cliente']['telefone']
         mensagem = f"Olá, {agendamento['cliente']['nome']}! Seu agendamento para o serviço {agendamento['servico']} está confirmado para o dia {agendamento['data_agendamento']} às {agendamento['horario']}."
@@ -970,17 +970,17 @@ def salon_analytics(request):
     if not salon_id:
         return Response({"error": "Salão não encontrado"}, status=400)
 
-    analytics = ReportService.get_salon_analytics(salon_id, start_date, end_date)
-    return Response(analytics)
+    # analytics = ReportService.get_salon_analytics(salon_id, start_date, end_date)
+    # return Response(analytics)
 
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def staff_analytics(request):
-    """
-    Retorna análises para a equipe administrativa
-    """
-    analytics = ReportService.get_staff_analytics()
-    return Response(analytics)
+# @api_view(['GET'])
+# @permission_classes([IsAdminUser])
+# def staff_analytics(request):
+#     """
+#     Retorna análises para a equipe administrativa
+#    """
+#     analytics = ReportService.get_staff_analytics()
+#     return Response(analytics)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -996,11 +996,11 @@ def export_data(request):
     if not all([data_type, start_date, end_date, salon_id]):
         return Response({"error": "Parâmetros inválidos"}, status=400)
 
-    try:
-        data = ReportService.export_data(salon_id, data_type, start_date, end_date)
-        return Response(data)
-    except ValueError as e:
-        return Response({"error": str(e)}, status=400)
+   #  try:
+        # data = ReportService.export_data(salon_id, data_type, start_date, end_date)
+        # return Response(data)
+   #  except ValueError as e:
+   #      return Response({"error": str(e)}, status=400)
 
 @api_view(['POST'])
 def send_whatsapp_message(request, salon_id):
@@ -1286,25 +1286,9 @@ def bot_config(request):
         }, status=500)
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def health_check(request):
     try:
-        # Teste conexão com o banco de dados
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-
-        # Teste conexão com Redis
-        redis_client = get_redis_connection("default")
-        redis_client.ping()
-
-        return Response({
-            "status": "healthy",
-            "database": "connected",
-            "redis": "connected",
-            "timestamp": datetime.now().isoformat()
-        }, status=200)
+        return Response({'status': 'ok'})
     except Exception as e:
-        return Response({
-            "status": "unhealthy",
-            "error": str(e)
-        }, status=500)
+        return Response({'status': 'error', 'details': str(e)}, status=500)

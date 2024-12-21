@@ -89,7 +89,7 @@ urlpatterns = [
     path('whatsapp/status/<str:estabelecimento_id>/', get_connection_status, name='get-connection-status'),
     path('admin/bot-config/', bot_config, name='bot-config'),
     path('admin/system-metrics/', system_metrics, name='system-metrics'),
-    path('health-check/', health_check, name='health-check'),
+    path('api/health-check/', health_check, name='health-check'),
 ]
 
 

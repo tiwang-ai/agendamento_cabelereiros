@@ -16,9 +16,10 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
     '*.railway.app',
+    'healthcheck.railway.app',
+    'frontend-816m76f9c-tiwangs-projects.vercel.app',
     'localhost',
     '127.0.0.1',
-    os.getenv('ALLOWED_HOSTS', '').split(',')
 ]
 
 INSTALLED_APPS = [
