@@ -1,23 +1,9 @@
 [build]
 builder = "nixpacks"
-buildCommand = """
-pip install -r requirements.txt && \
-python manage.py collectstatic --noinput && \
-python manage.py makemigrations core
-"""
+buildCommand = "pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py makemigrations core"
 
 [deploy]
-startCommand = """
-python manage.py migrate && \
-gunicorn agendamento_salao.wsgi:application --bind 0.0.0.0:$PORT \
---workers 4 \
---timeout 120 \
---keep-alive 5 \
---max-requests 1000 \
---max-requests-jitter 50 \
---worker-class gevent \
---worker-connections 1000
-"""
+startCommand = "python manage.py migrate && gunicorn agendamento_salao.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50 --worker-class gevent --worker-connections 1000"
 healthcheckPath = "/api/health-check/"
 healthcheckTimeout = 100
 
