@@ -1,6 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .views import (
     EstabelecimentoViewSet,
@@ -54,6 +56,10 @@ router.register(r'whatsapp/chats', ChatConfigViewSet, basename='chat-config')
 router.register(r'system-services', SystemServiceViewSet, basename='system-services')
 router.register(r'salon-services', SalonServiceViewSet, basename='salon-services')
 
+@api_view(['GET'])
+def health_check(request):
+    return Response({'status': 'healthy'})
+
 urlpatterns = [
     path('', include(router.urls)),
     path('api-auth/', include('rest_framework.urls')),
@@ -85,6 +91,7 @@ urlpatterns = [
     path('whatsapp/status/<str:estabelecimento_id>/', get_connection_status, name='get-connection-status'),
     path('admin/bot-config/', bot_config, name='bot-config'),
     path('admin/system-metrics/', system_metrics, name='system-metrics'),
+    path('health-check/', health_check, name='health-check'),
 ]
 
 

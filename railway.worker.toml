@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "pip install -r requirements.txt"
 
 [deploy]
-startCommand = "celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp --without-heartbeat --without-gossip"
+startCommand = "celery -A agendamento_salao worker --pool=gevent -l info"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 
