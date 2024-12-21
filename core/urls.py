@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from datetime import datetime
 
 from .views import (
     EstabelecimentoViewSet,
@@ -41,7 +42,8 @@ from .views import (
     connect_whatsapp,
     get_connection_status,
     bot_config,
-    system_metrics
+    system_metrics,
+    health_check
 )
 
 router = DefaultRouter()
@@ -55,17 +57,6 @@ router.register(r'profissional/clientes', ClienteProfissionalViewSet, basename='
 router.register(r'whatsapp/chats', ChatConfigViewSet, basename='chat-config')
 router.register(r'system-services', SystemServiceViewSet, basename='system-services')
 router.register(r'salon-services', SalonServiceViewSet, basename='salon-services')
-
-@api_view(['GET'])
-def health_check(request):
-    from django.db import connection
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
-        return Response({"status": "healthy"}, status=200)
-    except Exception as e:
-        return Response({"status": "unhealthy", "error": str(e)}, status=500)
 
 urlpatterns = [
     path('', include(router.urls)),

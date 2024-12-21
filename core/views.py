@@ -4,10 +4,11 @@ from django.contrib.auth import get_user_model
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService
 from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer
 from django.conf import settings
+from django.db import connection
+from django_redis import get_redis_connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from django.conf import settings
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum, Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
@@ -1282,4 +1283,28 @@ def bot_config(request):
     except Exception as e:
         return Response({
             'error': str(e)
+        }, status=500)
+
+@api_view(['GET'])
+def health_check(request):
+    try:
+        # Teste conexão com o banco de dados
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+
+        # Teste conexão com Redis
+        redis_client = get_redis_connection("default")
+        redis_client.ping()
+
+        return Response({
+            "status": "healthy",
+            "database": "connected",
+            "redis": "connected",
+            "timestamp": datetime.now().isoformat()
+        }, status=200)
+    except Exception as e:
+        return Response({
+            "status": "unhealthy",
+            "error": str(e)
         }, status=500)
