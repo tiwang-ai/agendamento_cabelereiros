@@ -58,7 +58,14 @@ router.register(r'salon-services', SalonServiceViewSet, basename='salon-services
 
 @api_view(['GET'])
 def health_check(request):
-    return Response({'status': 'healthy'})
+    from django.db import connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+            cursor.fetchone()
+        return Response({"status": "healthy"}, status=200)
+    except Exception as e:
+        return Response({"status": "unhealthy", "error": str(e)}, status=500)
 
 urlpatterns = [
     path('', include(router.urls)),

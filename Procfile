@@ -1,3 +1,3 @@
-web: gunicorn agendamento_salao.wsgi:application
-worker: celery -A agendamento_salao worker --pool=gevent -l info
+web: gunicorn agendamento_salao.wsgi:application --bind 0.0.0.0:$PORT --workers 4 --timeout 120 --keep-alive 5 --max-requests 1000 --max-requests-jitter 50 --worker-class gevent --worker-connections 1000
+worker: celery -A agendamento_salao worker --pool=gevent -l info -Q whatsapp --without-heartbeat --without-gossip --max-tasks-per-child=1000 --max-memory-per-child=512000
 beat: celery -A agendamento_salao beat -l info 
