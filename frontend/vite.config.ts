@@ -5,7 +5,7 @@ import path from 'path'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiUrl = mode === 'production' 
-    ? 'https://seu-app.railway.app'
+    ? 'https://cabelereiro-production.up.railway.app'
     : 'http://localhost:8000'
 
   return {

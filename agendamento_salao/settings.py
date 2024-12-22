@@ -16,6 +16,7 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = [
     '*.railway.app',
+    'cabelereiro-production.up.railway.app',
     'healthcheck.railway.app',
     'frontend-816m76f9c-tiwangs-projects.vercel.app',
     'localhost',
@@ -97,40 +98,19 @@ DATABASE_URL = os.getenv(
     "postgresql://cabalereiro-db_owner:W4nmbkYi7FvX@ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech/cabalereiro-db?sslmode=require",
 )
 
-db_config = {
-    "default": {
-        **dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=0,  # Importante para serverless
-            ssl_require=True,
-        ),
-        "OPTIONS": {
-            "sslmode": "require",
-            "target_session_attrs": "read-write",
-            "application_name": "agendamento_salao",
-        },
-        "POOL_OPTIONS": {
-            "POOL_SIZE": 20,  # Ajuste baseado na necessidade
-            "MAX_OVERFLOW": 10,
-            "RECYCLE": 300,  # 5 minutos
-        },
-        "CONN_MAX_AGE": 0,  # Desativa conexões persistentes
-        "CONN_HEALTH_CHECKS": True,
-        "TEST": {
-            "MIRROR": "default",
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'cabalereiro-db',
+        'USER': 'cabalereiro-db_owner',
+        'PASSWORD': 'W4nmbkYi7FvX',
+        'HOST': 'ep-white-mud-a5wh0xvw.us-east-2.aws.neon.tech',
+        'PORT': '5432',
+        'OPTIONS': {
+            'sslmode': 'require',
         },
     }
 }
-
-DATABASES = db_config
-
-if os.getenv("BUILD_PHASE", "False") == "True":
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {
