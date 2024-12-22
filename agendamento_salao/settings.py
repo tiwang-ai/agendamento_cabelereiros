@@ -212,6 +212,7 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
+    "https://cabelereiro-kqiaai2hi-tiwangs-projects.vercel.app",
     "https://*.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000"
