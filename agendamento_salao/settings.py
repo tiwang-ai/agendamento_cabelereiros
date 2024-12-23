@@ -213,6 +213,7 @@ CACHES = {
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
     "https://cabelereiro-kqiaai2hi-tiwangs-projects.vercel.app",
+    "https://cabelereiro-production.up.railway.app",
     "https://*.vercel.app",
     "http://localhost:5173",
     "http://localhost:3000"
@@ -242,6 +243,8 @@ CORS_ALLOW_HEADERS = [
 
 # URLs base e configurações de domínio
 CSRF_TRUSTED_ORIGINS = [
+    "https://cabelereiro-kqiaai2hi-tiwangs-projects.vercel.app",
+    "https://cabelereiro-production.up.railway.app",
     "https://*.railway.app",
     "https://*.vercel.app"
 ]
