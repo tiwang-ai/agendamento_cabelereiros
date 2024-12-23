@@ -4,7 +4,7 @@ import api from './api';
 export const SalonService = {
   getAll: async () => {
     try {
-      const response = await api.get('/estabelecimentos/');
+      const response = await api.get('/api/estabelecimentos/');
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar salões:', error);
@@ -13,13 +13,13 @@ export const SalonService = {
   },
 
   getById: async (id: string) => {
-    const response = await api.get(`/estabelecimentos/${id}/`);
+    const response = await api.get(`/api/estabelecimentos/${id}/`);
     return response.data;
   },
 
   create: async (data: any) => {
     try {
-      const response = await api.post('/estabelecimentos/', {
+      const response = await api.post('/api/estabelecimentos/', {
         ...data,
         create_instance: true
       });
@@ -31,13 +31,13 @@ export const SalonService = {
   },
 
   update: async (id: number, data: any) => {
-    const response = await api.put(`/estabelecimentos/${id}/`, data);
+    const response = await api.put(`/api/estabelecimentos/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: string) => {
     try {
-      await api.delete(`/estabelecimentos/${id}/`);
+      await api.delete(`/api/estabelecimentos/${id}/`);
     } catch (error: any) {
       console.error('Erro ao deletar salão:', error.response?.data || error.message);
       throw error;

@@ -335,3 +335,12 @@ class BotConfig(models.Model):
     
     class Meta:
         unique_together = ['estabelecimento', 'numero_cliente']
+
+class ActivityLog(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    action = models.CharField(max_length=255)
+    details = models.TextField(blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-timestamp']

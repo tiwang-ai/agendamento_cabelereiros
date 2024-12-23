@@ -19,7 +19,8 @@ import {
   TextField,
   Box,
   Chip,
-  Alert
+  Alert,
+  CircularProgress
 } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import { useNavigate ,  Link as RouterLink } from 'react-router-dom';
@@ -50,6 +51,7 @@ const SalonsManagement = () => {
     horario_funcionamento: ''
   });
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -58,10 +60,14 @@ const SalonsManagement = () => {
 
   const loadSalons = async () => {
     try {
+      setLoading(true);
       const data = await SalonService.getAll();
       setSalons(data);
-    } catch (error) {
+    } catch (error: any) {
+      setError(error.response?.data?.message || 'Erro ao carregar salões');
       console.error('Erro ao carregar salões:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -148,58 +154,64 @@ const SalonsManagement = () => {
           </Button>
         </Box>
 
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Endereço</TableCell>
-                <TableCell>Telefone</TableCell>
-                <TableCell>WhatsApp</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {salons.map((salon) => (
-                <TableRow key={salon.id}>
-                  <TableCell>
-                    <Box
-                      component={RouterLink}
-                      to={`/admin/salons/${salon.id}`}
-                      sx={{ 
-                        textDecoration: 'none', 
-                        color: 'primary.main',
-                        '&:hover': { 
-                          textDecoration: 'underline' 
-                        }
-                      }}
-                    >
-                      {salon.nome}
-                    </Box>
-                  </TableCell>
-                  <TableCell>{salon.endereco}</TableCell>
-                  <TableCell>{salon.telefone}</TableCell>
-                  <TableCell>{salon.whatsapp}</TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={salon.status || 'Desconectado'}
-                      color={salon.status === 'connected' ? 'success' : 'error'}
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => handleOpenDialog(salon)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(salon.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <TableContainer>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Nome</TableCell>
+                  <TableCell>Endereço</TableCell>
+                  <TableCell>Telefone</TableCell>
+                  <TableCell>WhatsApp</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell align="right">Ações</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+              </TableHead>
+              <TableBody>
+                {salons.map((salon) => (
+                  <TableRow key={salon.id}>
+                    <TableCell>
+                      <Box
+                        component={RouterLink}
+                        to={`/admin/salons/${salon.id}`}
+                        sx={{ 
+                          textDecoration: 'none', 
+                          color: 'primary.main',
+                          '&:hover': { 
+                            textDecoration: 'underline' 
+                          }
+                        }}
+                      >
+                        {salon.nome}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{salon.endereco}</TableCell>
+                    <TableCell>{salon.telefone}</TableCell>
+                    <TableCell>{salon.whatsapp}</TableCell>
+                    <TableCell>
+                      <Chip 
+                        label={salon.status || 'Desconectado'}
+                        color={salon.status === 'connected' ? 'success' : 'error'}
+                      />
+                    </TableCell>
+                    <TableCell align="right">
+                      <IconButton onClick={() => handleOpenDialog(salon)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(salon.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
 
         <Dialog 
           open={openDialog} 

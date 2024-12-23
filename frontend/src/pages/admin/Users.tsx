@@ -78,7 +78,7 @@ const UsersManagement = () => {
 
   const loadEstablishments = async () => {
     try {
-      const response = await api.get('/estabelecimentos/');
+      const response = await api.get('/api/estabelecimentos/');
       setEstablishments(response.data);
     } catch (error) {
       console.error('Erro ao carregar estabelecimentos:', error);

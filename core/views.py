@@ -1,8 +1,8 @@
 import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
-from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService
-from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer
+from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog
+from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer
 from django.conf import settings
 from django.db import connection
 from django_redis import get_redis_connection
@@ -112,6 +112,7 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class EstabelecimentoViewSet(viewsets.ModelViewSet):
     queryset = Estabelecimento.objects.all()
     serializer_class = EstabelecimentoSerializer
+    permission_classes = [IsAdminUser]
 
     def create(self, request, *args, **kwargs):
         try:
@@ -539,33 +540,36 @@ def finance_transactions(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_stats(request):
-    """
-    Retorna estatísticas para o dashboard administrativo
-    """
-    total_salons = Estabelecimento.objects.count()
-    active_salons = Estabelecimento.objects.filter(is_active=True).count()
-    total_revenue = Agendamento.objects.filter(status='completed').aggregate(
-        total=Sum('servico__preco'))['total'] or 0
-    active_subscriptions = User.objects.filter(role='OWNER', is_active=True).count()
-    
-    # Atividades recentes
-    recent_activities = []
-    recent_appointments = Agendamento.objects.order_by('-data_agendamento')[:5]
-    for appointment in recent_appointments:
-        recent_activities.append({
-            'id': appointment.id,
-            'type': 'appointment',
-            'description': f'Novo agendamento - {appointment.cliente.nome}',
-            'date': appointment.data_agendamento
+    try:
+        total_salons = Estabelecimento.objects.count()
+        active_salons = Estabelecimento.objects.filter(is_active=True).count()
+        total_revenue = Transaction.objects.filter(
+            type='income', 
+            status='completed'
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        
+        active_subscriptions = Estabelecimento.objects.filter(
+            status='connected'
+        ).count()
+        
+        # Últimas atividades (usando o modelo Interacao)
+        recent_activities = Interacao.objects.all().order_by('-data_criacao')[:5]
+        activities_list = [{
+            'id': activity.id,
+            'type': activity.tipo,
+            'description': activity.descricao,
+            'date': activity.data_criacao
+        } for activity in recent_activities]
+
+        return Response({
+            'totalSalons': total_salons,
+            'activeSalons': active_salons,
+            'totalRevenue': float(total_revenue),
+            'activeSubscriptions': active_subscriptions,
+            'recentActivities': activities_list
         })
-    
-    return Response({
-        'totalSalons': total_salons,
-        'activeSalons': active_salons,
-        'totalRevenue': float(total_revenue),
-        'activeSubscriptions': active_subscriptions,
-        'recentActivities': recent_activities
-    })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
@@ -1292,3 +1296,153 @@ def health_check(request):
         return Response({'status': 'ok'})
     except Exception as e:
         return Response({'status': 'error', 'details': str(e)}, status=500)
+
+@api_view(['POST'])
+def webhook_handler(request):
+    try:
+        data = request.data
+        # Log do webhook para debug
+        print("Webhook recebido:", data)
+        
+        # Processe os diferentes tipos de eventos
+        event_type = data.get('type')
+        if event_type == 'message':
+            # Processe mensagens
+            pass
+        elif event_type == 'status':
+            # Processe mudanças de status
+            pass
+            
+        return Response({'status': 'success'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def staff_list(request):
+    """
+    Lista todos os membros da equipe staff
+    """
+    try:
+        staff_members = User.objects.filter(is_staff=True)
+        serializer = StaffSerializer(staff_members, many=True)
+        
+        # Registra a atividade de visualização
+        register_activity(
+            user=request.user,
+            action="Visualizou lista de staff",
+            details="Acessou a página de gerenciamento de equipe"
+        )
+        
+        return Response(serializer.data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAdminUser])
+def staff_detail(request, pk):
+    """
+    Recupera ou atualiza um membro específico da equipe
+    """
+    try:
+        user = User.objects.get(pk=pk, is_staff=True)
+        
+        if request.method == 'GET':
+            data = {
+                'id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'role': user.role,
+                'is_active': user.is_active,
+                'last_activity': user.last_login,
+                'custom_permissions': {
+                    'manage_salons': user.has_perm('core.manage_salons'),
+                    'manage_staff': user.has_perm('core.manage_staff'),
+                    'view_finances': user.has_perm('core.view_finances'),
+                    'manage_system': user.has_perm('core.manage_system')
+                }
+            }
+            return Response(data)
+            
+        elif request.method == 'PUT':
+            data = request.data
+            user.is_active = data.get('is_active', user.is_active)
+            
+            # Atualiza permissões personalizadas
+            permissions = data.get('custom_permissions', {})
+            for perm, value in permissions.items():
+                if value:
+                    assign_perm(f'core.{perm}', user)
+                else:
+                    remove_perm(f'core.{perm}', user)
+            
+            user.save()
+            return Response({'status': 'success'})
+            
+    except User.DoesNotExist:
+        return Response({'error': 'Usuário não encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def staff_activities(request):
+    """
+    Lista todas as atividades da equipe staff
+    """
+    try:
+        print("Buscando atividades da equipe...")
+        activities = ActivityLog.objects.filter(
+            user__is_staff=True
+        ).select_related('user').order_by('-timestamp')[:100]
+        
+        print(f"Encontradas {activities.count()} atividades")
+        data = [{
+            'id': activity.id,
+            'user': activity.user.get_full_name() or activity.user.username,
+            'action': activity.action,
+            'details': activity.details,
+            'timestamp': activity.timestamp
+        } for activity in activities]
+        
+        return Response(data)
+    except Exception as e:
+        print(f"Erro ao buscar atividades: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def staff_user_activities(request, user_id):
+    """
+    Lista atividades de um membro específico da equipe
+    """
+    try:
+        activities = ActivityLog.objects.filter(
+            user_id=user_id,
+            user__is_staff=True
+        ).select_related('user').order_by('-timestamp')[:50]
+        
+        data = [{
+            'id': activity.id,
+            'user': activity.user.get_full_name() or activity.user.username,
+            'action': activity.action,
+            'details': activity.details,
+            'timestamp': activity.timestamp
+        } for activity in activities]
+        
+        return Response(data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+def register_activity(user, action, details=""):
+    """
+    Registra uma atividade do usuário
+    """
+    try:
+        ActivityLog.objects.create(
+            user=user,
+            action=action,
+            details=details
+        )
+    except Exception as e:
+        print(f"Erro ao registrar atividade: {str(e)}")

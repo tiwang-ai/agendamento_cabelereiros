@@ -217,3 +217,21 @@ class BotConfigSerializer(serializers.ModelSerializer):
             'dias_atendimento', 'mensagem_fora_horario', 
             'mensagem_bot_desativado'
         ]
+
+class StaffSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='get_full_name', read_only=True)
+    role = serializers.CharField(source='get_role_display')
+    last_activity = serializers.DateTimeField(source='last_login')
+    custom_permissions = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'name', 'email', 'role', 'is_active', 'last_activity', 'custom_permissions']
+
+    def get_custom_permissions(self, obj):
+        return {
+            'manage_salons': obj.has_perm('core.manage_salons'),
+            'manage_staff': obj.has_perm('core.manage_staff'),
+            'view_finances': obj.has_perm('core.view_finances'),
+            'manage_system': obj.has_perm('core.manage_system')
+        }

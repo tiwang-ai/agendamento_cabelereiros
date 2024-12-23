@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     'cabelereiro-git-implementacoes-tiwangs-projects.vercel.app',
     'localhost',
     '127.0.0.1',
+    '.ngrok.io',
 ]
 
 INSTALLED_APPS = [
@@ -216,7 +217,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://cabelereiro-production.up.railway.app",
     "https://*.vercel.app",
     "http://localhost:5173",
-    "http://localhost:3000"
+    "http://localhost:3000",
+    "http://*.ngrok.io",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
@@ -246,7 +248,8 @@ CSRF_TRUSTED_ORIGINS = [
     "https://cabelereiro-git-implementacoes-tiwangs-projects.vercel.app",
     "https://cabelereiro-production.up.railway.app",
     "https://*.railway.app",
-    "https://*.vercel.app"
+    "https://*.vercel.app",
+    "https://*.ngrok.io",
 ]
 
 # Configurações de segurança

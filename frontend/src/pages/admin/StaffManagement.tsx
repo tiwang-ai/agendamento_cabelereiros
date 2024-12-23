@@ -31,7 +31,7 @@ import {
 import { format } from 'date-fns';
 import { useState, useEffect , ChangeEvent } from 'react';
 
-import api from '../../services/api';
+import { StaffService } from '../../services/staff';
 
 
 
@@ -68,23 +68,27 @@ const StaffManagement = () => {
 
   const loadStaffMembers = async () => {
     try {
-      const response = await api.get('/admin/staff/');
-      setStaff(response.data);
+      const data = await StaffService.getAll();
+      setStaff(data);
     } catch (error) {
+      console.error('Erro ao carregar equipe:', error);
       setError('Erro ao carregar equipe');
     }
   };
 
   const loadActivities = async (userId?: number) => {
     try {
-      const url = userId 
-        ? `/admin/staff/activities/${userId}/`
-        : '/admin/staff/activities/';
-      const response = await api.get(url);
-      setActivities(response.data);
-      setOpenActivityDialog(true);
-    } catch (error) {
-      setError('Erro ao carregar atividades');
+      setError(null);
+      const data = await StaffService.getActivities(userId);
+      if (data && Array.isArray(data)) {
+        setActivities(data);
+        setOpenActivityDialog(true);
+      } else {
+        throw new Error('Dados inválidos recebidos do servidor');
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar atividades:', error);
+      setError(error.response?.data?.error || 'Erro ao carregar atividades');
     }
   };
 
@@ -92,7 +96,7 @@ const StaffManagement = () => {
     e.preventDefault();
     try {
       if (selectedMember) {
-        await api.put(`/admin/staff/${selectedMember.id}/`, selectedMember);
+        await StaffService.update(selectedMember.id, selectedMember);
       }
       loadStaffMembers();
       setOpenDialog(false);
