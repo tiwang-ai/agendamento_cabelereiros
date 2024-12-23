@@ -18,7 +18,7 @@ ALLOWED_HOSTS = [
     '*.railway.app',
     'cabelereiro-production.up.railway.app',
     'healthcheck.railway.app',
-    'frontend-816m76f9c-tiwangs-projects.vercel.app',
+    'cabelereiro-git-implementacoes-tiwangs-projects.vercel.app',
     'localhost',
     '127.0.0.1',
 ]
@@ -212,7 +212,7 @@ CACHES = {
 
 # Configurações de CORS e segurança
 CORS_ALLOWED_ORIGINS = [
-    "https://cabelereiro-kqiaai2hi-tiwangs-projects.vercel.app",
+    "https://cabelereiro-git-implementacoes-tiwangs-projects.vercel.app",
     "https://cabelereiro-production.up.railway.app",
     "https://*.vercel.app",
     "http://localhost:5173",
@@ -243,7 +243,7 @@ CORS_ALLOW_HEADERS = [
 
 # URLs base e configurações de domínio
 CSRF_TRUSTED_ORIGINS = [
-    "https://cabelereiro-kqiaai2hi-tiwangs-projects.vercel.app",
+    "https://cabelereiro-git-implementacoes-tiwangs-projects.vercel.app",
     "https://cabelereiro-production.up.railway.app",
     "https://*.railway.app",
     "https://*.vercel.app"

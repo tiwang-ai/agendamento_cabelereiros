@@ -3,7 +3,7 @@ import { UserRole } from '../types/auth';
 
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://cabelereiro-production.up.railway.app';
 
 const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -52,7 +52,7 @@ export const AuthService = {
         password: '***'
       });
 
-      const response = await axiosInstance.post<LoginResponse>('/auth/login/', {
+      const response = await axiosInstance.post<LoginResponse>('/api/auth/login/', {
         ...(credentials.email ? { email: credentials.email } : {}),
         ...(credentials.phone ? { phone: credentials.phone } : {}),
         password: credentials.password
