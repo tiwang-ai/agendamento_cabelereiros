@@ -5,16 +5,35 @@ from django.utils import timezone
 from django.db import IntegrityError
 
 class UserManager(BaseUserManager):
+    def normalize_phone(self, phone):
+        """Normaliza o número de telefone para o formato padrão"""
+        phone = ''.join(filter(str.isdigit, phone))
+        if not phone.startswith('55'):
+            phone = '55' + phone
+        return phone
+
     def create_user(self, email=None, password=None, **extra_fields):
+        if extra_fields.get('role') == 'PROFESSIONAL':
+            if not extra_fields.get('phone'):
+                raise ValueError('Telefone é obrigatório para profissionais')
+            if email:
+                raise ValueError('Profissionais devem usar apenas telefone para login')
+                
+        phone = extra_fields.get('phone')
+        if phone:
+            phone = self.normalize_phone(phone)
+            if self.filter(phone=phone).exists():
+                raise ValueError('Telefone já está em uso')
+            extra_fields['phone'] = phone
+            
+        if email and not extra_fields.get('role') == 'PROFESSIONAL':
+            email = self.normalize_email(email)
+            if self.filter(email=email).exists():
+                raise ValueError('Email já está em uso')
+        
         if not email and not extra_fields.get('phone'):
             raise ValueError('Email ou telefone é obrigatório')
         
-        if email:
-            email = self.normalize_email(email)
-            # Verifica se já existe um usuário com este email
-            if self.filter(email=email).exists():
-                raise ValueError('Email já está em uso')
-                
         user = self.model(
             email=email,
             **extra_fields

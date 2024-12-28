@@ -6,49 +6,7 @@ from rest_framework.response import Response
 from datetime import datetime
 
 from .views import (
-    EstabelecimentoViewSet,
-    ProfissionalViewSet,
-    ClienteViewSet,
-    ServicoViewSet,
-    AgendamentoViewSet,
-    listar_agendamentos_calendario,
-    relatorio_frequencia_clientes,
-    relatorio_servicos_populares,
-    relatorio_horarios_pico,
-    solicitar_relatorio_whatsapp,
-    register,
-    finance_stats,
-    finance_transactions,
-    UserViewSet,
-    admin_stats,
-    create_payment_preference,
-    process_payment,
-    bot_responder,
-    whatsapp_status,
-    generate_qr_code,
-    dashboard_stats,
-    create_professional,
-    whatsapp_instances_status,
-    system_logs,
-    ClienteProfissionalViewSet,
-    whatsapp_webhook,
-    CustomTokenObtainPairView,
-    ChatConfigViewSet,
-    salon_finance_stats,
-    salon_finance_transactions,
-    SystemServiceViewSet,
-    SalonServiceViewSet,
-    manage_whatsapp_connection,
-    bot_config,
-    system_metrics,
-    health_check,
-    webhook_handler,
-    staff_list,
-    staff_detail,
-    staff_activities,
-    staff_user_activities,
-    get_whatsapp_instances,
-    send_whatsapp_message,
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, bot_config, system_metrics, health_check, webhook_handler, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message,
 )
 
 router = DefaultRouter()
@@ -65,11 +23,6 @@ router.register(r'salon-services', SalonServiceViewSet, basename='salon-services
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('auth/', include([
-            path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-            path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-            path('register/', register, name='register'),
-        ])),
     path('agendamentos/calendario/', listar_agendamentos_calendario, name='listar_agendamentos_calendario'),
     path('relatorios/frequencia-clientes/', relatorio_frequencia_clientes, name='relatorio_frequencia_clientes'),
     path('relatorios/servicos-populares/', relatorio_servicos_populares, name='relatorio_servicos_populares'),
@@ -82,7 +35,14 @@ urlpatterns = [
     path('profissionais/', create_professional, name='create-professional'),
     path('finance/salon/stats/', salon_finance_stats, name='salon-finance-stats'),
     path('finance/salon/transactions/', salon_finance_transactions, name='salon-finance-transactions'),
+    path('admin/staff/', staff_list, name='staff-list'),
     path('api/', include([
+        
+        path('auth/', include([
+            path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+            path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+            path('register/', register, name='register'),
+        ])),
         path('admin/', include([
             path('stats/', admin_stats, name='admin-stats'),
             path('staff/', staff_list, name='staff-list'),

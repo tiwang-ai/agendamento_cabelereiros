@@ -56,19 +56,29 @@ evolution_api = EvolutionAPI()
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         try:
-            # Normaliza o telefone se fornecido
+            # Verifica se tem telefone ou email
             phone = attrs.get('phone')
-            if phone:
-                phone = ''.join(filter(str.isdigit, phone))
-                user = User.objects.get(phone=phone)
-                attrs['username'] = user.get_username()  # Usa o email ou phone como username
-            else:
-                attrs['username'] = attrs.get('email')
-
+            email = attrs.get('email')
             password = attrs.get('password')
 
-            if not attrs.get('username') or not password:
-                raise serializers.ValidationError({'detail': 'Informe email/telefone e senha'})
+            if not (phone or email):
+                raise serializers.ValidationError({'detail': 'Informe email ou telefone'})
+            
+            if not password:
+                raise serializers.ValidationError({'detail': 'Senha é obrigatória'})
+
+            # Normaliza o telefone se fornecido
+            if phone:
+                phone = ''.join(filter(str.isdigit, phone))
+                if not phone.startswith('55'):
+                    phone = '55' + phone
+                try:
+                    user = User.objects.get(phone=phone)
+                    attrs['username'] = phone  # Usa o telefone como username
+                except User.DoesNotExist:
+                    raise serializers.ValidationError({'detail': 'Usuário não encontrado'})
+            else:
+                attrs['username'] = email
 
             user = authenticate(
                 request=self.context.get('request'),
@@ -76,23 +86,23 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 password=password
             )
 
-            if user:
-                data = super().validate(attrs)
-                data.update({
-                    'email': user.email,
-                    'name': user.name,
-                    'role': user.role,
-                    'estabelecimento_id': user.estabelecimento_id if user.estabelecimento else None,
-                    'phone': user.phone
-                })
-                return data
+            if not user:
+                raise serializers.ValidationError({'detail': 'Credenciais inválidas'})
+
+            data = super().validate(attrs)
+            data.update({
+                'id': str(user.id),
+                'name': user.name,
+                'email': user.email,
+                'phone': user.phone,
+                'role': user.role,
+                'estabelecimento_id': str(user.estabelecimento_id) if user.estabelecimento_id else None,
+            })
+            return data
             
-            raise serializers.ValidationError({'detail': 'Credenciais inválidas'})
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'detail': 'Usuário não encontrado'})
         except Exception as e:
-            print("Erro detalhado:", str(e))
-            raise serializers.ValidationError({'detail': str(e)})
+            print(f"Erro de autenticação: {str(e)}")
+            raise
 
     @classmethod
     def get_token(cls, user):
@@ -876,23 +886,22 @@ def create_whatsapp_instance(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def whatsapp_instances_status(request):
-    import logging
-    logger = logging.getLogger('django.request')
-    logger.debug(f"Request method: {request.method}")
-    logger.debug(f"Request path: {request.path}")
-    logger.debug(f"Request user: {request.user}")
-    logger.debug(f"Request headers: {request.headers}")
-    
+    """
+    Retorna todas as instâncias do WhatsApp
+    """
+    print("Acessando whatsapp_instances_status")
     try:
         estabelecimentos = Estabelecimento.objects.all()
-        logger.debug(f"Estabelecimentos encontrados: {estabelecimentos.count()}")
+        print(f"Estabelecimentos encontrados: {estabelecimentos.count()}")
         instances_data = []
         
         for estabelecimento in estabelecimentos:
+            print(f"Processando estabelecimento: {estabelecimento.id} - {estabelecimento.nome}")
             status = 'disconnected'
             if estabelecimento.evolution_instance_id:
                 status_response = evolution_api.check_connection_status(estabelecimento.evolution_instance_id)
                 status = status_response.get('status', 'disconnected')
+                print(f"Status da instância {estabelecimento.evolution_instance_id}: {status}")
             
             instances_data.append({
                 'id': str(estabelecimento.id),
@@ -902,9 +911,10 @@ def whatsapp_instances_status(request):
                 'status': status
             })
         
+        print(f"Retornando dados: {instances_data}")
         return Response(instances_data)
     except Exception as e:
-        logger.error(f"Erro em whatsapp_instances_status: {str(e)}", exc_info=True)
+        print(f"Erro ao buscar instâncias: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -1444,32 +1454,12 @@ def staff_list(request):
     Lista todos os membros da equipe (staff)
     """
     try:
-        # Busca todos os usuários que são staff (is_staff=True)
-        staff_users = User.objects.filter(is_staff=True).select_related('profile')
-        
-        staff_data = []
-        for user in staff_users:
-            staff_data.append({
-                'id': user.id,
-                'name': user.get_full_name() or user.username,
-                'email': user.email,
-                'role': user.profile.role if hasattr(user, 'profile') else 'staff',
-                'is_active': user.is_active,
-                'last_activity': user.last_login,
-                'custom_permissions': {
-                    'can_manage_users': user.has_perm('auth.change_user'),
-                    'can_view_reports': user.has_perm('core.view_reports'),
-                    'can_manage_services': user.has_perm('core.change_service'),
-                }
-            })
-        
-        return Response(staff_data)
+        staff = User.objects.filter(is_staff=True).select_related('estabelecimento')
+        serializer = StaffSerializer(staff, many=True)
+        return Response(serializer.data)
     except Exception as e:
         print(f"Erro ao listar staff: {str(e)}")
-        return Response(
-            {'error': f'Erro ao listar equipe: {str(e)}'}, 
-            status=500
-        )
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAdminUser])

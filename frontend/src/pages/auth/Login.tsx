@@ -13,7 +13,7 @@ import {
   ToggleButton,
   InputAdornment
 } from '@mui/material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthService } from '../../services/auth';
 import { UserRole } from '../../types/auth';
@@ -22,6 +22,7 @@ const Login = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [userType, setUserType] = useState<'admin' | 'owner' | 'professional'>('owner');
   const [formData, setFormData] = useState({
     email: '',
     phone: '',
@@ -29,8 +30,14 @@ const Login = () => {
   });
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (userType === 'professional') {
+      setLoginMethod('phone');
+    }
+  }, [userType]);
+
   const handleMethodChange = (_: React.MouseEvent<HTMLElement>, newMethod: 'email' | 'phone') => {
-    if (newMethod !== null) {
+    if (newMethod !== null && !(userType === 'professional' && newMethod === 'email')) {
       setLoginMethod(newMethod);
       setFormData({ ...formData, email: '', phone: '' });
     }
@@ -66,6 +73,19 @@ const Login = () => {
       setError(err.response?.data?.detail || 'Erro ao fazer login');
     }
   };
+
+  // Adicionar seletor de tipo de usuário
+  const renderUserTypeSelector = () => (
+    <ToggleButtonGroup
+      value={userType}
+      exclusive
+      onChange={(_, newType) => newType && setUserType(newType)}
+      sx={{ mb: 2 }}
+    >
+      <ToggleButton value="owner">Proprietário</ToggleButton>
+      <ToggleButton value="professional">Profissional</ToggleButton>
+    </ToggleButtonGroup>
+  );
 
   return (
     <Box

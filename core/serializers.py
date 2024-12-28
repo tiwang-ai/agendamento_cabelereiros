@@ -42,24 +42,27 @@ class ProfissionalSerializer(serializers.ModelSerializer):
         telefone = ''.join(filter(str.isdigit, data.get('telefone', '')))
         if len(telefone) < 10:
             raise serializers.ValidationError("Telefone deve ter pelo menos 10 dígitos")
+        if not telefone.startswith('55'):
+            telefone = '55' + telefone
         data['telefone'] = telefone
+
+        # Verifica se já existe um usuário com este telefone
+        if User.objects.filter(phone=telefone).exists():
+            raise serializers.ValidationError("Telefone já está em uso")
 
         return data
 
     def create(self, validated_data):
         try:
-            # Gera uma senha temporária
             temp_password = 'mudar123'
+            phone = validated_data['telefone']
             
-            # Normaliza o telefone para usar como username
-            phone = ''.join(filter(str.isdigit, validated_data['telefone']))
-            
-            # Cria o usuário primeiro
             user = User.objects.create(
-                phone=phone,  # Importante: usar o telefone normalizado
+                phone=phone,
                 name=validated_data['nome'],
                 role='PROFESSIONAL',
-                estabelecimento=validated_data['estabelecimento']
+                estabelecimento=validated_data['estabelecimento'],
+                email=None  # Garante que não terá email
             )
             user.set_password(temp_password)
             user.save()

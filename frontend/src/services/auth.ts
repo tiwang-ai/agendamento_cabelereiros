@@ -1,6 +1,5 @@
 // src/services/auth.ts
 import { UserRole } from '../types/auth';
-
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'https://cabelereiro-production.up.railway.app';
@@ -39,11 +38,18 @@ interface LoginResponse {
   phone?: string;
 }
 
+const formatPhone = (phone: string): string => {
+  // Remove tudo que não for número
+  const numbers = phone.replace(/\D/g, '');
+  // Adiciona 55 se não começar com ele
+  return numbers.startsWith('55') ? numbers : `55${numbers}`;
+};
+
 export const AuthService = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
     try {
       if (credentials.phone) {
-        credentials.phone = credentials.phone.replace(/\D/g, '');
+        credentials.phone = formatPhone(credentials.phone);
       }
 
       console.log('Enviando credenciais:', {

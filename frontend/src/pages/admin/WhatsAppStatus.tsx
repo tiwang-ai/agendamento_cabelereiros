@@ -53,7 +53,7 @@ const WhatsAppStatus = () => {
   const handleReconnect = async (estabelecimentoId: string) => {
     try {
       setLoading(true);
-      const response = await WhatsAppService.reconnect(estabelecimentoId);
+      const response = await WhatsAppService.connect(estabelecimentoId);
       
       if (response.success) {
         await loadInstances();
@@ -62,8 +62,6 @@ const WhatsAppStatus = () => {
           setConnectionData(response.connection_data);
           setOpenQRDialog(true);
         }
-      } else {
-        console.error('Erro:', response.error);
       }
     } catch (error) {
       console.error('Erro ao reconectar:', error);
