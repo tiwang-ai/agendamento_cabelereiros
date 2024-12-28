@@ -8,7 +8,7 @@ from django.db import connection
 from django_redis import get_redis_connection
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from datetime import datetime, timedelta
 from django.db.models import Count, Sum, Q, Avg
 from django_filters.rest_framework import DjangoFilterBackend
@@ -18,7 +18,6 @@ from django.http import JsonResponse
 from .integrations.evolution import (
     get_whatsapp_status, 
     check_connection,
-    criar_instancia_evolution,
     EvolutionAPI
 )
 
@@ -42,7 +41,6 @@ from .serializers import (
     UserSerializer
 )
 from .llm_utils import processar_pergunta
-from .integrations.evolution import criar_instancia_evolution
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -52,6 +50,7 @@ import mercadopago
 
 User = get_user_model()
 
+# Singleton para EvolutionAPI
 evolution_api = EvolutionAPI()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -121,8 +120,9 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
             estabelecimento = serializer.save()
 
             # Criar instância WhatsApp automaticamente
-            instance_response = criar_instancia_evolution(
-                salon_id=str(estabelecimento.id),
+            api = EvolutionAPI()
+            instance_response = api.criar_instancia(
+                estabelecimento_id=str(estabelecimento.id),
                 phone=estabelecimento.whatsapp
             )
             
@@ -138,7 +138,6 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
                 )
 
                 # Configurar webhooks
-                api = EvolutionAPI()
                 api.configurar_webhooks(instance_response.get('instanceId'))
 
             return Response(serializer.data, status=201)
@@ -176,8 +175,18 @@ class EstabelecimentoViewSet(viewsets.ModelViewSet):
             }, status=500)
 
 class ProfissionalViewSet(viewsets.ModelViewSet):
-    queryset = Profissional.objects.all()
     serializer_class = ProfissionalSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['estabelecimento']
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_staff:
+            return Profissional.objects.all()
+        elif hasattr(user, 'estabelecimento'):
+            return Profissional.objects.filter(estabelecimento=user.estabelecimento)
+        return Profissional.objects.none()
 
 class ClienteViewSet(viewsets.ModelViewSet):
     serializer_class = ClienteSerializer
@@ -193,15 +202,18 @@ class ClienteViewSet(viewsets.ModelViewSet):
         serializer.save(estabelecimento=self.request.user.estabelecimento)
 
 class ServicoViewSet(viewsets.ModelViewSet):
-    queryset = Servico.objects.all()
     serializer_class = ServicoSerializer
     permission_classes = [IsAuthenticated]
-    queryset = Servico.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['estabelecimento']
 
     def get_queryset(self):
-        if self.request.user.role == 'ADMIN':
+        user = self.request.user
+        if user.is_staff:
             return Servico.objects.all()
-        return Servico.objects.filter(estabelecimento=self.request.user.estabelecimento)
+        elif hasattr(user, 'estabelecimento'):
+            return Servico.objects.filter(estabelecimento=user.estabelecimento)
+        return Servico.objects.none()
 
     def perform_create(self, serializer):
         serializer.save(estabelecimento=self.request.user.estabelecimento)
@@ -373,8 +385,9 @@ def onboarding(request):
         )
 
         # 2. Criar instância WhatsApp
-        instance_response = criar_instancia_evolution(
-            salon_id=str(estabelecimento.id),
+        api = EvolutionAPI()
+        instance_response = api.criar_instancia(
+            estabelecimento_id=str(estabelecimento.id),
             phone=estabelecimento.whatsapp
         )
 
@@ -580,10 +593,60 @@ class UserViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.role == 'ADMIN':
             return User.objects.all()
-        elif user.role == 'OWNER':
+        elif user.role in ['OWNER', 'PROFESSIONAL', 'RECEPTIONIST']:
             return User.objects.filter(estabelecimento=user.estabelecimento)
-        else:
-            return User.objects.filter(id=user.id)
+        return User.objects.none()
+
+    @action(detail=True, methods=['get'])
+    def details(self, request, pk=None):
+        """
+        Retorna detalhes do usuário incluindo atividades e permissões
+        """
+        try:
+            user = self.get_object()
+            
+            # Verifica permissão
+            if not request.user.is_staff and user.estabelecimento != request.user.estabelecimento:
+                return Response(
+                    {'error': 'Sem permissão para ver estes detalhes'}, 
+                    status=403
+                )
+
+            # Busca atividades recentes
+            activities = ActivityLog.objects.filter(user=user).order_by('-timestamp')[:10]
+            
+            # Monta resposta detalhada
+            response_data = {
+                'user': UserSerializer(user).data,
+                'activities': [{
+                    'action': log.action,
+                    'details': log.details,
+                    'timestamp': log.timestamp
+                } for log in activities],
+                'permissions': {
+                    'manage_salons': user.has_perm('core.manage_salons'),
+                    'manage_staff': user.has_perm('core.manage_staff'),
+                    'view_finances': user.has_perm('core.view_finances'),
+                    'manage_system': user.has_perm('core.manage_system')
+                }
+            }
+            
+            # Adiciona dados específicos baseado no papel
+            if user.role == 'PROFESSIONAL':
+                response_data['professional_data'] = {
+                    'total_appointments': Agendamento.objects.filter(
+                        profissional__user=user
+                    ).count(),
+                    'rating': Agendamento.objects.filter(
+                        profissional__user=user,
+                        avaliacao__isnull=False
+                    ).aggregate(Avg('avaliacao'))['avaliacao__avg']
+                }
+            
+            return Response(response_data)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -647,18 +710,30 @@ def process_payment(request):
     return Response({"status": payment["status"]}, status=400)
 
 @api_view(['GET'])
-def whatsapp_status(request, salon_id):
+@permission_classes([IsAuthenticated])
+def whatsapp_status(request, estabelecimento_id):
+    """
+    Retorna o status do WhatsApp para um estabelecimento específico
+    """
     try:
-        estabelecimento = Estabelecimento.objects.get(id=salon_id)
-        if not estabelecimento.evolution_instance_id:
-            return JsonResponse({'error': 'Instância não encontrada'}, status=404)
+        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+        api = EvolutionAPI()
+        
+        status_data = {
+            'id': estabelecimento.id,
+            'nome': estabelecimento.nome,
+            'instance_id': estabelecimento.evolution_instance_id,
+            'whatsapp': estabelecimento.whatsapp,
+            'status': estabelecimento.status
+        }
+        
+        if estabelecimento.evolution_instance_id:
+            status_response = evolution_api.get_instance_status(estabelecimento.evolution_instance_id)
+            status_data['status'] = status_response.get('status', 'disconnected')
             
-        status = get_whatsapp_status(estabelecimento.evolution_instance_id)
-        return JsonResponse(status)
-    except Estabelecimento.DoesNotExist:
-        return JsonResponse({'error': 'Salão não encontrado'}, status=404)
+        return Response(status_data)
     except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 def generate_qr_code(request, salon_id):
@@ -749,25 +824,42 @@ def create_professional(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
+def validate_phone(phone: str) -> str:
+    """Valida e formata o número de telefone"""
+    phone = phone.replace("+", "").replace("-", "").replace(" ", "")
+    if not phone.isdigit():
+        raise ValueError("Número de telefone inválido")
+    if not phone.startswith("55"):
+        phone = "55" + phone
+    return phone
+
 @api_view(['POST'])
 def create_whatsapp_instance(request):
     try:
         salon_id = request.user.estabelecimento_id
         phone = request.data.get('phone')
         
-        # Cria instância na Evolution API
-        instance_response = criar_instancia_evolution(salon_id, phone)
+        try:
+            phone = validate_phone(phone)
+        except ValueError as e:
+            return Response({'error': str(e)}, status=400)
+        
+        api = EvolutionAPI()
+        instance_response = api.criar_instancia(
+            estabelecimento_id=str(salon_id),
+            phone=phone
+        )
         
         if instance_response:
             # Atualiza o estabelecimento com o ID da instância
             estabelecimento = Estabelecimento.objects.get(id=salon_id)
-            estabelecimento.instance_id = instance_response['instanceId']
-            estabelecimento.whatsapp_number = phone
+            estabelecimento.evolution_instance_id = instance_response['instance']['instanceId']
+            estabelecimento.whatsapp = phone
             estabelecimento.save()
             
             return Response({
                 'success': True,
-                'instanceId': instance_response['instanceId']
+                'instanceId': instance_response['instance']['instanceId']
             })
         
         return Response({
@@ -775,6 +867,7 @@ def create_whatsapp_instance(request):
             'error': 'Falha ao criar instância'
         }, status=400)
     except Exception as e:
+        print(f"Erro detalhado: {str(e)}")
         return Response({
             'success': False,
             'error': str(e)
@@ -783,30 +876,35 @@ def create_whatsapp_instance(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def whatsapp_instances_status(request):
+    import logging
+    logger = logging.getLogger('django.request')
+    logger.debug(f"Request method: {request.method}")
+    logger.debug(f"Request path: {request.path}")
+    logger.debug(f"Request user: {request.user}")
+    logger.debug(f"Request headers: {request.headers}")
+    
     try:
         estabelecimentos = Estabelecimento.objects.all()
-        status_list = []
+        logger.debug(f"Estabelecimentos encontrados: {estabelecimentos.count()}")
+        instances_data = []
         
         for estabelecimento in estabelecimentos:
-            status = {
-                'id': estabelecimento.id,
+            status = 'disconnected'
+            if estabelecimento.evolution_instance_id:
+                status_response = evolution_api.check_connection_status(estabelecimento.evolution_instance_id)
+                status = status_response.get('status', 'disconnected')
+            
+            instances_data.append({
+                'id': str(estabelecimento.id),
                 'nome': estabelecimento.nome,
                 'instance_id': estabelecimento.evolution_instance_id,
                 'whatsapp': estabelecimento.whatsapp,
-                'status': 'disconnected'
-            }
-            
-            if estabelecimento.evolution_instance_id:
-                try:
-                    status_response = get_whatsapp_status(estabelecimento.evolution_instance_id)
-                    status['status'] = status_response.get('status', 'error')
-                except:
-                    status['status'] = 'error'
-            
-            status_list.append(status)
+                'status': status
+            })
         
-        return Response(status_list)
+        return Response(instances_data)
     except Exception as e:
+        logger.error(f"Erro em whatsapp_instances_status: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -856,7 +954,7 @@ def reconnect_whatsapp(request, estabelecimento_id):
         
         if not instance_exists:
             # Cria nova instância
-            instance_response = criar_instancia_evolution(
+            instance_response = api.criar_instancia(
                 estabelecimento_id=str(estabelecimento_id),
                 phone=estabelecimento.whatsapp
             )
@@ -1199,41 +1297,63 @@ def bot_metricas(request, estabelecimento_id):
     })
 
 @api_view(['GET'])
-def connect_whatsapp(request, estabelecimento_id):
+@permission_classes([IsAuthenticated])
+def manage_whatsapp_connection(request, estabelecimento_id):
+    """
+    Gerencia conexão do WhatsApp: verifica, cria ou reconecta instância
+    """
     try:
         estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
         api = EvolutionAPI()
         
-        # Primeiro verifica se a instância já existe na Evolution API
+        # Verifica instâncias existentes
         instances = api.fetch_instances()
         instance_name = f"estabelecimento_{estabelecimento_id}"
         
         instance_exists = any(inst.get('instanceName') == instance_name for inst in instances)
         
+        # Se não existe, cria nova instância
         if not instance_exists:
-            # Se não existe, cria nova instância
-            instance_response = criar_instancia_evolution(
+            # Cria nova instância
+            instance_response = api.criar_instancia(
                 estabelecimento_id=str(estabelecimento_id),
                 phone=estabelecimento.whatsapp
             )
-            if instance_response and instance_response.get('instanceId'):
-                estabelecimento.evolution_instance_id = instance_response.get('instanceId')
-                estabelecimento.save()
-        
-        # Agora tenta conectar usando o nome da instância
-        connect_response = api.connect_instance(instance_name)
-        
-        if 'error' not in connect_response:
-            estabelecimento.status = 'pending_connection'
-            estabelecimento.save()
-            return JsonResponse(connect_response)
             
-        return JsonResponse({'error': 'Erro ao conectar'}, status=500)
-    except Estabelecimento.DoesNotExist:
-        return JsonResponse({'error': 'Salão não encontrado'}, status=404)
+            if instance_response and instance_response.get('instanceId'):
+                estabelecimento.evolution_instance_id = instance_response['instanceId']
+                estabelecimento.save()
+                
+                # Tenta conexão automática
+                connect_response = api.connect_instance(instance_name)
+                
+                return Response({
+                    'success': True,
+                    'message': 'Nova instância criada e tentativa de conexão iniciada',
+                    'instanceId': instance_response['instanceId'],
+                    'connection_data': connect_response
+                })
+        else:
+            # Verifica status e reconecta se necessário
+            status = api.check_connection_status(estabelecimento.evolution_instance_id)
+            if status.get('status') in ['disconnected', 'error']:
+                connect_response = api.connect_instance(instance_name)
+                return Response({
+                    'success': True,
+                    'message': 'Tentativa de reconexão iniciada',
+                    'connection_data': connect_response
+                })
+        
+        return Response({
+            'success': False,
+            'error': 'Instância já existe e está conectada'
+        })
     except Exception as e:
         print(f"Erro detalhado: {str(e)}")
-        return JsonResponse({'error': str(e)}, status=500)
+        return Response({
+            'success': False,
+            'error': f'Erro ao gerenciar conexão: {str(e)}'
+        }, status=500)
 
 @api_view(['GET', 'POST'])
 @permission_classes([IsAdminUser])
@@ -1321,66 +1441,58 @@ def webhook_handler(request):
 @permission_classes([IsAdminUser])
 def staff_list(request):
     """
-    Lista todos os membros da equipe staff
+    Lista todos os membros da equipe (staff)
     """
     try:
-        staff_members = User.objects.filter(is_staff=True)
-        serializer = StaffSerializer(staff_members, many=True)
+        # Busca todos os usuários que são staff (is_staff=True)
+        staff_users = User.objects.filter(is_staff=True).select_related('profile')
         
-        # Registra a atividade de visualização
-        register_activity(
-            user=request.user,
-            action="Visualizou lista de staff",
-            details="Acessou a página de gerenciamento de equipe"
-        )
+        staff_data = []
+        for user in staff_users:
+            staff_data.append({
+                'id': user.id,
+                'name': user.get_full_name() or user.username,
+                'email': user.email,
+                'role': user.profile.role if hasattr(user, 'profile') else 'staff',
+                'is_active': user.is_active,
+                'last_activity': user.last_login,
+                'custom_permissions': {
+                    'can_manage_users': user.has_perm('auth.change_user'),
+                    'can_view_reports': user.has_perm('core.view_reports'),
+                    'can_manage_services': user.has_perm('core.change_service'),
+                }
+            })
         
-        return Response(serializer.data)
+        return Response(staff_data)
     except Exception as e:
-        return Response({'error': str(e)}, status=500)
+        print(f"Erro ao listar staff: {str(e)}")
+        return Response(
+            {'error': f'Erro ao listar equipe: {str(e)}'}, 
+            status=500
+        )
 
 @api_view(['GET', 'PUT'])
 @permission_classes([IsAdminUser])
 def staff_detail(request, pk):
     """
-    Recupera ou atualiza um membro específico da equipe
+    Detalhes e atualização de um membro da equipe
     """
     try:
-        user = User.objects.get(pk=pk, is_staff=True)
+        staff_member = User.objects.get(id=pk, is_staff=True)
         
         if request.method == 'GET':
-            data = {
-                'id': user.id,
-                'name': user.get_full_name() or user.username,
-                'email': user.email,
-                'role': user.role,
-                'is_active': user.is_active,
-                'last_activity': user.last_login,
-                'custom_permissions': {
-                    'manage_salons': user.has_perm('core.manage_salons'),
-                    'manage_staff': user.has_perm('core.manage_staff'),
-                    'view_finances': user.has_perm('core.view_finances'),
-                    'manage_system': user.has_perm('core.manage_system')
-                }
-            }
-            return Response(data)
+            serializer = StaffSerializer(staff_member)
+            return Response(serializer.data)
             
         elif request.method == 'PUT':
-            data = request.data
-            user.is_active = data.get('is_active', user.is_active)
-            
-            # Atualiza permissões personalizadas
-            permissions = data.get('custom_permissions', {})
-            for perm, value in permissions.items():
-                if value:
-                    assign_perm(f'core.{perm}', user)
-                else:
-                    remove_perm(f'core.{perm}', user)
-            
-            user.save()
-            return Response({'status': 'success'})
+            serializer = StaffSerializer(staff_member, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
             
     except User.DoesNotExist:
-        return Response({'error': 'Usuário não encontrado'}, status=404)
+        return Response({'error': 'Membro da equipe não encontrado'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
@@ -1446,3 +1558,32 @@ def register_activity(user, action, details=""):
         )
     except Exception as e:
         print(f"Erro ao registrar atividade: {str(e)}")
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def get_whatsapp_instances(request):
+    """
+    Retorna todas as instâncias do WhatsApp
+    """
+    try:
+        estabelecimentos = Estabelecimento.objects.all()
+        instances_data = []
+        
+        for estabelecimento in estabelecimentos:
+            status = 'disconnected'
+            if estabelecimento.evolution_instance_id:
+                status_response = evolution_api.check_connection_status(estabelecimento.evolution_instance_id)
+                status = status_response.get('status', 'disconnected')
+            
+            instances_data.append({
+                'id': str(estabelecimento.id),
+                'nome': estabelecimento.nome,
+                'instance_id': estabelecimento.evolution_instance_id,
+                'whatsapp': estabelecimento.whatsapp,
+                'status': status
+            })
+        
+        return Response(instances_data)
+    except Exception as e:
+        print(f"Erro ao buscar instâncias: {str(e)}")
+        return Response({'error': str(e)}, status=500)

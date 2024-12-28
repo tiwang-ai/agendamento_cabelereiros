@@ -235,3 +235,13 @@ class StaffSerializer(serializers.ModelSerializer):
             'view_finances': obj.has_perm('core.view_finances'),
             'manage_system': obj.has_perm('core.manage_system')
         }
+
+class EstabelecimentoDetailSerializer(EstabelecimentoSerializer):
+    profissionais = ProfissionalSerializer(many=True, read_only=True)
+    servicos = ServicoSerializer(many=True, read_only=True)
+    
+    class Meta(EstabelecimentoSerializer.Meta):
+        fields = EstabelecimentoSerializer.Meta.fields + [
+            'profissionais', 'servicos', 'data_cadastro',
+            'plano', 'configuracoes_bot'
+        ]

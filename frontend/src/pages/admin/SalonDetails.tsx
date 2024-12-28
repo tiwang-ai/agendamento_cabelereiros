@@ -21,6 +21,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 
 import api from '../../services/api';
+import { SalonService } from '../../services/salons';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -61,17 +62,16 @@ const SalonDetails = () => {
 
   const loadSalonData = async () => {
     try {
-      const [salonRes, profRes, appRes, servRes] = await Promise.all([
-        api.get(`/estabelecimentos/${id}/`),
-        api.get(`/profissionais/?estabelecimento_id=${id}`),
-        api.get(`/agendamentos/?estabelecimento_id=${id}`),
-        api.get(`/servicos/?estabelecimento_id=${id}`)
+      setLoading(true);
+      const [salonData, professionalsData, servicesData] = await Promise.all([
+        SalonService.getById(id!),
+        SalonService.getProfessionals(id!),
+        SalonService.getServices(id!)
       ]);
-
-      setSalon(salonRes.data);
-      setProfessionals(profRes.data);
-      setAppointments(appRes.data);
-      setServices(servRes.data);
+      
+      setSalon(salonData);
+      setProfessionals(professionalsData);
+      setServices(servicesData);
     } catch (error) {
       console.error('Erro ao carregar dados do salão:', error);
     } finally {

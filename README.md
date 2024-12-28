@@ -43,6 +43,9 @@ venv\Scripts\activate # Windows
 1. Instalar dependências: `cd frontend && npm install`
 2. Iniciar servidor de desenvolvimento: `npm run dev`
 
+## Ngrok
+1. `ngrok start --config ngrok.yml django frontend`
+
 ## Estrutura do Projeto
 
 ```

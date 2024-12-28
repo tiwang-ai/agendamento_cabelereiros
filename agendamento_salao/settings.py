@@ -273,3 +273,8 @@ MERCADOPAGO_PUBLIC_KEY = os.getenv("MERCADOPAGO_PUBLIC_KEY", "YOUR_PUBLIC_KEY")
 WHATSAPP_INSTANCE_URL = f"{EVOLUTION_API_URL}/instance"
 WHATSAPP_MESSAGE_URL = f"{EVOLUTION_API_URL}/message"
 WHATSAPP_STATUS_URL = f"{EVOLUTION_API_URL}/status"
+
+# Configuração da URL base
+BASE_URL = 'https://api.agendacabelereiro.com.br'  # Produção
+if DEBUG:
+    BASE_URL = 'http://localhost:8000'  # Desenvolvimento

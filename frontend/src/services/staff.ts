@@ -6,6 +6,11 @@ export const StaffService = {
     return response.data;
   },
 
+  getById: async (id: number) => {
+    const response = await api.get(`/api/admin/staff/${id}/`);
+    return response.data;
+  },
+
   getActivities: async (userId?: number) => {
     const url = userId 
       ? `/api/admin/staff/activities/${userId}/`

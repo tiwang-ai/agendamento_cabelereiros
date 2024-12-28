@@ -3,13 +3,8 @@ import api from './api';
 
 export const SalonService = {
   getAll: async () => {
-    try {
-      const response = await api.get('/api/estabelecimentos/');
-      return response.data;
-    } catch (error) {
-      console.error('Erro ao buscar salões:', error);
-      throw error;
-    }
+    const response = await api.get('/api/estabelecimentos/');
+    return response.data;
   },
 
   getById: async (id: string) => {
@@ -18,29 +13,36 @@ export const SalonService = {
   },
 
   create: async (data: any) => {
-    try {
-      const response = await api.post('/api/estabelecimentos/', {
-        ...data,
-        create_instance: true
-      });
-      return response.data;
-    } catch (error: any) {
-      console.error('Erro ao criar salão:', error.response?.data || error.message);
-      throw error;
-    }
+    const response = await api.post('/api/estabelecimentos/', data);
+    return response.data;
   },
 
-  update: async (id: number, data: any) => {
-    const response = await api.put(`/api/estabelecimentos/${id}/`, data);
+  update: async (id: string, data: any) => {
+    const response = await api.patch(`/api/estabelecimentos/${id}/`, data);
     return response.data;
   },
 
   delete: async (id: string) => {
-    try {
-      await api.delete(`/api/estabelecimentos/${id}/`);
-    } catch (error: any) {
-      console.error('Erro ao deletar salão:', error.response?.data || error.message);
-      throw error;
-    }
+    const response = await api.delete(`/api/estabelecimentos/${id}/`);
+    return response.data;
+  },
+
+  getProfessionals: async (id: string) => {
+    const response = await api.get('/api/profissionais/', {
+      params: { estabelecimento_id: id }
+    });
+    return response.data;
+  },
+
+  getServices: async (id: string) => {
+    const response = await api.get('/api/servicos/', {
+      params: { estabelecimento_id: id }
+    });
+    return response.data;
+  },
+
+  getDetails: async (id: string) => {
+    const response = await api.get(`/api/estabelecimentos/${id}/details/`);
+    return response.data;
   }
 };

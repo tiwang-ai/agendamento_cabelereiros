@@ -105,8 +105,17 @@ const SalonsManagement = () => {
   const handleSubmit = async () => {
     try {
       setError(null);
-      const response = await SalonService.create(formData);
-      setSalons([...salons, response]);
+      console.log('Enviando dados:', formData);
+      
+      if (!formData.whatsapp) {
+        setError('O número do WhatsApp é obrigatório');
+        return;
+      }
+      
+      const result = await SalonService.create(formData);
+      console.log('Resultado da criação:', result);
+      
+      await loadSalons();
       setOpenDialog(false);
       setFormData({
         nome: '',
@@ -116,8 +125,8 @@ const SalonsManagement = () => {
         horario_funcionamento: ''
       });
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Erro ao salvar salão');
-      console.error('Erro ao salvar salão:', error);
+      console.error('Erro completo:', error);
+      setError(error.error || 'Erro ao salvar salão');
     }
   };
 

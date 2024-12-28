@@ -1,5 +1,5 @@
 // src/pages/admin/Users.tsx
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Delete as DeleteIcon, Info as InfoIcon } from '@mui/icons-material';
 import {
   Container,
   Paper,
@@ -23,7 +23,12 @@ import {
   FormControl,
   InputLabel,
   Chip,
-  Alert
+  Alert,
+  Grid,
+  List,
+  ListItem,
+  ListItemText,
+  Divider
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { useState, useEffect, ChangeEvent } from 'react';
@@ -58,6 +63,8 @@ const UsersManagement = () => {
     password: '',
     confirmPassword: ''
   });
+  const [selectedUserDetails, setSelectedUserDetails] = useState<any>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -102,9 +109,9 @@ const UsersManagement = () => {
       };
 
       if (selectedUser) {
-        await api.put(`/users/${selectedUser.id}/`, userData);
+        await UserService.update(selectedUser.id, userData);
       } else {
-        await api.post('/users/', userData);
+        await UserService.create(userData);
       }
 
       loadUsers();
@@ -215,6 +222,99 @@ const UsersManagement = () => {
     }));
   };
 
+  const handleViewDetails = async (userId: string) => {
+    try {
+      const response = await UserService.getDetails(userId);
+      setSelectedUserDetails(response);
+      setDetailsDialogOpen(true);
+    } catch (error) {
+      console.error('Erro ao carregar detalhes:', error);
+      setError('Erro ao carregar detalhes do usuário');
+    }
+  };
+
+  const UserDetailsDialog = () => (
+    <Dialog 
+      open={detailsDialogOpen} 
+      onClose={() => setDetailsDialogOpen(false)}
+      maxWidth="md"
+      fullWidth
+    >
+      <DialogTitle>
+        Detalhes do Usuário
+      </DialogTitle>
+      <DialogContent>
+        {selectedUserDetails && (
+          <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6">Informações Básicas</Typography>
+              <List>
+                <ListItem>
+                  <ListItemText 
+                    primary="Nome" 
+                    secondary={selectedUserDetails.user.name} 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Email" 
+                    secondary={selectedUserDetails.user.email} 
+                  />
+                </ListItem>
+                <ListItem>
+                  <ListItemText 
+                    primary="Função" 
+                    secondary={getRoleLabel(selectedUserDetails.user.role)} 
+                  />
+                </ListItem>
+              </List>
+            </Grid>
+            
+            <Grid item xs={12} md={6}>
+              <Typography variant="h6">Atividades Recentes</Typography>
+              <List>
+                {selectedUserDetails.activities.map((activity: any, index: number) => (
+                  <ListItem key={index}>
+                    <ListItemText
+                      primary={activity.action}
+                      secondary={new Date(activity.timestamp).toLocaleString()}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            </Grid>
+
+            {selectedUserDetails.professional_data && (
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
+                <Typography variant="h6">Dados Profissionais</Typography>
+                <List>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Total de Agendamentos" 
+                      secondary={selectedUserDetails.professional_data.total_appointments} 
+                    />
+                  </ListItem>
+                  <ListItem>
+                    <ListItemText 
+                      primary="Avaliação Média" 
+                      secondary={selectedUserDetails.professional_data.rating?.toFixed(1) || 'N/A'} 
+                    />
+                  </ListItem>
+                </List>
+              </Grid>
+            )}
+          </Grid>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setDetailsDialogOpen(false)}>
+          Fechar
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Paper sx={{ p: 3 }}>
@@ -259,6 +359,9 @@ const UsersManagement = () => {
                     {establishments.find(e => e.id === user.estabelecimento_id)?.nome || '-'}
                   </TableCell>
                   <TableCell align="right">
+                    <IconButton onClick={() => handleViewDetails(user.id)}>
+                      <InfoIcon />
+                    </IconButton>
                     <IconButton onClick={() => handleOpenDialog(user)}>
                       <EditIcon />
                     </IconButton>
@@ -363,6 +466,8 @@ const UsersManagement = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        
+        <UserDetailsDialog />
       </Paper>
     </Container>
   );

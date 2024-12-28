@@ -19,6 +19,10 @@ class EvolutionAPI:
         url = f"{self.base_url}/instance/create"
         instance_name = f"estabelecimento_{estabelecimento_id}"
         
+        webhook_url = f"{settings.BASE_URL}/api/webhooks/whatsapp/"
+        if not webhook_url.startswith('http'):
+            webhook_url = f"https://{webhook_url}"
+        
         payload = {
             "instanceName": instance_name,
             "token": settings.EVOLUTION_API_KEY,
@@ -30,16 +34,32 @@ class EvolutionAPI:
             "alwaysOnline": True,
             "readMessages": True,
             "readStatus": True,
-            "syncFullHistory": True
+            "syncFullHistory": False,
+            "webhookUrl": webhook_url,
+            "webhookByEvents": True,
+            "webhookBase64": True,
+            "webhookEvents": [
+                "APPLICATION_STARTUP",
+                "CHATS_UPSERT",
+                "SEND_MESSAGE",
+                "MESSAGES_UPSERT"
+            ]
         }
         
         try:
-            response = requests.post(url, json=payload, headers=self.headers)
-            if response.status_code not in [200, 201]:
-                print(f"Erro Evolution API: {response.text}")
-                return None
+            print(f"Criando instância para estabelecimento {estabelecimento_id}")
+            print(f"URL: {url}")
+            print(f"Payload: {payload}")
             
-            return response.json()
+            response = requests.post(url, json=payload, headers=self.headers)
+            print(f"Status code: {response.status_code}")
+            print(f"Resposta: {response.text}")
+            
+            if response.status_code in [200, 201]:
+                return response.json()
+            
+            print(f"Erro Evolution API: {response.text}")
+            return None
         except Exception as e:
             print(f"Erro ao criar instância: {str(e)}")
             return None
@@ -228,10 +248,3 @@ def check_connection(instance_id: str) -> Dict:
     """
     api = EvolutionAPI()
     return api.check_connection_status(instance_id)
-
-def criar_instancia_evolution(estabelecimento_id: str, phone: str) -> Optional[Dict]:
-    """
-    Cria uma nova instância do WhatsApp
-    """
-    api = EvolutionAPI()
-    return api.criar_instancia(estabelecimento_id, phone)

@@ -24,5 +24,10 @@ export const UserService = {
 
   delete: async (id: string) => {
     await api.delete(`/api/users/${id}/`);
+  },
+
+  getDetails: async (id: string) => {
+    const response = await api.get(`/api/users/${id}/details/`);
+    return response.data;
   }
 };

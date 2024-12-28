@@ -79,7 +79,7 @@ const WhatsAppStatus = () => {
 
   useEffect(() => {
     loadInstances();
-    const interval = setInterval(loadInstances, 60000);
+    const interval = setInterval(loadInstances, 300000);
     return () => clearInterval(interval);
   }, []);
 

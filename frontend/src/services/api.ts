@@ -7,6 +7,9 @@ const api = axios.create({
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');
+  console.log('DEBUG: Token presente:', !!token);
+  console.log('DEBUG: URL completa:', `${config.baseURL}${config.url}`);
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -16,6 +19,7 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   response => response,
   error => {
+    console.error('API Error:', error.config.url, error.response?.status, error.response?.data);
     if (error.response?.status === 401) {
       window.location.href = '/login';
     }
