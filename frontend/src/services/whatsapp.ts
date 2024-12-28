@@ -4,8 +4,15 @@ import api from './api';
 
 export const WhatsAppService = {
   getAllInstances: async () => {
-    const response = await api.get('/api/whatsapp/instances/status/');
-    return response.data;
+    console.log('Iniciando getAllInstances');
+    try {
+      const response = await api.get('/api/whatsapp/instances/status/');
+      console.log('Resposta getAllInstances:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Erro detalhado getAllInstances:', error);
+      throw error;
+    }
   },
 
   getStatus: async (estabelecimento_id: string) => {

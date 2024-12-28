@@ -53,7 +53,7 @@ const Reports = () => {
       setLoading(true);
       setError(null);
 
-      const response = await api.get('/reports/analytics/', {
+      const response = await api.get('/api/reports/analytics/', {
         params: {
           start_date: format(startDate, 'yyyy-MM-dd'),
           end_date: format(endDate, 'yyyy-MM-dd')
@@ -71,7 +71,7 @@ const Reports = () => {
 
   const handleExport = async () => {
     try {
-      const response = await api.get('/reports/export/', {
+      const response = await api.get('/api/reports/export/', {
         params: {
           type: reportType,
           start_date: format(startDate!, 'yyyy-MM-dd'),

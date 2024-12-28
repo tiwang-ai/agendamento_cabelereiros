@@ -16,7 +16,7 @@ const SystemServicesManagement = () => {
   // CRUD completo dos serviços base
   const handleCreateService = async (data: Omit<SystemService, 'id'>) => {
     try {
-      const response = await api.post('/system-services/', data);
+      const response = await api.post('/api/system-services/', data);
       setServices([...services, response.data]);
     } catch (error) {
       console.error('Erro ao criar serviço:', error);

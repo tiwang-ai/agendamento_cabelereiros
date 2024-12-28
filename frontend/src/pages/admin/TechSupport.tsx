@@ -87,8 +87,8 @@ const TechSupport = () => {
     try {
       setRefreshing(true);
       const [logsResponse, metricsResponse] = await Promise.all([
-        api.get('/admin/system-logs/'),
-        api.get('/admin/system-metrics/')
+        api.get('/api/admin/system-logs/'),
+        api.get('/api/admin/system-metrics/')
       ]);
       setSystemLogs(logsResponse.data);
       setMetrics(metricsResponse.data);

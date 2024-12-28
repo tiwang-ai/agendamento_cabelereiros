@@ -35,55 +35,50 @@ urlpatterns = [
     path('profissionais/', create_professional, name='create-professional'),
     path('finance/salon/stats/', salon_finance_stats, name='salon-finance-stats'),
     path('finance/salon/transactions/', salon_finance_transactions, name='salon-finance-transactions'),
-    path('admin/staff/', staff_list, name='staff-list'),
-    path('api/', include([
-        
-        path('auth/', include([
-            path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-            path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-            path('register/', register, name='register'),
-        ])),
-        path('admin/', include([
-            path('stats/', admin_stats, name='admin-stats'),
-            path('staff/', staff_list, name='staff-list'),
-            path('staff/<int:pk>/', staff_detail, name='staff-detail'),
-            path('staff/activities/', staff_activities, name='staff-activities'),
-            path('staff/activities/<int:user_id>/', staff_user_activities, name='staff-user-activities'),
-            path('finance/stats/', finance_stats, name='finance_stats'),
-            path('finance/transactions/', finance_transactions, name='finance_transactions'),
-            path('bot-config/', bot_config, name='bot-config'),
-            path('system-metrics/', system_metrics, name='system-metrics'),
-            path('system-logs/', system_logs, name='system-logs'),
-        ])),
-        path('whatsapp/', include([
-            path('instances/status/', whatsapp_instances_status, name='whatsapp-instances-status'),
-            path('status/<str:estabelecimento_id>/', whatsapp_status, name='whatsapp-status'),
-            path('connect/<str:estabelecimento_id>/', manage_whatsapp_connection, name='connect-whatsapp'),
-            path('qr-code/<str:estabelecimento_id>/', generate_qr_code, name='generate-qr-code'),
-            path('webhook/', whatsapp_webhook, name='whatsapp-webhook'),
-            path('bot-config/<str:estabelecimento_id>/', bot_config, name='bot-config'),
-            path('send-message/<str:estabelecimento_id>/', send_whatsapp_message, name='send-message'),
-        ])),
-        path('estabelecimentos/<int:pk>/', EstabelecimentoViewSet.as_view({
-            'get': 'retrieve',
-            'put': 'update',
-            'patch': 'partial_update',
-            'delete': 'destroy'
-        }), name='estabelecimento-detail'),
-        path('profissionais/', ProfissionalViewSet.as_view({
-            'get': 'list',
-            'post': 'create'
-        })),
-        path('servicos/', ServicoViewSet.as_view({
-            'get': 'list',
-            'post': 'create'
-        })),
-        path('estabelecimentos/<int:pk>/details/', EstabelecimentoViewSet.as_view({
-            'get': 'retrieve_details'
-        }), name='estabelecimento-details'),
-        path('health-check/', health_check, name='health-check'),
-        path('webhooks/whatsapp/', webhook_handler, name='whatsapp-webhook'),
+    path('auth/', include([
+        path('register/', register, name='register'),
+        path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+        path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     ])),
+    path('admin/', include([
+        path('stats/', admin_stats, name='admin-stats'),
+        path('staff/', staff_list, name='staff-list'),
+        path('staff/activities/', staff_activities, name='staff-activities'),
+        path('staff/activities/<int:user_id>/', staff_user_activities, name='staff-user-activities'),
+        path('finance/stats/', finance_stats, name='finance_stats'),
+        path('staff/<int:pk>/', staff_detail, name='staff-detail'),
+        path('bot-config/', bot_config, name='bot-config'),
+        path('finance/transactions/', finance_transactions, name='finance_transactions'),
+        path('system-logs/', system_logs, name='system-logs'),
+        path('system-metrics/', system_metrics, name='system-metrics'),
+    ])),
+    path('whatsapp/', include([
+        path('instances/status/', whatsapp_instances_status, name='whatsapp-instances-status'),
+        path('status/<str:estabelecimento_id>/', whatsapp_status, name='whatsapp-status'),
+        path('qr-code/<str:estabelecimento_id>/', generate_qr_code, name='generate-qr-code'),
+        path('connect/<str:estabelecimento_id>/', manage_whatsapp_connection, name='connect-whatsapp'),
+        path('bot-config/<str:estabelecimento_id>/', bot_config, name='bot-config'),
+        path('webhook/', whatsapp_webhook, name='whatsapp-webhook'),
+    ])),
+    path('send-message/<str:estabelecimento_id>/', send_whatsapp_message, name='send-message'),
+    path('profissionais/', ProfissionalViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    })),
+    path('servicos/', ServicoViewSet.as_view({
+        'get': 'list',
+        'post': 'create'
+    })),
+    path('estabelecimentos/<int:pk>/', EstabelecimentoViewSet.as_view({
+        'get': 'retrieve',
+        'put': 'update',
+        'patch': 'partial_update',
+        'delete': 'destroy'
+    }), name='estabelecimento-detail'),
+    path('estabelecimentos/<int:pk>/details/', EstabelecimentoViewSet.as_view({
+        'get': 'retrieve_details'
+    }), name='estabelecimento-details'),
+    path('health-check/', health_check, name='health-check'),
 ]
 
 

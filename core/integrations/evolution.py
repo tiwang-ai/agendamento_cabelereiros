@@ -241,10 +241,3 @@ def get_whatsapp_status(instance_id: str) -> Dict:
     """
     api = EvolutionAPI()
     return api.check_connection_status(instance_id)
-
-def check_connection(instance_id: str) -> Dict:
-    """
-    Verifica o status da conexão para uma instância específica
-    """
-    api = EvolutionAPI()
-    return api.check_connection_status(instance_id)

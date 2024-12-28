@@ -11,7 +11,7 @@ export const AIService = {
   },
 
   getWhatsAppStatus: async (salonId: string) => {
-    const response = await api.get(`/whatsapp/status/${salonId}`);
+    const response = await api.get(`/api/whatsapp/status/${salonId}`);
     return response.data;
   }
 };

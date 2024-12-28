@@ -1,7 +1,7 @@
 import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
-from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog
+from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog, Transaction
 from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer
 from django.conf import settings
 from django.db import connection
@@ -16,8 +16,6 @@ from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from .services.system_logs import SystemMonitor
 from django.http import JsonResponse
 from .integrations.evolution import (
-    get_whatsapp_status, 
-    check_connection,
     EvolutionAPI
 )
 
@@ -563,35 +561,50 @@ def finance_transactions(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def admin_stats(request):
+    """
+    Retorna estatísticas para o dashboard administrativo
+    """
     try:
+        # Total de salões
         total_salons = Estabelecimento.objects.count()
-        active_salons = Estabelecimento.objects.filter(is_active=True).count()
-        total_revenue = Transaction.objects.filter(
-            type='income', 
-            status='completed'
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
         
-        active_subscriptions = Estabelecimento.objects.filter(
-            status='connected'
+        # Salões ativos (usando o campo is_active)
+        active_salons = Estabelecimento.objects.filter(
+            is_active=True
         ).count()
         
-        # Últimas atividades (usando o modelo Interacao)
-        recent_activities = Interacao.objects.all().order_by('-data_criacao')[:5]
-        activities_list = [{
+        # Receita total (soma de todas as transações bem-sucedidas)
+        total_revenue = Transaction.objects.filter(
+            status='completed'
+        ).aggregate(
+            total=Sum('amount')
+        )['total'] or 0
+        
+        # Assinaturas ativas (usando estabelecimentos ativos como proxy)
+        active_subscriptions = Estabelecimento.objects.filter(
+            is_active=True
+        ).count()
+        
+        # Atividades recentes
+        recent_activities = ActivityLog.objects.all().order_by('-timestamp')[:10]
+        
+        activities_data = [{
             'id': activity.id,
-            'type': activity.tipo,
-            'description': activity.descricao,
-            'date': activity.data_criacao
+            'type': activity.action,
+            'description': activity.details,
+            'date': activity.timestamp.isoformat()
         } for activity in recent_activities]
-
+        
         return Response({
             'totalSalons': total_salons,
             'activeSalons': active_salons,
             'totalRevenue': float(total_revenue),
             'activeSubscriptions': active_subscriptions,
-            'recentActivities': activities_list
+            'recentActivities': activities_data
         })
+        
     except Exception as e:
+        print(f"Erro ao gerar estatísticas: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -886,10 +899,13 @@ def create_whatsapp_instance(request):
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def whatsapp_instances_status(request):
+    print("=== INICIANDO WHATSAPP INSTANCES STATUS ===")
+    print(f"Request method: {request.method}")
+    print(f"Request path: {request.path}")
+    print(f"Request user: {request.user}")
     """
     Retorna todas as instâncias do WhatsApp
     """
-    print("Acessando whatsapp_instances_status")
     try:
         estabelecimentos = Estabelecimento.objects.all()
         print(f"Estabelecimentos encontrados: {estabelecimentos.count()}")
@@ -1548,32 +1564,3 @@ def register_activity(user, action, details=""):
         )
     except Exception as e:
         print(f"Erro ao registrar atividade: {str(e)}")
-
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def get_whatsapp_instances(request):
-    """
-    Retorna todas as instâncias do WhatsApp
-    """
-    try:
-        estabelecimentos = Estabelecimento.objects.all()
-        instances_data = []
-        
-        for estabelecimento in estabelecimentos:
-            status = 'disconnected'
-            if estabelecimento.evolution_instance_id:
-                status_response = evolution_api.check_connection_status(estabelecimento.evolution_instance_id)
-                status = status_response.get('status', 'disconnected')
-            
-            instances_data.append({
-                'id': str(estabelecimento.id),
-                'nome': estabelecimento.nome,
-                'instance_id': estabelecimento.evolution_instance_id,
-                'whatsapp': estabelecimento.whatsapp,
-                'status': status
-            })
-        
-        return Response(instances_data)
-    except Exception as e:
-        print(f"Erro ao buscar instâncias: {str(e)}")
-        return Response({'error': str(e)}, status=500)

@@ -12,12 +12,12 @@ export interface Plan {
 
 export const PlansService = {
   getAll: async () => {
-    const response = await api.get('/plans/');
+    const response = await api.get('/api/plans/');
     return response.data;
   },
 
   create: async (planData: Omit<Plan, 'id'>) => {
-    const response = await api.post('/plans/', planData);
+    const response = await api.post('/api/plans/', planData);
     return response.data;
   },
 

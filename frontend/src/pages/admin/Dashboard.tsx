@@ -45,7 +45,7 @@ const AdminDashboard = () => {
 
   const loadStats = async () => {
     try {
-      const response = await api.get('/admin/stats/');
+      const response = await api.get('/api/admin/stats/');
       setStats(response.data);
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);

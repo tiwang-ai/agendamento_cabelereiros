@@ -37,7 +37,7 @@ export interface FinanceFilters {
 export const FinanceService = {
   // Admin/Staff endpoints
   getAdminStats: async (): Promise<FinanceStats> => {
-    const response = await api.get('/admin/finance/stats/');
+    const response = await api.get('/api/admin/finance/stats/');
     return response.data;
   },
 
@@ -49,7 +49,7 @@ export const FinanceService = {
       status: filters?.status
     };
 
-    const response = await api.get('/admin/finance/transactions/', { 
+    const response = await api.get('/api/admin/finance/transactions/', { 
       params: {
         start_date: params.start_date,
         end_date: params.end_date,
@@ -62,7 +62,7 @@ export const FinanceService = {
 
   // Salon endpoints
   getSalonStats: async (): Promise<SalonStats> => {
-    const response = await api.get('/finance/salon/stats/');
+    const response = await api.get('/api/finance/salon/stats/');
     return response.data;
   },
 
@@ -74,7 +74,7 @@ export const FinanceService = {
       status: filters?.status
     };
 
-    const response = await api.get('/finance/salon/transactions/', { params });
+    const response = await api.get('/api/finance/salon/transactions/', { params });
     return response.data;
   },
 
@@ -86,7 +86,7 @@ export const FinanceService = {
       status: filters?.status
     };
 
-    const response = await api.get('/finance/transactions/', { params });
+    const response = await api.get('/api/finance/transactions/', { params });
     return response.data;
   }
 };
