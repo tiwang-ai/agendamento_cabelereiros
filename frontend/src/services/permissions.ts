@@ -61,12 +61,12 @@ export const defaultPermissions: Record<UserRole, RolePermissions> = {
 
 export const PermissionService = {
   getUserPermissions: async (userId: string) => {
-    const response = await api.get(`/users/${userId}/permissions/`);
+    const response = await api.get(`/api/users/${userId}/permissions/`);
     return response.data;
   },
 
   updateUserPermissions: async (userId: string, permissions: RolePermissions) => {
-    const response = await api.put(`/users/${userId}/permissions/`, permissions);
+    const response = await api.put(`/api/users/${userId}/permissions/`, permissions);
     return response.data;
   },
 

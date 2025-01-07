@@ -1381,59 +1381,85 @@ def manage_whatsapp_connection(request, estabelecimento_id):
             'error': f'Erro ao gerenciar conexão: {str(e)}'
         }, status=500)
 
-@api_view(['GET', 'POST'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAdminUser])
-def bot_config(request):
+def bot_settings_view(request):
     try:
         config = SystemConfig.objects.first()
-        if request.method == 'POST':
+        if not config:
+            config = SystemConfig.objects.create()
+
+        if request.method in ['POST', 'PATCH']:
             data = request.data
-            instance_created = False
-            webhook_configured = False
-            
-            if not config:
-                config = SystemConfig.objects.create(
-                    support_whatsapp=data['support_whatsapp']
-                )
-            else:
-                config.support_whatsapp = data['support_whatsapp']
-                config.save()
-
-            # Criar instância se não existir
-            if not config.evolution_instance_id:
-                api = EvolutionAPI()
-                instance_response = api.criar_instancia(
-                    estabelecimento_id='staff_support',
-                    phone=config.support_whatsapp
-                )
+            if not isinstance(config.bot_settings, dict):
+                config.bot_settings = {}
                 
-                if instance_response and instance_response.get('instanceId'):
-                    config.evolution_instance_id = instance_response['instanceId']
+            config.bot_settings.update(data)
+            config.save()
+
+            # Tenta criar/atualizar instância na Evolution API
+            if not config.evolution_instance_id:
+                evolution_api = EvolutionAPI()
+                instance = evolution_api.criar_instancia(
+                    estabelecimento_id='support',
+                    phone=phone,
+                    is_support=True
+                )
+                if instance and not instance.get('error'):
+                    config.evolution_instance_id = instance.get('instanceId')
+                    config.status = 'pending_connection'
                     config.save()
-                    instance_created = True
-                    
-                    # Configurar webhook após criar instância
-                    webhook_response = api.configurar_webhooks(instance_response['instanceId'])
-                    webhook_configured = 'error' not in webhook_response
 
             return Response({
-                'success': True,
-                'instance_created': instance_created,
-                'webhook_configured': webhook_configured,
-                'config': {
-                    'support_whatsapp': config.support_whatsapp,
-                    'status': config.status
-                }
+                'support_whatsapp': config.support_whatsapp,
+                'status': config.status,
+                'instance_created': bool(config.evolution_instance_id)
             })
-        else:
-            return Response({
-                'support_whatsapp': config.support_whatsapp if config else '',
-                'status': config.status if config else 'disconnected'
-            })
-    except Exception as e:
+
         return Response({
-            'error': str(e)
-        }, status=500)
+            'support_whatsapp': config.support_whatsapp,
+            'status': config.status
+        })
+
+    except Exception as e:
+        print(f"Erro em bot_config_view: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def generate_qr_code(request):
+    """
+    Gera QR Code para conexão do WhatsApp
+    """
+    try:
+        config = SystemConfig.objects.first()
+        if not config:
+            return Response({'error': 'Configuração não encontrada'}, status=404)
+            
+        api = EvolutionAPI()
+        
+        # Se não tem instância, cria
+        if not config.evolution_instance_id:
+            instance = api.criar_instancia(
+                estabelecimento_id='support',
+                phone=config.support_whatsapp,
+                is_support=True
+            )
+            if instance and not instance.get('error'):
+                config.evolution_instance_id = instance.get('instanceId')
+                config.status = 'pending_connection'
+                config.save()
+        
+        # Gera QR Code
+        qr_response = api.get_qr_code(config.evolution_instance_id)
+        if 'error' in qr_response:
+            return Response({'error': qr_response['error']}, status=500)
+            
+        return Response(qr_response)
+        
+    except Exception as e:
+        print(f"Erro ao gerar QR code: {str(e)}")
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -1564,3 +1590,191 @@ def register_activity(user, action, details=""):
         )
     except Exception as e:
         print(f"Erro ao registrar atividade: {str(e)}")
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def support_webhook(request):
+    """Webhook para o bot de suporte (Bot 1)"""
+    try:
+        data = request.data
+        # Processar mensagens do bot de suporte
+        if data.get('type') == 'message':
+            # Implementar lógica do Bot 1
+            pass
+        return Response({'status': 'ok'})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def salon_webhook(request, salon_id):
+    """Webhook para os bots dos salões (Bot 2)"""
+    try:
+        data = request.data
+        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        
+        if data.get('type') == 'message':
+            # Implementar lógica do Bot 2
+            pass
+        return Response({'status': 'ok'})
+    except Estabelecimento.DoesNotExist:
+        return Response({'error': 'Salão não encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+class BotConfigViewSet(viewsets.ViewSet):
+    permission_classes = [IsAdminUser]
+    
+    def retrieve(self, request):
+        """Obtém configurações do bot de suporte"""
+        config = SystemConfig.objects.first()
+        if not config:
+            config = SystemConfig.objects.create()
+        return Response(SystemConfigSerializer(config).data)
+    
+    def update(self, request):
+        """Atualiza configurações do bot de suporte"""
+        config = SystemConfig.objects.first()
+        if not config:
+            config = SystemConfig.objects.create()
+            
+        serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+    
+    @action(detail=False, methods=['post'])
+    def connect(self, request):
+        """Inicia conexão do bot de suporte"""
+        config = SystemConfig.objects.first()
+        if not config:
+            return Response({"error": "Configurações não encontradas"}, status=404)
+            
+        api = EvolutionAPI()
+        result = api.criar_instancia_suporte()
+        
+        if result.get('error'):
+            return Response({"error": result['error']}, status=400)
+            
+        return Response(result)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def bot_status(request):
+    """Retorna o status do bot de suporte"""
+    try:
+        config = SystemConfig.objects.first()
+        if not config:
+            return Response({
+                'status': 'disconnected',
+                'support_whatsapp': None
+            })
+            
+        api = EvolutionAPI()
+        if config.evolution_instance_id:
+            status_response = api.check_connection_status(config.evolution_instance_id)
+            status = status_response.get('status', 'disconnected')
+        else:
+            status = 'disconnected'
+            
+        return Response({
+            'status': status,
+            'support_whatsapp': config.support_whatsapp,
+            'instance_id': config.evolution_instance_id
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def check_connection(request):
+    """Verifica e gerencia conexão do bot de suporte"""
+    try:
+        config = SystemConfig.objects.first()
+        if not config or not config.evolution_instance_id:
+            return Response({'status': 'disconnected'})
+            
+        api = EvolutionAPI()
+        
+        if request.method == 'POST':
+            # Tenta conectar
+            instance = api.connect_instance(f"support_bot")
+            if instance and not instance.get('error'):
+                config.status = 'connecting'
+                config.save()
+                return Response({'status': 'connecting', 'qr': instance.get('qr')})
+            return Response({'error': 'Falha ao conectar'}, status=400)
+        
+        # GET - apenas verifica status
+        status = api.check_connection_status(config.evolution_instance_id)
+        return Response(status)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAdminUser])
+def bot_settings_view(request):
+    try:
+        if request.method == 'POST':
+            data = request.data
+            # Usa o prompt existente como base
+            if 'prompt_template' not in data:
+                data['prompt_template'] = gerar_prompt_bot1("")
+            
+            # Salva configurações
+            config = SystemConfig.objects.first()
+            if not config:
+                config = SystemConfig.objects.create()
+            
+            config.bot_settings = data
+            config.save()
+            
+            return Response(data)
+            
+        # GET
+        config = SystemConfig.objects.first()
+        if not config:
+            return Response({
+                'bot_ativo': True,
+                'prompt_template': gerar_prompt_bot1(""),
+                'attendance_mode': 'auto',
+                'evolution_settings': {
+                    'reject_calls': True,
+                    'read_messages': True,
+                    'groups_ignore': True
+                },
+                'horario_atendimento': {
+                    'inicio': '09:00',
+                    'fim': '18:00'
+                }
+            })
+            
+        return Response(config.bot_settings)
+        
+    except Exception as e:
+        print(f"Erro em bot_settings_view: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def check_instance_exists(request):
+    try:
+        config = SystemConfig.objects.first()
+        api = EvolutionAPI()
+        
+        if not config:
+            return Response({'exists': False})
+            
+        instances = api.fetch_instances()
+        instance_exists = any(
+            inst.get('instanceName') == 'support_bot' 
+            for inst in instances
+        )
+        
+        return Response({
+            'exists': instance_exists,
+            'instance_id': config.evolution_instance_id if instance_exists else None
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)

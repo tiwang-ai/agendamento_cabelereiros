@@ -15,19 +15,41 @@ export const WhatsAppService = {
     }
   },
 
-  getStatus: async (estabelecimento_id: string) => {
-    const response = await api.get(`/api/whatsapp/status/${estabelecimento_id}/`);
+  getStatus: async (id: string, isSupport: boolean = false) => {
+    const endpoint = isSupport 
+      ? '/api/admin/bot-config/status/'
+      : `/api/whatsapp/status/${id}/`;
+    const response = await api.get(endpoint);
     return response.data;
   },
 
-  connect: async (estabelecimento_id: string) => {
-    const response = await api.post(`/api/whatsapp/connect/${estabelecimento_id}/`);
-    return response.data;
+  connect: async (id: string, isSupport: boolean = false) => {
+    try {
+        console.log('Conectando instância:', id, 'isSupport:', isSupport); // Debug
+        const endpoint = isSupport 
+            ? '/api/admin/bot-config/connection/'
+            : `/api/whatsapp/connect/${id}/`;
+        const response = await api.post(endpoint);
+        console.log('Resposta da conexão:', response.data); // Debug
+        return response.data;
+    } catch (error) {
+        console.error('Erro na conexão:', error);
+        throw error;
+    }
   },
 
-  generateQrCode: async (estabelecimento_id: string): Promise<QRCodeResponse> => {
-    const response = await api.get(`/api/whatsapp/qr-code/${estabelecimento_id}/`);
-    return response.data;
+  generateQrCode: async (estabelecimento_id: string, isSupport: boolean = false) => {
+    try {
+      const endpoint = isSupport 
+        ? '/api/admin/bot-config/qr-code/'
+        : `/api/whatsapp/qr-code/${estabelecimento_id}/`;
+                
+      const response = await api.post(endpoint);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao gerar QR code:', error);
+      throw error;
+    }
   },
 
   sendMessage: async (salonId: string, number: string, message: string, options?: any) => {
@@ -46,5 +68,19 @@ export const WhatsAppService = {
   }) => {
     const response = await api.patch(`/api/whatsapp/bot-config/${estabelecimento_id}/`, config);
     return response.data;
+  },
+
+  checkExistingInstance: async (isSupport: boolean = false) => {
+    try {
+      const endpoint = isSupport 
+        ? '/api/admin/bot-config/instance/check/'
+        : '/api/whatsapp/instances/status/';
+                
+      const response = await api.get(endpoint);
+      return response.data.exists;
+    } catch (error) {
+      console.error('Erro ao verificar instância:', error);
+      return false;
+    }
   }
 };

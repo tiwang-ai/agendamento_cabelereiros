@@ -3,7 +3,7 @@ import api from './api';
 
 export const AIService = {
   processMessage: async (message: string, botType: 1 | 2) => {
-    const response = await api.post('/bot/process/', {
+    const response = await api.post('/api/bot/process/', {
       pergunta: message,
       bot_tipo: botType
     });

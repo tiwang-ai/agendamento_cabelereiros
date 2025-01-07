@@ -6,70 +6,86 @@ from typing import Dict, Optional, List
 
 class EvolutionAPI:
     def __init__(self):
-        self.base_url = settings.EVOLUTION_API_URL
+        """
+        Inicializa a conexão com a Evolution API
+        """
+        self.base_url = settings.EVOLUTION_API_URL.rstrip('/')
+        if not self.base_url.startswith(('http://', 'https://')):
+            self.base_url = f"https://{self.base_url}"
+        
         self.headers = {
-            'apikey': f'{settings.EVOLUTION_API_KEY}',
+            'apikey': settings.EVOLUTION_API_KEY,
             'Content-Type': 'application/json'
         }
 
-    def criar_instancia(self, estabelecimento_id: str, phone: str) -> Optional[Dict]:
+    def _validate_url(self, endpoint: str) -> str:
         """
-        Cria uma nova instância do WhatsApp
+        Valida e formata a URL para requisições
         """
-        url = f"{self.base_url}/instance/create"
-        instance_name = f"estabelecimento_{estabelecimento_id}"
-        
-        webhook_url = f"{settings.BASE_URL}/api/webhooks/whatsapp/"
-        if not webhook_url.startswith('http'):
-            webhook_url = f"https://{webhook_url}"
-        
-        payload = {
-            "instanceName": instance_name,
-            "token": settings.EVOLUTION_API_KEY,
-            "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
-            "qrcode": True,
-            "integration": "WHATSAPP-BAILEYS",
-            "reject_call": True,
-            "groupsIgnore": True,
-            "alwaysOnline": True,
-            "readMessages": True,
-            "readStatus": True,
-            "syncFullHistory": False,
-            "webhookUrl": webhook_url,
-            "webhookByEvents": True,
-            "webhookBase64": True,
-            "webhookEvents": [
-                "APPLICATION_STARTUP",
-                "CHATS_UPSERT",
-                "SEND_MESSAGE",
-                "MESSAGES_UPSERT"
-            ]
-        }
-        
+        url = f"{self.base_url}/{endpoint.lstrip('/')}"
+        print(f"URL formatada: {url}")  # Debug temporário
+        return url
+
+    def criar_instancia(self, estabelecimento_id: str, phone: str, is_support: bool = False) -> Optional[Dict]:
+        """
+        Cria uma instância do WhatsApp na Evolution API
+        Args:
+            estabelecimento_id: ID do estabelecimento ou 'support' para bot de suporte
+            phone: Número do WhatsApp
+            is_support: Flag para identificar se é instância de suporte
+        """
         try:
-            print(f"Criando instância para estabelecimento {estabelecimento_id}")
-            print(f"URL: {url}")
-            print(f"Payload: {payload}")
+            instance_name = f"support_bot" if is_support else f"salon_{estabelecimento_id}"
             
-            response = requests.post(url, json=payload, headers=self.headers)
-            print(f"Status code: {response.status_code}")
-            print(f"Resposta: {response.text}")
+            # Verifica se já existe uma instância
+            instances = self.fetch_instances()
+            if any(inst.get('instanceName') == instance_name for inst in instances):
+                return {"error": "Instância já existe"}
             
-            if response.status_code in [200, 201]:
-                return response.json()
+            # Garante que a URL do webhook está formatada corretamente
+            webhook_url = (
+                f"{settings.BASE_URL.rstrip('/')}/api/webhooks/support/"
+                if is_support
+                else f"{settings.BASE_URL.rstrip('/')}/api/webhooks/salon/{estabelecimento_id}/"
+            )
             
-            print(f"Erro Evolution API: {response.text}")
-            return None
+            if not webhook_url.startswith(('http://', 'https://')):
+                webhook_url = f"https://{webhook_url}"
+            
+            payload = {
+                "instanceName": instance_name,
+                "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
+                "qrcode": True,
+                "integration": "WHATSAPP-BAILEYS",
+                "reject_call": True,
+                "groupsIgnore": True,
+                "alwaysOnline": True,
+                "readMessages": True,
+                "readStatus": True,
+                "syncFullHistory": False,
+                "webhookUrl": webhook_url,
+                "webhookByEvents": True,
+                "webhookBase64": True,
+                "webhookEvents": ["MESSAGES_UPSERT", "SEND_MESSAGE"]
+            }
+            
+            response = requests.post(
+                self._validate_url('instance/create'),
+                json=payload,
+                headers=self.headers
+            )
+            response.raise_for_status()
+            return response.json()
         except Exception as e:
             print(f"Erro ao criar instância: {str(e)}")
-            return None
+            return {"error": str(e)}
 
-    def check_connection_status(self, instance_id: str) -> dict:
+    def check_connection_status(self, instance_id: str) -> Dict:
         """
-        Verifica o status da conexão de uma instância
+        Verifica o status de uma instância específica
         """
-        url = f"{self.base_url}/instance/connectionState/{instance_id}"
         try:
+            url = self._validate_url(f'instance/connectionState/{instance_id}')
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
             return response.json()
@@ -192,8 +208,9 @@ class EvolutionAPI:
         """
         Busca todas as instâncias existentes na Evolution API
         """
-        url = f"{self.base_url}/instance/fetchInstances"
         try:
+            url = f"{self.base_url}/instance/fetchInstances"
+            print(f"Fazendo requisição para: {url}")  # Debug
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
             return response.json()
@@ -233,6 +250,19 @@ class EvolutionAPI:
         except requests.exceptions.RequestException as e:
             print(f"Erro ao enviar mensagem WhatsApp: {str(e)}")
             return None
+
+    def test_connection(self) -> bool:
+        """
+        Testa a conexão com a Evolution API
+        """
+        try:
+            response = requests.get(self.base_url, headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+            return data.get('status') == 200
+        except Exception as e:
+            print(f"Erro ao testar conexão: {str(e)}")
+            return False
 
 # Criando funções wrapper para serem importadas
 def get_whatsapp_status(instance_id: str) -> Dict:

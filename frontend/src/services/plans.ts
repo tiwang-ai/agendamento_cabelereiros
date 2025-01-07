@@ -22,7 +22,7 @@ export const PlansService = {
   },
 
   update: async (id: number, planData: Partial<Plan>) => {
-    const response = await api.put(`/plans/${id}/`, planData);
+    const response = await api.put(`/api/plans/${id}/`, planData);
     return response.data;
   },
 

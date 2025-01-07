@@ -44,6 +44,7 @@ venv\Scripts\activate # Windows
 2. Iniciar servidor de desenvolvimento: `npm run dev`
 
 ## Ngrok
+
 1. `ngrok start --config ngrok.yml django frontend`
 
 ## Estrutura do Projeto
@@ -104,6 +105,10 @@ Teste_Agendamento-TIWANG/
 │   │   │   └── Layout.tsx
 │   │   ├── pages/         # Páginas principais
 │   │   │   ├── admin/
+│   │   │   │   ├── components
+│   │   │   │   │   ├── BotMetrics.tsx
+│   │   │   │   │   ├── BotConfig.tsx
+│   │   │   │   │   └── WhatsAppSetup.tsx
 │   │   │   │   ├── Dashboard.tsx
 │   │   │   │   ├── Finance.tsx
 │   │   │   │   ├── SalonDetails.tsx
@@ -169,8 +174,10 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── global.d.ts
 │   │   │   ├── qrcode.d.ts
 │   │   │   ├── framer-motion.d.ts
+│   │   │   ├── bot.ts
 │   │   │   └── auth.ts
 │   │   ├── utils/         # Funções utilitárias
+│   │   │   └── prompts.ts
 │   │   ├── assets/        # Imagens, etc
 │   │   │   └── react.svg
 │   │   ├── i18n/
@@ -326,10 +333,19 @@ Relacionamentos:
 
 #### Bot 1 (Atendimento ao Salão)
 
-- Atendimento administrativo aos salões
-- Respostas sobre relatórios e métricas
-- Envio automático de relatórios de desempenho
-- Suporte técnico básico
+- [x] Atendimento administrativo aos salões
+- [x] Configuração básica da instância
+- [x] Integração com Evolution API
+- [x] Configuração de webhooks
+- [x] Monitoramento de status
+- [ ] Processamento de mensagens
+- [ ] Integração com LLM
+- [ ] Gestão de leads
+- [ ] Sistema de vendas
+- [ ] Respostas sobre relatórios e métricas
+- [ ] Envio automático de relatórios
+- [ ] Suporte técnico básico
+- [ ] Venda Básica
 
 #### Bot 2 (Atendimento ao Cliente)
 

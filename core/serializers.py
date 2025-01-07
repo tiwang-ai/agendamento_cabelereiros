@@ -10,7 +10,8 @@ from .models import (
     SystemService,
     SalonService,
     BotConfig,
-    Interacao
+    Interacao,
+    SystemConfig
 )
 import json
 
@@ -248,3 +249,8 @@ class EstabelecimentoDetailSerializer(EstabelecimentoSerializer):
             'profissionais', 'servicos', 'data_cadastro',
             'plano', 'configuracoes_bot'
         ]
+
+class SystemConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SystemConfig
+        fields = '__all__'

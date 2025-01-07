@@ -11,12 +11,12 @@ export interface Plan {
 
 export const PaymentService = {
   createPreference: async (planId: string) => {
-    const response = await api.post('/payments/preference', { planId });
+    const response = await api.post('/api/payments/preference', { planId });
     return response.data;
   },
 
   processPayment: async (paymentData: any) => {
-    const response = await api.post('/payments/process', paymentData);
+    const response = await api.post('/api/payments/process', paymentData);
     return response.data;
   }
 };

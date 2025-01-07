@@ -317,22 +317,28 @@ class Plan(models.Model):
         return self.name
 
 class SystemConfig(models.Model):
-    support_whatsapp = models.CharField(max_length=20)
+    support_whatsapp = models.CharField(max_length=20, null=True, blank=True)
     evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
-    status = models.CharField(
-        max_length=50, 
-        default='disconnected',
-        choices=[
-            ('disconnected', 'Desconectado'),
-            ('connected', 'Conectado'),
-            ('pending_connection', 'Aguardando Conexão'),
-            ('error', 'Erro')
-        ]
-    )
-    
-    class Meta:
-        verbose_name = 'Configuração do Sistema'
-        verbose_name_plural = 'Configurações do Sistema'
+    status = models.CharField(max_length=20, default='disconnected')
+    bot_settings = models.JSONField(default=dict, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.bot_settings:
+            self.bot_settings = {
+                'bot_ativo': True,
+                'prompt_template': '',
+                'attendance_mode': 'auto',
+                'evolution_settings': {
+                    'reject_calls': True,
+                    'read_messages': True,
+                    'groups_ignore': True
+                },
+                'horario_atendimento': {
+                    'inicio': '09:00',
+                    'fim': '18:00'
+                }
+            }
+        super().save(*args, **kwargs)
 
 class BotConfig(models.Model):
     estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
@@ -363,3 +369,29 @@ class ActivityLog(models.Model):
 
     class Meta:
         ordering = ['-timestamp']
+
+class Lead(models.Model):
+    SOURCES = (
+        ('BOT1', 'Bot de Suporte'),
+        ('BOT2', 'Bot do Salão'),
+        ('SITE', 'Website')
+    )
+    
+    STATUS = (
+        ('NEW', 'Novo'),
+        ('CONTACTED', 'Contatado'),
+        ('CONVERTED', 'Convertido'),
+        ('LOST', 'Perdido')
+    )
+    
+    phone = models.CharField(max_length=20)
+    name = models.CharField(max_length=100, blank=True)
+    source = models.CharField(max_length=10, choices=SOURCES)
+    status = models.CharField(max_length=10, choices=STATUS, default='NEW')
+    salon = models.ForeignKey(Estabelecimento, null=True, on_delete=models.SET_NULL)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_contact = models.DateTimeField(auto_now=True)
+    notes = models.TextField(blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']

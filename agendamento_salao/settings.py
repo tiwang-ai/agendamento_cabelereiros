@@ -144,9 +144,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Configurações da Evolution API
-EVOLUTION_API_URL = os.getenv(
-    "EVOLUTION_API_URL", "https://evo-evolution.vaekfu.easypanel.io:8080/api/"
-)
+EVOLUTION_API_URL = 'https://api.agendacabelereiro.com.br'
 EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "429683C4C977415CAAFCCE10F7D57E11")
 EVOLUTION_API_TOKEN = EVOLUTION_API_KEY
 

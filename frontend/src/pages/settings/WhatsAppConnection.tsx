@@ -28,6 +28,11 @@ interface ConnectionData {
   count?: number;
 }
 
+interface WhatsAppConnectionProps {
+    isSupport?: boolean;
+    title?: string;
+}
+
 const TabPanel = (props: TabPanelProps): ReactElement => {
   const { children, value, index, ...other } = props;
 
@@ -44,49 +49,53 @@ const TabPanel = (props: TabPanelProps): ReactElement => {
   );
 };
 
-const WhatsAppConnection = () => {
+const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: WhatsAppConnectionProps) => {
   const { user } = useAuth();
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
   const [tabValue, setTabValue] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [hasInstance, setHasInstance] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkInitialStatus = async () => {
-      if (!user?.estabelecimento_id) return;
-      
+    const checkInstance = async () => {
       try {
-        const statusResponse = await WhatsAppService.getStatus(user.estabelecimento_id);
-        setStatus(statusResponse.status);
+        const exists = await WhatsAppService.checkExistingInstance(isSupport);
+        setHasInstance(exists);
+        if (exists) {
+          const statusResponse = await WhatsAppService.getStatus(
+            isSupport ? 'support' : user?.estabelecimento_id || '',
+            isSupport
+          );
+          setStatus(statusResponse.status);
+        }
       } catch (err) {
-        console.error('Erro ao verificar status inicial:', err);
+        console.error('Erro ao verificar instância:', err);
       }
     };
 
-    checkInitialStatus();
-  }, [user?.estabelecimento_id]);
+    checkInstance();
+  }, [isSupport, user?.estabelecimento_id]);
 
   const handleGeneratePairingCode = async () => {
-    if (!user?.estabelecimento_id) {
-      setError('ID do salão não encontrado');
-      return;
-    }
-
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await WhatsAppService.connectInstance(user.estabelecimento_id);
+      const response = await WhatsAppService.generateQrCode(
+        isSupport ? 'support' : user?.estabelecimento_id || '',
+        isSupport
+      );
       
-      if (response.pairingCode || response.code) {
-        setConnectionData(response);
-      } else {
-        throw new Error('Dados de conexão não recebidos');
+      if (response.error) {
+        throw new Error(response.error);
       }
+      
+      setConnectionData(response);
     } catch (err) {
-      console.error('Erro ao gerar código:', err);
-      setError('Não foi possível gerar o código. Por favor, tente novamente.');
+      setError('Erro ao gerar código. Por favor, tente novamente.');
+      console.error('Erro detalhado:', err);
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +109,7 @@ const WhatsAppConnection = () => {
     <Box sx={{ maxWidth: 1200, mx: 'auto', mt: 4 }}>
       <Paper sx={{ p: 3 }}>
         <Typography variant="h5" gutterBottom>
-          Conexão WhatsApp
+          {title}
         </Typography>
 
         {error && (
