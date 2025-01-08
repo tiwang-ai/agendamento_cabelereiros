@@ -2,7 +2,7 @@ import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog, Transaction
-from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer
+from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer, InteracaoSerializer
 from django.conf import settings
 from django.db import connection
 from django_redis import get_redis_connection
@@ -18,28 +18,6 @@ from django.http import JsonResponse
 from .integrations.evolution import (
     EvolutionAPI
 )
-
-from .models import (
-    Estabelecimento, 
-    Profissional, 
-    Cliente, 
-    Servico, 
-    Agendamento,
-    Calendario_Estabelecimento,
-    Interacao,
-    Plan
-)
-
-from .serializers import (
-    EstabelecimentoSerializer,
-    ProfissionalSerializer,
-    ClienteSerializer,
-    ServicoSerializer,
-    AgendamentoSerializer,
-    UserSerializer,
-    SystemConfigSerializer,
-    StaffSerializer
-)
 from .llm_utils import processar_pergunta, conversation_manager, chamar_llm
 
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -47,6 +25,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import authenticate
 
 import mercadopago
+import time
 
 User = get_user_model()
 
@@ -1031,7 +1010,8 @@ def whatsapp_webhook(request):
     """Processa webhooks do WhatsApp"""
     try:
         data = request.data
-        print("Webhook recebido:", data)  # Debug
+        print("\n=== WEBHOOK RECEBIDO ===")
+        print(f"Dados: {data}")
         
         event_type = data.get('event')
         instance_name = data.get('instance', {}).get('instanceName')
@@ -1059,7 +1039,7 @@ def whatsapp_webhook(request):
         return Response({'status': 'success'})
         
     except Exception as e:
-        print(f"Erro no webhook: {str(e)}")
+        print(f"ERRO no webhook: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -1547,55 +1527,121 @@ def register_activity(user, action, details=""):
 def support_webhook(request):
     """Webhook para o bot de suporte (Bot 1)"""
     try:
-        print("\n=== WEBHOOK RECEBIDO (SUPORTE) ===")
-        print(f"Dados: {request.data}")
+        print("\n=== WEBHOOK BOT SUPORTE ===")
+        print(f"Headers recebidos: {request.headers}")
+        print(f"Dados recebidos: {request.data}")
         
         data = request.data
-        if data.get('type') == 'message':
-            # Extrai informações da mensagem
-            message = data.get('message', {})
-            sender = message.get('from')
-            text = message.get('text', '')
+        
+        if data.get('event') == 'messages.upsert':
+            message_data = data.get('data', {})
+            sender = message_data.get('key', {}).get('remoteJid', '').split('@')[0]
+            text = message_data.get('message', {}).get('conversation', '')
             
+            if not sender or not text:
+                return Response({'status': 'invalid_message'})
+
             print(f"De: {sender}")
             print(f"Mensagem: {text}")
             
+            start_time = time.time()
+            
+            # Registra interação
+            interacao = Interacao.objects.create(
+                numero_whatsapp=sender,
+                mensagem=text,
+                tipo='support_bot',
+                is_lead=True  # Será atualizado depois
+            )
+            
+            # Verifica se é cliente existente
+            estabelecimento = Estabelecimento.objects.filter(whatsapp=sender).first()
+            if estabelecimento:
+                interacao.is_lead = False
+                interacao.estabelecimento = estabelecimento
+                interacao.save()
+            
             # Processa com LLM
-            conversation_id = f"support_{sender}"
-            conversation_manager.add_message(conversation_id, "user", text)
-            
-            # Gera resposta
-            context = conversation_manager.get_context(conversation_id)
-            response_text = chamar_llm(context)
-            
-            print(f"Resposta: {response_text}")
-            
-            # Envia resposta
-            api = EvolutionAPI()
-            api.send_text_message("support_bot", sender, response_text)
-            
-            return Response({'status': 'ok'})
-            
+            try:
+                response_text = chamar_llm(text, debug=True)
+                
+                # Atualiza interação
+                interacao.resposta = response_text
+                interacao.usado_llm = True
+                interacao.save()
+                
+                # Envia resposta via Evolution API
+                api = EvolutionAPI()
+                api.send_text_message('support_bot', sender, response_text)
+                
+                return Response({'status': 'ok'})
+                
+            except Exception as e:
+                print(f"Erro ao processar mensagem: {str(e)}")
+                return Response({'error': str(e)}, status=500)
+                
+        print("=== FIM WEBHOOK ===\n")
+        return Response({'status': 'ok'})
+        
     except Exception as e:
-        print(f"ERRO no webhook: {str(e)}")
+        print(f"Erro no webhook: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def salon_webhook(request, salon_id):
-    """Webhook para os bots dos salões (Bot 2)"""
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def list_interactions(request):
+    """Lista as últimas interações do bot"""
     try:
-        data = request.data
-        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        interacoes = Interacao.objects.filter(
+            tipo='support_bot'
+        ).order_by('-created_at')[:50]  # Últimas 50 interações
         
-        if data.get('type') == 'message':
-            # Implementar lógica do Bot 2
-            pass
-        return Response({'status': 'ok'})
-    except Estabelecimento.DoesNotExist:
-        return Response({'error': 'Salão não encontrado'}, status=404)
+        serializer = InteracaoSerializer(interacoes, many=True)
+        return Response(serializer.data)
+        
     except Exception as e:
+        print(f"Erro ao listar interações: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def bot_metrics(request):
+    """
+    Retorna métricas do bot de suporte
+    """
+    try:
+        hoje = datetime.now()
+        ontem = hoje - timedelta(days=1)
+        
+        # Filtra interações únicas por número de WhatsApp
+        interacoes = Interacao.objects.filter(
+            created_at__gte=ontem,
+            tipo='support_bot'
+        )
+        
+        # Conta leads únicos (apenas primeira interação do número)
+        leads = interacoes.values('numero_whatsapp').distinct().filter(is_lead=True).count()
+        
+        # Conta clientes existentes únicos
+        clientes = interacoes.values('numero_whatsapp').distinct().filter(is_lead=False).count()
+        
+        metricas = {
+            'total_interactions': interacoes.count(),
+            'unique_users': interacoes.values('numero_whatsapp').distinct().count(),
+            'new_leads': leads,
+            'existing_clients': clientes,
+            'ai_responses': interacoes.filter(usado_llm=True).count(),
+            'avg_response_time': interacoes.filter(
+                tempo_resposta__isnull=False
+            ).aggregate(Avg('tempo_resposta'))['tempo_resposta__avg']
+        }
+        
+        return Response(metricas)
+        
+    except Exception as e:
+        print(f"Erro ao gerar métricas: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
 class BotConfigViewSet(viewsets.ViewSet):
     permission_classes = [IsAdminUser]
     
@@ -1754,4 +1800,89 @@ def check_instance(request):
         
     except Exception as e:
         print(f"Erro ao verificar instância: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def salon_webhook(request, salon_id):
+    """Webhook para os bots dos salões (Bot 2)"""
+    try:
+        print(f"\n=== WEBHOOK BOT SALÃO {salon_id} ===")
+        print(f"Headers recebidos: {request.headers}")
+        print(f"Dados recebidos: {request.data}")
+        
+        data = request.data
+        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        
+        if data.get('event') == 'messages.upsert':
+            message_data = data.get('data', {})
+            sender = message_data.get('key', {}).get('remoteJid', '').split('@')[0]
+            text = message_data.get('message', {}).get('conversation', '')
+            
+            if not sender or not text:
+                return Response({'status': 'invalid_message'})
+
+            print(f"De: {sender}")
+            print(f"Mensagem: {text}")
+            
+            # Registra interação
+            interacao = Interacao.objects.create(
+                numero_whatsapp=sender,
+                mensagem=text,
+                tipo='salon_bot',
+                estabelecimento=estabelecimento,
+                is_lead=True  # Será atualizado depois da verificação
+            )
+            
+            # Verifica se é cliente existente
+            cliente = Cliente.objects.filter(
+                estabelecimento=estabelecimento,
+                whatsapp=sender
+            ).first()
+            
+            if cliente:
+                interacao.is_lead = False
+                interacao.save()
+                
+                # Gera prompt contextualizado para cliente existente
+                prompt = f"""Você é um assistente virtual do salão {estabelecimento.nome}.
+                Cliente: {cliente.nome}
+                Histórico: {cliente.historico_agendamentos or 'Sem histórico'}
+                
+                Pergunta: {text}
+                
+                Responda de forma personalizada e profissional."""
+            else:
+                # Prompt para novo cliente
+                prompt = f"""Você é um assistente virtual do salão {estabelecimento.nome}.
+                Este é um novo cliente potencial.
+                
+                Pergunta: {text}
+                
+                Responda de forma acolhedora e profissional, explicando nossos serviços."""
+            
+            try:
+                # Processa com LLM
+                response_text = chamar_llm(prompt)
+                
+                # Atualiza interação
+                interacao.resposta = response_text
+                interacao.usado_llm = True
+                interacao.save()
+                
+                # Envia resposta
+                api = EvolutionAPI()
+                api.send_text_message(estabelecimento.evolution_instance_id, sender, response_text)
+                
+            except Exception as e:
+                print(f"Erro ao processar LLM: {str(e)}")
+                return Response({'error': str(e)}, status=500)
+                
+        print("=== FIM WEBHOOK ===\n")
+        return Response({'status': 'ok'})
+        
+    except Estabelecimento.DoesNotExist:
+        return Response({'error': 'Salão não encontrado'}, status=404)
+    except Exception as e:
+        print(f"Erro no webhook do salão: {str(e)}")
         return Response({'error': str(e)}, status=500)

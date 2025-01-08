@@ -94,8 +94,20 @@ export const BotConfigService = {
     },
 
     getMetrics: async () => {
-        const response = await api.get('/api/admin/bot/metrics/');
-        return response.data;
+        try {
+            const [metricsResponse, interactionsResponse] = await Promise.all([
+                api.get('/api/admin/bot/metrics/'),
+                api.get('/api/admin/bot/interactions/')
+            ]);
+            
+            return {
+                ...metricsResponse.data,
+                interactions: interactionsResponse.data
+            };
+        } catch (error) {
+            console.error('Erro ao carregar métricas:', error);
+            throw error;
+        }
     },
 
     updateSettings: async (settings: {

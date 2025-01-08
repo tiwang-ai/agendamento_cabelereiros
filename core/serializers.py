@@ -254,3 +254,14 @@ class SystemConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = SystemConfig
         fields = '__all__'
+
+class InteracaoSerializer(serializers.ModelSerializer):
+    estabelecimento_nome = serializers.CharField(source='estabelecimento.nome', read_only=True)
+    
+    class Meta:
+        model = Interacao
+        fields = [
+            'id', 'numero_whatsapp', 'mensagem', 'resposta',
+            'tipo', 'usado_llm', 'is_lead', 'status',
+            'estabelecimento_nome', 'created_at'
+        ]

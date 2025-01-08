@@ -180,12 +180,10 @@ class EvolutionAPI:
                     "enabled": True,
                     "url": webhook_url,
                     "webhookByEvents": True,
-                    "webhookBase64": True,
+                    "webhookBase64": False,  # Mudando para false para facilitar debug
                     "events": [
                         "MESSAGES_UPSERT",
                         "MESSAGES_UPDATE",
-                        "SEND_MESSAGE",
-                        "CONNECTION_UPDATE",
                         "QRCODE_UPDATED"
                     ]
                 }

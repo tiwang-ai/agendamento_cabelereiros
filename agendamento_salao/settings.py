@@ -129,7 +129,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = "en-us"
-TIME_ZONE = "UTC"
+TIME_ZONE = "America/Sao_Paulo"
 USE_I18N = True
 USE_TZ = True
 
@@ -149,12 +149,9 @@ EVOLUTION_API_KEY = os.getenv("EVOLUTION_API_KEY", "429683C4C977415CAAFCCE10F7D5
 EVOLUTION_API_TOKEN = EVOLUTION_API_KEY
 
 # Configurações da API do Deep Infra
-DEEP_INFRA_API_URL = (
-    "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3.1-8B-Instruct"
-)
-DEEP_INFRA_API_TOKEN = os.getenv(
-    "DEEP_INFRA_API_TOKEN", "74h47LHC10VwzA5DR6vjHD9gnqZOSaK0"
-)
+DEEPINFRA_API_URL = "https://api.deepinfra.com/v1/openai/chat/completions"  # URL correta
+DEEPINFRA_API_KEY = '74h47LHC10VwzA5DR6vjHD9gnqZOSaK0'
+DEEPINFRA_MODEL = 'mistralai/Mixtral-8x7B-Instruct-v0.1'
 
 # Configuração do Redis
 REDIS_URL = os.getenv(
@@ -278,7 +275,7 @@ if DEBUG:
     BASE_URL = 'http://localhost:8000'  # Desenvolvimento
 
 # Adicione nas configurações
-NGROK_URL = 'https://7f25-186-220-156-104.ngrok-free.app'
+NGROK_URL = 'https://5c30-186-220-156-104.ngrok-free.app'
 BASE_URL = NGROK_URL if NGROK_URL else 'http://localhost:8000'
 
 # Adicionar o domínio do ngrok aos CORS e CSRF

@@ -5,6 +5,7 @@ from .models import Estabelecimento, BotConfig, Interacao, Servico, Profissional
 from .integrations.evolution import EvolutionAPI
 from typing import Dict, Optional
 from datetime import datetime
+import json
 
 class ConversationContext:
     def __init__(self, estabelecimento_id: int, numero_cliente: str):
@@ -161,23 +162,57 @@ def identificar_profissional(texto: str, profissionais) -> Optional[Profissional
             return prof
     return None
 
-def chamar_llm(prompt):
-    url = "https://api.deepinfra.com/v1/inference/meta-llama/Meta-Llama-3-8B-Instruct"
+def chamar_llm(texto: str, debug: bool = True) -> str:
+    """
+    Função centralizada para chamar o LLM usando a API do Deepinfra
+    """
+    if not settings.DEEPINFRA_API_KEY:
+        raise ValueError("DEEPINFRA_API_KEY não configurada")
+
+    # Endpoint correto para chat completions
+    url = "https://api.deepinfra.com/v1/openai/chat/completions"
+    
     headers = {
         "Authorization": f"Bearer {settings.DEEPINFRA_API_KEY}",
         "Content-Type": "application/json"
     }
-    payload = {
-        "input": prompt,
-        "stop": ["<|eot_id|>"]
-    }
     
-    response = requests.post(url, json=payload, headers=headers)
-    if response.status_code == 200:
+    payload = {
+        "model": settings.DEEPINFRA_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": "Você é um assistente virtual profissional e prestativo."
+            },
+            {
+                "role": "user",
+                "content": texto
+            }
+        ]
+    }
+
+    if debug:
+        print("\n=== CHAMADA LLM ===")
+        print(f"URL: {url}")
+        print(f"Headers: {headers}")
+        print(f"Payload: {json.dumps(payload, indent=2, ensure_ascii=False)}")
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        response.raise_for_status()
+        
+        if debug:
+            print(f"Resposta: {response.text}\n")
+            print("=== FIM CHAMADA LLM ===\n")
+        
         data = response.json()
-        return data["results"][0]["generated_text"]
-    else:
-        return "Erro ao se comunicar com a LLM."
+        return data['choices'][0]['message']['content']
+        
+    except Exception as e:
+        print(f"Erro na chamada LLM: {str(e)}")
+        if debug and 'response' in locals():
+            print(f"Resposta de erro: {response.text}")
+        raise
 
 class ConversationManager:
     def __init__(self):

@@ -235,17 +235,35 @@ class Agendamento(models.Model):
         return f"{self.cliente} - {self.data_agendamento} {self.horario}"
 
 class Interacao(models.Model):
-    salao = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
-    data = models.DateTimeField(auto_now_add=True)
-    tipo = models.CharField(max_length=50)
-    descricao = models.TextField()
+    numero_whatsapp = models.CharField(max_length=20)
+    mensagem = models.TextField()
+    resposta = models.TextField(null=True, blank=True)
+    tipo = models.CharField(max_length=20)  # 'support_bot' ou 'salon_bot'
+    usado_llm = models.BooleanField(default=False)
     tempo_resposta = models.FloatField(null=True)
-    sucesso = models.BooleanField(default=True)
-    intencao = models.CharField(max_length=50, null=True)
-    cliente_satisfeito = models.BooleanField(null=True)
+    estabelecimento = models.ForeignKey(
+        'Estabelecimento', 
+        null=True, 
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    is_lead = models.BooleanField(default=True)  # Agora começa como True por padrão
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('novo', 'Novo'),
+            ('em_atendimento', 'Em Atendimento'),
+            ('convertido', 'Convertido'),
+            ('perdido', 'Perdido')
+        ],
+        default='novo'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.salao.nome} - {self.tipo} - {self.data}"
+    class Meta:
+        db_table = 'core_interacao'
+        ordering = ['-created_at']
 
 class Horarios_Disponiveis(models.Model):
     profissional = models.ForeignKey(Profissional, on_delete=models.CASCADE, related_name="horarios")
@@ -317,41 +335,31 @@ class Plan(models.Model):
         return self.name
 
 class SystemConfig(models.Model):
+    """Configuraçõesglobais do sistema"""
     support_whatsapp = models.CharField(max_length=20, null=True, blank=True)
-    evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
-    status = models.CharField(
-        max_length=20, 
-        choices=[
-            ('disconnected', 'Desconectado'),
-            ('connected', 'Conectado'),
-            ('pending', 'Pendente'),
-            ('error', 'Erro')
-        ],
-        default='disconnected'
-    )
-    bot_settings = models.JSONField(default=dict, blank=True)
-    last_qr_code = models.TextField(null=True, blank=True)
-    qr_code_timestamp = models.DateTimeField(null=True, blank=True)
+    bot_ativo = models.BooleanField(default=True)  # Adicionando campo
+    prompt_template = models.TextField(blank=True)
+    webhook_settings = models.JSONField(default=dict)
+    evolution_settings = models.JSONField(default=dict)
+    horario_atendimento = models.JSONField(default=dict)
+    status = models.CharField(max_length=20, default='disconnected')
+    
+    class Meta:
+        verbose_name = 'Configuração do Sistema'
+        verbose_name_plural = 'Configurações do Sistema'
 
-    def get_default_settings(self):
-        return {
-            'bot_ativo': True,
-            'prompt_template': '',
-            'attendance_mode': 'auto',
-            'evolution_settings': {
+    def save(self, *args, **kwargs):
+        if not self.evolution_settings:
+            self.evolution_settings = {
                 'reject_calls': True,
                 'read_messages': True,
                 'groups_ignore': True
-            },
-            'horario_atendimento': {
+            }
+        if not self.horario_atendimento:
+            self.horario_atendimento = {
                 'inicio': '09:00',
                 'fim': '18:00'
             }
-        }
-
-    def save(self, *args, **kwargs):
-        if not self.bot_settings:
-            self.bot_settings = self.get_default_settings()
         super().save(*args, **kwargs)
 
 class BotConfig(models.Model):

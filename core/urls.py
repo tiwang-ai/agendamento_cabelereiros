@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from datetime import datetime
 
 from .views import (
-    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, system_metrics, health_check, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message, support_webhook, salon_webhook, bot_status, check_connection, bot_settings_view, check_instance
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, system_metrics, health_check, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message, support_webhook, salon_webhook, bot_status, check_connection, bot_settings_view, check_instance, bot_metrics, list_interactions
 )
 
 router = DefaultRouter()
@@ -56,6 +56,8 @@ urlpatterns = [
             path('status/', bot_status, name='bot-status'),
             path('connection/', check_connection, name='check-connection'),
             path('instance/check/', check_instance, name='check-instance-exists'),
+            path('metrics/', bot_metrics, name='bot_metrics'),
+            path('interactions/', list_interactions, name='list-interactions'),
         ])),
     ])),
     path('whatsapp/', include([

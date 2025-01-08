@@ -1,4 +1,4 @@
-import { Grid, Card, CardContent, Typography, Box, CircularProgress } from '@mui/material';
+import { Grid, Card, CardContent, Typography, Box, CircularProgress, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { BotConfigService } from '../../../services/botConfig';
 
@@ -81,6 +81,32 @@ const BotMetrics = () => {
                 </Card>
             </Grid>
 
+            <Grid item xs={12} md={6} lg={4}>
+                <Card>
+                    <CardContent>
+                        <Typography color="textSecondary" gutterBottom>
+                            Leads Novos (24h)
+                        </Typography>
+                        <Typography variant="h4">
+                            {metrics?.new_leads || 0}
+                        </Typography>
+                    </CardContent>
+                </Card>
+            </Grid>
+
+            <Grid item xs={12} md={6} lg={4}>
+                <Card>
+                    <CardContent>
+                        <Typography color="textSecondary" gutterBottom>
+                            Clientes Existentes (24h)
+                        </Typography>
+                        <Typography variant="h4">
+                            {metrics?.existing_clients || 0}
+                        </Typography>
+                    </CardContent>
+                </Card>
+            </Grid>
+
             <Grid item xs={12}>
                 <Card>
                     <CardContent>
@@ -88,6 +114,44 @@ const BotMetrics = () => {
                             Histórico de Interações
                         </Typography>
                         {/* Aqui você pode adicionar um gráfico com histórico */}
+                    </CardContent>
+                </Card>
+            </Grid>
+
+            <Grid item xs={12}>
+                <Card>
+                    <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                            Últimas Interações
+                        </Typography>
+                        <TableContainer>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Data/Hora</TableCell>
+                                        <TableCell>Número</TableCell>
+                                        <TableCell>Tipo</TableCell>
+                                        <TableCell>Mensagem</TableCell>
+                                        <TableCell>Resposta</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {metrics?.interactions?.map((interaction: any) => (
+                                        <TableRow key={interaction.id}>
+                                            <TableCell>
+                                                {new Date(interaction.created_at).toLocaleString()}
+                                            </TableCell>
+                                            <TableCell>{interaction.numero_whatsapp}</TableCell>
+                                            <TableCell>
+                                                {interaction.is_lead ? 'Lead' : 'Cliente'}
+                                            </TableCell>
+                                            <TableCell>{interaction.mensagem}</TableCell>
+                                            <TableCell>{interaction.resposta}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
                     </CardContent>
                 </Card>
             </Grid>
