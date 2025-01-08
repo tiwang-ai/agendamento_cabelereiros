@@ -253,7 +253,9 @@ class EstabelecimentoDetailSerializer(EstabelecimentoSerializer):
 class SystemConfigSerializer(serializers.ModelSerializer):
     class Meta:
         model = SystemConfig
-        fields = '__all__'
+        fields = ['id', 'support_whatsapp', 'bot_ativo', 'prompt_template', 
+                 'webhook_settings', 'evolution_settings', 'horario_atendimento', 'status']
+        read_only_fields = ['status']
 
 class InteracaoSerializer(serializers.ModelSerializer):
     estabelecimento_nome = serializers.CharField(source='estabelecimento.nome', read_only=True)

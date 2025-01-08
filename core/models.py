@@ -363,7 +363,11 @@ class SystemConfig(models.Model):
         super().save(*args, **kwargs)
 
 class BotConfig(models.Model):
-    estabelecimento = models.ForeignKey(Estabelecimento, on_delete=models.CASCADE)
+    estabelecimento = models.OneToOneField(
+        Estabelecimento,
+        on_delete=models.CASCADE,
+        related_name='bot_config'
+    )
     numero_cliente = models.CharField(max_length=20)
     bot_ativo = models.BooleanField(default=True)
     aceitar_nao_clientes = models.BooleanField(default=False)

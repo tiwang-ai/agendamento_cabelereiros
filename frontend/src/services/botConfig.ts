@@ -79,13 +79,18 @@ export const BotConfigService = {
             
             const { status, ...settingsWithoutStatus } = settings;
             
-            if (settingsWithoutStatus.webhook_settings?.enabled) {
-                settingsWithoutStatus.webhook_settings.url = `${baseUrl}/api/webhooks/support/`;
-            }
+            // Envia todas as configurações, incluindo o estado do bot e webhook
+            const response = await api.post('/api/admin/bot/config/', {
+                ...settingsWithoutStatus,
+                bot_ativo: settings.bot_ativo,
+                webhook_settings: {
+                    enabled: settings.bot_ativo,
+                    url: settings.bot_ativo ? `${baseUrl}/api/webhooks/support/` : '',
+                    events: settings.bot_ativo ? ["MESSAGES_UPSERT", "MESSAGES_UPDATE"] : []
+                }
+            });
 
-            console.log('Enviando configurações:', settingsWithoutStatus);
-
-            const response = await api.post('/api/admin/bot/config/', settingsWithoutStatus);
+            // Retorna os dados atualizados do servidor
             return response.data;
         } catch (error) {
             console.error('Erro ao salvar configurações:', error);

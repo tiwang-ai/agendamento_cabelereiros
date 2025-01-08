@@ -12,6 +12,7 @@ import { useState, useEffect } from 'react';
 import { BotConfigService } from '../../../services/botConfig';
 import type { BotSettingsData } from '../../../types/bot';
 import { gerar_prompt_bot1 } from '../../../utils/prompts';
+import { useSnackbar } from 'notistack';
 
 //URL padrão do webhook
 const DEFAULT_WEBHOOK_URL = `${window.location.origin}/api/webhooks/support/`;
@@ -51,6 +52,7 @@ const BotSettings = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const { enqueueSnackbar } = useSnackbar();
 
     useEffect(() => {
         const loadSettings = async () => {
@@ -97,6 +99,50 @@ const BotSettings = () => {
         }
     };
 
+    const handleBotStatusChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        try {
+            const newStatus = event.target.checked;
+            
+            // Atualiza o estado local imediatamente para feedback visual
+            setSettings(prev => ({
+                ...prev,
+                bot_ativo: newStatus
+            }));
+            
+            // Envia a atualização para o backend
+            const response = await BotConfigService.saveBotSettings({
+                ...settings,
+                bot_ativo: newStatus,
+                webhook_settings: {
+                    enabled: newStatus,
+                    url: newStatus ? `${window.location.origin}/api/webhooks/support/` : '',
+                    events: newStatus ? ["MESSAGES_UPSERT", "MESSAGES_UPDATE"] : []
+                }
+            });
+            
+            // Atualiza o estado com a resposta do servidor
+            setSettings(prev => ({
+                ...prev,
+                ...response,
+                webhook_settings: response.webhook_settings || prev.webhook_settings
+            }));
+            
+            enqueueSnackbar(
+                `Bot ${newStatus ? 'ativado' : 'desativado'} com sucesso!`,
+                { variant: 'success' }
+            );
+        } catch (error) {
+            console.error('Erro ao alterar status do bot:', error);
+            enqueueSnackbar('Erro ao alterar status do bot', { variant: 'error' });
+            
+            // Reverte o estado em caso de erro
+            setSettings(prev => ({
+                ...prev,
+                bot_ativo: !event.target.checked
+            }));
+        }
+    };
+
     return (
         <Box>
             {success && (
@@ -117,10 +163,7 @@ const BotSettings = () => {
                         control={
                             <Switch
                                 checked={settings.bot_ativo}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    bot_ativo: e.target.checked
-                                }))}
+                                onChange={handleBotStatusChange}
                             />
                         }
                         label="Bot Ativo"
@@ -167,52 +210,34 @@ const BotSettings = () => {
                     <Typography variant="subtitle1" gutterBottom>
                         Configurações de Webhook
                     </Typography>
-                    <FormControlLabel
-                        control={
-                            <Switch
-                                checked={settings.webhook_settings.enabled}
-                                onChange={(e) => setSettings(prev => ({
-                                    ...prev,
-                                    webhook_settings: {
-                                        ...prev.webhook_settings,
-                                        enabled: e.target.checked
-                                    }
-                                }))}
-                            />
-                        }
-                        label="Webhook Ativo"
-                    />
-                    
-                    {settings.webhook_settings.enabled && (
-                        <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                URL do Webhook (configuração padrão):
-                            </Typography>
-                            <Typography 
-                                variant="body1" 
-                                sx={{ 
-                                    wordBreak: 'break-all',
-                                    fontFamily: 'monospace'
-                                }}
-                            >
-                                {DEFAULT_WEBHOOK_URL}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                                Esta URL é configurada automaticamente para integração com Evolution API e DeepInfra
-                            </Typography>
-                            
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                                Eventos configurados:
-                            </Typography>
-                            <Box sx={{ pl: 2 }}>
-                                {settings.webhook_settings.events.map((event) => (
-                                    <Typography key={event} variant="body2">
-                                        • {event}
-                                    </Typography>
-                                ))}
-                            </Box>
+                    <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.100', borderRadius: 1 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                            URL do Webhook (configuração padrão):
+                        </Typography>
+                        <Typography 
+                            variant="body1" 
+                            sx={{ 
+                                wordBreak: 'break-all',
+                                fontFamily: 'monospace'
+                            }}
+                        >
+                            {DEFAULT_WEBHOOK_URL}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Esta URL é configurada automaticamente para integração com Evolution API e DeepInfra
+                        </Typography>
+                        
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                            Eventos configurados:
+                        </Typography>
+                        <Box sx={{ pl: 2 }}>
+                            {DEFAULT_WEBHOOK_EVENTS.map((event) => (
+                                <Typography key={event} variant="body2">
+                                    • {event}
+                                </Typography>
+                            ))}
                         </Box>
-                    )}
+                    </Box>
                 </Grid>
 
                 <Grid item xs={12}>

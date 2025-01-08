@@ -164,7 +164,7 @@ class EvolutionAPI:
                 'status': None
             }
 
-    def configurar_webhooks(self, instance_name: str) -> Dict:
+    def configurar_webhooks(self, instance_name: str, enabled: bool = True) -> Dict:
         """
         Configura os webhooks para a instância
         """
@@ -177,15 +177,15 @@ class EvolutionAPI:
             # Payload com eventos corretos conforme documentação
             payload = {
                 "webhook": {
-                    "enabled": True,
-                    "url": webhook_url,
+                    "enabled": enabled,
+                    "url": webhook_url,  # URL sempre presente
                     "webhookByEvents": True,
-                    "webhookBase64": False,  # Mudando para false para facilitar debug
+                    "webhookBase64": False,
                     "events": [
                         "MESSAGES_UPSERT",
                         "MESSAGES_UPDATE",
                         "QRCODE_UPDATED"
-                    ]
+                    ] if enabled else []  # Apenas eventos são removidos quando desabilitado
                 }
             }
             
@@ -200,7 +200,7 @@ class EvolutionAPI:
                 'Content-Type': 'application/json'
             }
             
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url, json=payload, headers=self.headers)
             print(f"Resposta: {response.json()}\n")
             
             return response.json()

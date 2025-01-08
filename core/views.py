@@ -1355,22 +1355,39 @@ def bot_settings_view(request):
             return Response(SystemConfigSerializer(config).data)
             
         elif request.method in ['POST', 'PATCH']:
+            print("\n=== DEBUG BOT SETTINGS ===")
+            print(f"Método: {request.method}")
+            print(f"Dados recebidos: {request.data}")
+            
             serializer = SystemConfigSerializer(config, data=request.data, partial=True)
             if serializer.is_valid():
-                serializer.save()
-                
-                # Configura webhook se necessário e se NGROK_URL estiver configurado
-                if request.data.get('webhook_settings') and settings.NGROK_URL:
+                # Se o bot_ativo foi alterado
+                if 'bot_ativo' in request.data:
+                    bot_ativo = request.data.get('bot_ativo')
                     api = EvolutionAPI()
-                    webhook_result = api.configurar_webhooks('support_bot')
+                    
+                    # Configura webhook baseado no estado do bot
+                    webhook_result = api.configurar_webhooks('support_bot', enabled=bot_ativo)
                     if 'error' in webhook_result:
                         return Response({'error': webhook_result['error']}, status=400)
+                    
+                    # Atualiza webhook_settings no modelo mantendo a URL
+                    config.webhook_settings = {
+                        'enabled': bot_ativo,
+                        'url': f"{settings.NGROK_URL}/api/webhooks/support/",
+                        'events': ["MESSAGES_UPSERT", "MESSAGES_UPDATE"] if bot_ativo else []
+                    }
+                
+                serializer.save()
+                print(f"Configuração salva: {serializer.data}")
                 
                 return Response(serializer.data)
                 
+            print(f"Erros de validação: {serializer.errors}")
             return Response(serializer.errors, status=400)
             
     except Exception as e:
+        print(f"Erro em bot_settings: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
@@ -1530,6 +1547,12 @@ def support_webhook(request):
         print("\n=== WEBHOOK BOT SUPORTE ===")
         print(f"Headers recebidos: {request.headers}")
         print(f"Dados recebidos: {request.data}")
+
+        # Verifica se o bot está ativo
+        bot_config = BotConfig.objects.first()  # Para o bot de suporte
+        if not bot_config or not bot_config.bot_ativo:
+            print("Bot está desativado")
+            return Response({'status': 'bot_disabled'})
         
         data = request.data
         
@@ -1732,47 +1755,6 @@ def check_connection(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-@api_view(['GET', 'POST', 'PATCH'])
-@permission_classes([IsAdminUser])
-def bot_settings_view(request):
-    """
-    Gerencia configurações do bot de suporte
-    """
-    try:
-        config = SystemConfig.objects.first()
-        if not config:
-            config = SystemConfig.objects.create()
-
-        if request.method == 'GET':
-            return Response(SystemConfigSerializer(config).data)
-            
-        elif request.method in ['POST', 'PATCH']:
-            print("\n=== DEBUG BOT SETTINGS ===")
-            print(f"Método: {request.method}")
-            print(f"Dados recebidos: {request.data}")
-            
-            serializer = SystemConfigSerializer(config, data=request.data, partial=True)
-            if serializer.is_valid():
-                serializer.save()
-                print(f"Configuração salva: {serializer.data}")
-                
-                # Configura webhook se necessário
-                if request.data.get('webhook_settings'):
-                    api = EvolutionAPI()
-                    webhook_result = api.configurar_webhooks('support_bot')
-                    print(f"Resultado webhook: {webhook_result}")
-                
-                print("=== FIM DEBUG SETTINGS ===\n")
-                
-                return Response(serializer.data)
-                
-            print(f"Erros de validação: {serializer.errors}")
-            return Response(serializer.errors, status=400)
-            
-    except Exception as e:
-        print(f"Erro em bot_settings: {str(e)}")
-        return Response({'error': str(e)}, status=500)
-
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
 def check_instance(request):
@@ -1813,6 +1795,12 @@ def salon_webhook(request, salon_id):
         
         data = request.data
         estabelecimento = Estabelecimento.objects.get(id=salon_id)
+
+        # Verifica se o bot está ativo
+        bot_config = estabelecimento.bot_config
+        if not bot_config or not bot_config.bot_ativo:
+            print(f"Bot do salão {salon_id} está desativado")
+            return Response({'status': 'bot_disabled'})
         
         if data.get('event') == 'messages.upsert':
             message_data = data.get('data', {})
