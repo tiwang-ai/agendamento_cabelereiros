@@ -1,6 +1,6 @@
 import { Grid, Card, CardContent, Typography, Box, CircularProgress, TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { BotConfigService } from '../../../services/botConfig';
+import { StaffBotService } from '../../../services/botConfig';
 
 const BotMetrics = () => {
     const [metrics, setMetrics] = useState<any>(null);
@@ -14,7 +14,7 @@ const BotMetrics = () => {
 
     const loadMetrics = async () => {
         try {
-            const data = await BotConfigService.getMetrics();
+            const data = await StaffBotService.getMetrics();
             setMetrics(data);
         } catch (error) {
             console.error('Erro ao carregar métricas:', error);

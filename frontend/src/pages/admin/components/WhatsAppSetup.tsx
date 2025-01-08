@@ -1,7 +1,7 @@
 import WhatsAppConnection from '../../settings/WhatsAppConnection';
 import { Box, Typography, Alert, TextField, Button, CircularProgress } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { BotConfigService } from '../../../services/botConfig';
+import { StaffBotService } from '../../../services/botConfig';
 
 interface WhatsAppSetupProps {
     isSupport?: boolean;
@@ -20,7 +20,7 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
 
     const checkExistingConfig = async () => {
         try {
-            const config = await BotConfigService.getConfig();
+            const config = await StaffBotService.getConfig();
             if (config.support_whatsapp) {
                 setPhone(config.support_whatsapp);
                 setHasInstance(true);
@@ -47,7 +47,7 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
             
             console.log('Enviando configuração:', configData); // Debug
             
-            await BotConfigService.saveConfig(configData);
+            await StaffBotService.saveConfig(configData);
             setSaved(true);
             setHasInstance(true);
             setTimeout(() => setSaved(false), 3000);

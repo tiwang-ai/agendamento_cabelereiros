@@ -9,7 +9,7 @@ import {
     Grid
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-import { BotConfigService } from '../../../services/botConfig';
+import { StaffBotService } from '../../../services/botConfig';
 import type { BotSettingsData } from '../../../types/bot';
 import { gerar_prompt_bot1 } from '../../../utils/prompts';
 import { useSnackbar } from 'notistack';
@@ -58,7 +58,7 @@ const BotSettings = () => {
         const loadSettings = async () => {
             try {
                 setLoading(true);
-                const data = await BotConfigService.getBotSettings();
+                const data = await StaffBotService.getBotSettings();
                 if (data) {
                     setSettings({
                         ...initialSettings,
@@ -87,7 +87,7 @@ const BotSettings = () => {
     const handleSave = async () => {
         setLoading(true);
         try {
-            await BotConfigService.saveBotSettings(settings);
+            await StaffBotService.saveBotSettings(settings);
             setError(null);
             setSuccess(true);
             setTimeout(() => setSuccess(false), 3000);
@@ -110,7 +110,7 @@ const BotSettings = () => {
             }));
             
             // Envia a atualização para o backend
-            const response = await BotConfigService.saveBotSettings({
+            const response = await StaffBotService.saveBotSettings({
                 ...settings,
                 bot_ativo: newStatus,
                 webhook_settings: {

@@ -53,7 +53,7 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/auth/register', formData);
+      const response = await axios.post('api/auth/register', formData);
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         navigate('/dashboard');

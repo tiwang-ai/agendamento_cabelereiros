@@ -55,34 +55,35 @@ const SalonDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [statsResponse, appointmentsResponse] = await Promise.all([
+          api.get('/api/dashboard/stats/'),
+          api.get('/api/agendamentos/')
+        ]);
+        
+        setStats({
+          clientesHoje: statsResponse.data.clientesHoje || 0,
+          agendamentosHoje: statsResponse.data.agendamentosHoje || 0,
+          faturamentoHoje: statsResponse.data.faturamentoHoje || 0,
+          clientesTotal: statsResponse.data.clientesTotal || 0
+        });
+        setAppointments(appointmentsResponse.data);
+      } catch (error: any) {
+        console.error('Erro ao carregar dados do dashboard:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadDashboardData();
   }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [statsResponse, appointmentsResponse] = await Promise.all([
-        api.get('/dashboard/stats/'),
-        api.get('/agendamentos/')
-      ]);
-      
-      setStats(statsResponse.data);
-      setAppointments(appointmentsResponse.data);
-    } catch (error: any) {
-      console.error('Erro ao carregar dados do dashboard:', error);
-      if (error.response?.status === 401) {
-        window.location.href = '/login';
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleEditAppointment = async (id: string) => {
     try {
       // Implementar edição de agendamento
-      await api.put(`/agendamentos/${id}/`);
-      loadDashboardData(); // Recarregar dados
+      await api.put(`/api/agendamentos/${id}/`);
     } catch (error) {
       console.error('Erro ao editar agendamento:', error);
     }
@@ -91,8 +92,7 @@ const SalonDashboard = () => {
   const handleDeleteAppointment = async (id: string) => {
     if (window.confirm('Tem certeza que deseja excluir este agendamento?')) {
       try {
-        await api.delete(`/agendamentos/${id}/`);
-        loadDashboardData(); // Recarregar dados
+        await api.delete(`/api/agendamentos/${id}/`);
       } catch (error) {
         console.error('Erro ao excluir agendamento:', error);
       }

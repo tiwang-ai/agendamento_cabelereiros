@@ -52,7 +52,7 @@ const Agenda = () => {
 
   const loadAppointments = async () => {
     try {
-      const response = await api.get('/agendamentos/profissional/');
+      const response = await api.get('/api/agendamentos/profissional/');
       setAppointments(response.data);
     } catch (error) {
       console.error('Erro ao carregar agendamentos:', error);
@@ -73,7 +73,7 @@ const Agenda = () => {
     if (!selectedAppointment) return;
 
     try {
-      await api.patch(`/agendamentos/${selectedAppointment.id}/`, {
+      await api.patch(`/api/agendamentos/${selectedAppointment.id}/`, {
         status: newStatus
       });
       loadAppointments();

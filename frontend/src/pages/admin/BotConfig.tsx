@@ -16,7 +16,7 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import WhatsAppSetup from './components/WhatsAppSetup';
 import BotMetrics from './components/BotMetrics';
 import BotSettings from './components/BotSettings';
-import { BotConfigService } from '../../services/botConfig';
+import { StaffBotService } from '../../services/botConfig';
 
 const BotConfig = () => {
     const [tabValue, setTabValue] = useState(0);
@@ -28,7 +28,7 @@ const BotConfig = () => {
 
     const checkInitialConfig = async () => {
         try {
-            const config = await BotConfigService.getConfig();
+            const config = await StaffBotService.getConfig();
             setConfigLoaded(!!config.support_whatsapp);
         } catch (error) {
             console.error('Erro ao verificar configuração inicial:', error);

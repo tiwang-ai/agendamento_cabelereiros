@@ -20,6 +20,19 @@ export interface BotSettingsData {
     status?: string;
 }
 
+export interface SalonBotConfig {
+    bot_ativo: boolean;
+    aceitar_nao_clientes: boolean;
+    mensagem_nao_cliente?: string;
+    horario_atendimento: {
+        inicio: string;
+        fim: string;
+    };
+    dias_atendimento: string[];
+    mensagem_fora_horario?: string;
+    mensagem_bot_desativado?: string;
+}
+
 export interface BotMetrics {
     today_interactions: number;
     avg_response_time: string;

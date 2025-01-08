@@ -78,15 +78,29 @@ const Clients = () => {
   });
   const [selectedHistoryClient, setSelectedHistoryClient] = useState<Cliente | null>(null);
   const [openHistoryDialog, setOpenHistoryDialog] = useState(false);
+  const [userEstabelecimento, setUserEstabelecimento] = useState<number | null>(null);
 
   useEffect(() => {
     loadClients();
     loadProfessionals();
   }, []);
 
+  useEffect(() => {
+    const loadUserEstablishment = async () => {
+        try {
+            const response = await api.get('/api/dashboard/stats/');
+            setUserEstabelecimento(response.data.estabelecimento_id);
+        } catch (error: any) {
+            console.error('Erro ao carregar estabelecimento:', error);
+        }
+    };
+
+    loadUserEstablishment();
+  }, []);
+
   const loadClients = async () => {
     try {
-      const response = await api.get('/clientes/');
+      const response = await api.get('/api/clientes/');
       setClients(response.data);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
@@ -98,7 +112,7 @@ const Clients = () => {
 
   const loadProfessionals = async () => {
     try {
-      const response = await api.get('/profissionais/');
+      const response = await api.get('/api/profissionais/');
       setProfessionals(response.data);
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error);
@@ -136,32 +150,42 @@ const Clients = () => {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!userEstabelecimento) {
+      setError('Estabelecimento não encontrado');
+      return;
+    }
+
     try {
       const clientData = {
         nome: formData.nome,
         whatsapp: formData.whatsapp.replace(/\D/g, ''),
         email: formData.email || null,
         observacoes: formData.observacoes || null,
-        is_active: true
+        is_active: true,
+        estabelecimento: userEstabelecimento
       };
 
       if (selectedClient) {
-        await api.patch(`/clientes/${selectedClient.id}/`, clientData);
+        await api.patch(`/api/clientes/${selectedClient.id}/`, clientData);
       } else {
-        await api.post('/clientes/', clientData);
+        await api.post('/api/clientes/', clientData);
       }
       loadClients();
       handleCloseDialog();
     } catch (error: any) {
       console.error('Erro ao salvar cliente:', error);
-      setError(error.response?.data?.detail || 'Erro ao salvar cliente');
+      if (error.response?.status === 500) {
+        setError('Erro interno do servidor. Verifique se todos os campos estão preenchidos corretamente.');
+      } else {
+        setError(error.response?.data?.detail || 'Erro ao salvar cliente');
+      }
     }
   };
 
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
       try {
-        await api.delete(`/clientes/${id}/`);
+        await api.delete(`/api/clientes/${id}/`);
         loadClients();
       } catch (error) {
         console.error('Erro ao excluir cliente:', error);

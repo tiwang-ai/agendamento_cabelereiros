@@ -4,15 +4,10 @@ import { WhatsAppService } from './whatsapp';
 import type { BotSettingsData } from '../types/bot';
 import { gerar_prompt_bot1 } from '../utils/prompts';
 
-export const BotConfigService = {
+export const StaffBotService = {
     getConfig: async () => {
-        try {
-            const response = await api.get('/api/admin/bot/config/');
-            return response.data;
-        } catch (error) {
-            console.error('Erro ao obter configuração:', error);
-            throw error;
-        }
+        const response = await api.get('/api/admin/bot/config/');
+        return response.data;
     },
 
     saveConfig: async (config: {

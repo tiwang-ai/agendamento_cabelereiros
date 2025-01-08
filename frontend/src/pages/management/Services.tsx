@@ -58,7 +58,7 @@ const ServicesManagement = () => {
 
   const loadServices = async () => {
     try {
-      const response = await api.get('/servicos/');
+      const response = await api.get('/api/servicos/');
       setServices(response.data);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
@@ -101,9 +101,9 @@ const ServicesManagement = () => {
       };
 
       if (selectedService) {
-        await api.patch(`/servicos/${selectedService.id}/`, serviceData);
+        await api.patch(`/api/servicos/${selectedService.id}/`, serviceData);
       } else {
-        await api.post('/servicos/', serviceData);
+        await api.post('/api/servicos/', serviceData);
       }
       loadServices();
       handleCloseDialog();
@@ -128,7 +128,7 @@ const ServicesManagement = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este serviço?')) {
       try {
-        await api.delete(`/servicos/${id}/`);
+        await api.delete(`/api/servicos/${id}/`);
         loadServices();
       } catch (error) {
         console.error('Erro ao excluir serviço:', error);

@@ -58,7 +58,7 @@ const Professionals = () => {
 
   const loadProfessionals = async () => {
     try {
-      const response = await api.get('/profissionais/');
+      const response = await api.get('/api/profissionais/');
       setProfessionals(response.data);
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error);
@@ -103,9 +103,9 @@ const Professionals = () => {
       };
 
       if (selectedProfessional) {
-        await api.patch(`/profissionais/${selectedProfessional.id}/`, userData);
+        await api.patch(`/api/profissionais/${selectedProfessional.id}/`, userData);
       } else {
-        await api.post('/profissionais/', userData);
+        await api.post('/api/profissionais/', userData);
       }
       
       handleCloseDialog();
@@ -121,7 +121,7 @@ const Professionals = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este profissional?')) {
       try {
-        await api.delete(`/profissionais/${id}/`);
+        await api.delete(`/api/profissionais/${id}/`);
         loadProfessionals();
       } catch (error) {
         console.error('Erro ao excluir profissional:', error);

@@ -2,7 +2,7 @@ import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog, Transaction
-from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer, InteracaoSerializer
+from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer, InteracaoSerializer, BotConfigSerializer
 from django.conf import settings
 from django.db import connection
 from django_redis import get_redis_connection
@@ -769,50 +769,52 @@ def get_connection_status(request, estabelecimento_id):
 
 @api_view(['GET'])
 def dashboard_stats(request):
+    """
+    Retorna estatísticas do dashboard para o estabelecimento do usuário
+    """
     try:
-        # Obtém estabelecimento_id do usuário logado
-        estabelecimento_id = request.user.estabelecimento_id
-        if not estabelecimento_id:
-            return Response(
-                {'error': 'Usuário não est associado a um estabelecimento'}, 
-                status=400
-            )
-            
-        hoje = datetime.now().date()
-        
-        # Busca profissionais do estabelecimento
-        profissionais_ids = Profissional.objects.filter(
-            estabelecimento_id=estabelecimento_id
-        ).values_list('id', flat=True)
-        
-        stats = {
-            'clientesHoje': Agendamento.objects.filter(
-                profissional_id__in=profissionais_ids,
-                data_agendamento=hoje
-            ).values('cliente').distinct().count(),
-            
-            'agendamentosHoje': Agendamento.objects.filter(
-                profissional_id__in=profissionais_ids,
-                data_agendamento=hoje
-            ).count(),
-            
-            'faturamentoHoje': Agendamento.objects.filter(
-                profissional_id__in=profissionais_ids,
-                data_agendamento=hoje,
-                status='finalizado'
-            ).aggregate(
-                total=Sum('servico__preco')
-            )['total'] or 0,
-            
-            'clientesTotal': Cliente.objects.filter(
-                estabelecimento_id=estabelecimento_id
-            ).count()
-        }
-        
-        return Response(stats)
+        # Verifica se o usuário tem estabelecimento associado
+        if not hasattr(request.user, 'estabelecimento') or not request.user.estabelecimento:
+            return Response({
+                'error': 'Usuário não está associado a um estabelecimento',
+                'code': 'NO_ESTABLISHMENT'
+            }, status=400)
+
+        estabelecimento = request.user.estabelecimento
+        hoje = timezone.now().date()
+
+        # Busca estatísticas
+        clientes_hoje = Agendamento.objects.filter(
+            estabelecimento=estabelecimento,
+            data_agendamento=hoje
+        ).values('cliente').distinct().count()
+
+        agendamentos_hoje = Agendamento.objects.filter(
+            estabelecimento=estabelecimento,
+            data_agendamento=hoje
+        ).count()
+
+        faturamento_hoje = Agendamento.objects.filter(
+            estabelecimento=estabelecimento,
+            data_agendamento=hoje,
+            status='completed'
+        ).aggregate(total=Sum('servico__preco'))['total'] or 0
+
+        clientes_total = Cliente.objects.filter(
+            estabelecimento=estabelecimento
+        ).count()
+
+        return Response({
+            'clientesHoje': clientes_hoje,
+            'agendamentosHoje': agendamentos_hoje,
+            'faturamentoHoje': faturamento_hoje,
+            'clientesTotal': clientes_total
+        })
+
     except Exception as e:
-        print(f"Erro no dashboard_stats: {str(e)}")
-        return Response({'error': str(e)}, status=500)
+        return Response({
+            'error': str(e)
+        }, status=500)
 
 @api_view(['POST'])
 def create_professional(request):
@@ -1873,4 +1875,124 @@ def salon_webhook(request, salon_id):
         return Response({'error': 'Salão não encontrado'}, status=404)
     except Exception as e:
         print(f"Erro no webhook do salão: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+def verificar_disponibilidade(request):
+    """
+    Verifica horários disponíveis para agendamento
+    """
+    data = request.query_params.get('data')
+    profissional_id = request.query_params.get('profissional_id')
+    
+    if not data or not profissional_id:
+        return Response({
+            'error': 'Data e profissional são obrigatórios'
+        }, status=400)
+        
+    try:
+        # Busca agendamentos existentes
+        agendamentos = Agendamento.objects.filter(
+            data_agendamento=data,
+            profissional_id=profissional_id
+        ).values_list('horario', flat=True)
+        
+        # Define horários disponíveis (8h às 18h, intervalos de 1h)
+        horarios_possiveis = [
+            f"{hora:02d}:00" for hora in range(8, 19)
+        ]
+        
+        # Remove horários já agendados
+        horarios_disponiveis = [
+            horario for horario in horarios_possiveis 
+            if horario not in agendamentos
+        ]
+        
+        return Response({
+            'horarios_disponiveis': horarios_disponiveis
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=500)
+
+@api_view(['GET'])
+def bot_verificar_agenda(request):
+    """
+    Endpoint para o bot verificar disponibilidade
+    """
+    data = request.query_params.get('data')
+    profissional_id = request.query_params.get('profissional_id')
+    servico_id = request.query_params.get('servico_id')
+    
+    try:
+        disponibilidade = verificar_disponibilidade(data, profissional_id)
+        servico = Servico.objects.get(id=servico_id)
+        profissional = Profissional.objects.get(id=profissional_id)
+        
+        return Response({
+            'disponibilidade': disponibilidade,
+            'servico': {
+                'nome': servico.nome_servico,
+                'duracao': servico.duracao,
+                'preco': float(servico.preco)
+            },
+            'profissional': {
+                'nome': profissional.nome,
+                'especialidade': profissional.especialidade
+            }
+        })
+        
+    except Exception as e:
+        return Response({
+            'error': str(e)
+        }, status=500)
+
+@api_view(['GET', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def salon_bot_settings(request, estabelecimento_id):
+    """
+    Gerencia configurações do bot do salão
+    """
+    try:
+        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+        
+        # Verifica permissão
+        if request.user.estabelecimento_id != estabelecimento.id and not request.user.is_staff:
+            return Response({"error": "Sem permissão"}, status=403)
+            
+        if request.method == 'GET':
+            bot_config = estabelecimento.bot_config
+            if not bot_config:
+                bot_config = BotConfig.objects.create(estabelecimento=estabelecimento)
+            return Response(BotConfigSerializer(bot_config).data)
+            
+        elif request.method == 'PATCH':
+            bot_config = estabelecimento.bot_config
+            if not bot_config:
+                bot_config = BotConfig.objects.create(estabelecimento=estabelecimento)
+                
+            serializer = BotConfigSerializer(bot_config, data=request.data, partial=True)
+            if serializer.is_valid():
+                # Se o bot_ativo foi alterado
+                if 'bot_ativo' in request.data:
+                    bot_ativo = request.data.get('bot_ativo')
+                    api = EvolutionAPI()
+                    
+                    # Configura webhook baseado no estado do bot
+                    instance_name = f'salon_{estabelecimento_id}'
+                    webhook_result = api.configurar_webhooks(instance_name, enabled=bot_ativo)
+                    if 'error' in webhook_result:
+                        return Response({'error': webhook_result['error']}, status=400)
+                
+                serializer.save()
+                return Response(serializer.data)
+                
+            return Response(serializer.errors, status=400)
+            
+    except Estabelecimento.DoesNotExist:
+        return Response({"error": "Salão não encontrado"}, status=404)
+    except Exception as e:
+        print(f"Erro em salon_bot_settings: {str(e)}")
         return Response({'error': str(e)}, status=500)
