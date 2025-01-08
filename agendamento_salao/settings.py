@@ -276,3 +276,12 @@ WHATSAPP_STATUS_URL = f"{EVOLUTION_API_URL}/status"
 BASE_URL = 'https://api.agendacabelereiro.com.br'  # Produção
 if DEBUG:
     BASE_URL = 'http://localhost:8000'  # Desenvolvimento
+
+# Adicione nas configurações
+NGROK_URL = os.getenv('NGROK_URL', '').rstrip('/')
+BASE_URL = NGROK_URL if NGROK_URL else 'http://localhost:8000'
+
+# Adicionar o domínio do ngrok aos CORS e CSRF
+if NGROK_URL:
+    CORS_ALLOWED_ORIGINS.append(NGROK_URL)
+    CSRF_TRUSTED_ORIGINS.append(NGROK_URL)

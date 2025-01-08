@@ -60,19 +60,23 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
 
   useEffect(() => {
     const checkInstance = async () => {
-      try {
-        const exists = await WhatsAppService.checkExistingInstance(isSupport);
-        setHasInstance(exists);
-        if (exists) {
-          const statusResponse = await WhatsAppService.getStatus(
-            isSupport ? 'support' : user?.estabelecimento_id || '',
-            isSupport
-          );
-          setStatus(statusResponse.status);
+        try {
+            const instanceData = await WhatsAppService.checkExistingInstance(isSupport);
+            setHasInstance(instanceData.exists);
+            
+            if (instanceData.exists) {
+                // Atualiza o status baseado na resposta da Evolution API
+                setStatus(instanceData.status === 'open' ? 'connected' : 'disconnected');
+                
+                if (instanceData.status !== 'open') {
+                    // Se existe mas não está conectada, permite reconectar
+                    setConnectionData(null);
+                }
+            }
+        } catch (err) {
+            console.error('Erro ao verificar instância:', err);
+            setError('Erro ao verificar status da conexão');
         }
-      } catch (err) {
-        console.error('Erro ao verificar instância:', err);
-      }
     };
 
     checkInstance();
@@ -90,6 +94,10 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
       
       if (response.error) {
         throw new Error(response.error);
+      }
+      
+      if (response.code && !response.code.startsWith('data:image')) {
+        response.code = `data:image/png;base64,${response.code}`;
       }
       
       setConnectionData(response);

@@ -4,6 +4,7 @@ from .filters import filtrar_pergunta_bot1, filtrar_pergunta_bot2
 from .models import Estabelecimento, BotConfig, Interacao, Servico, Profissional, Cliente
 from .integrations.evolution import EvolutionAPI
 from typing import Dict, Optional
+from datetime import datetime
 
 class ConversationContext:
     def __init__(self, estabelecimento_id: int, numero_cliente: str):
@@ -23,12 +24,12 @@ class ConversationContext:
     def get_profissionais(self):
         return Profissional.objects.filter(estabelecimento=self.estabelecimento)
 
-def gerar_prompt_bot1(pergunta):
-    prompt = f"""
-    Você é um bot de atendimento ao cliente da empresa que fornece o sistema de agendamento para salões. Responda apenas a perguntas sobre relatórios, configuração do sistema e status de agendamentos.
-    Pergunta: {pergunta}
+def gerar_prompt_bot1() -> str:
     """
-    return prompt
+    Gera o prompt padrão para o bot de suporte
+    """
+    return """Você é um bot de atendimento ao cliente da empresa que fornece o sistema de agendamento para salões. 
+    Responda apenas a perguntas sobre relatórios, configuração do sistema e status de agendamentos."""
 
 def gerar_prompt_bot2(pergunta, nome_estabelecimento, horario_funcionamento, servicos):
     prompt = f"""
@@ -62,42 +63,35 @@ def processar_pergunta(pergunta: str, bot_tipo: int, estabelecimento_id: Optiona
     Processa perguntas para os bots com contexto do estabelecimento
     """
     try:
-        if bot_tipo == 2:  # Bot de atendimento ao cliente final
-            estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+        print("\n=== PROCESSANDO MENSAGEM ===")
+        print(f"Pergunta: {pergunta}")
+        print(f"Bot Tipo: {bot_tipo}")
+        
+        # Filtra pergunta
+        if bot_tipo == 1:
+            pergunta_filtrada = filtrar_pergunta_bot1(pergunta)
+        else:
+            pergunta_filtrada = filtrar_pergunta_bot2(pergunta)
             
-            # Verifica se o bot está ativo
-            bot_config = BotConfig.objects.filter(
-                estabelecimento=estabelecimento,
-                bot_ativo=True
-            ).first()
-            
-            if not bot_config:
-                return "Atendimento automático desativado."
-
-            # Verifica se é cliente cadastrado
-            is_client = Cliente.objects.filter(
-                estabelecimento=estabelecimento,
-                whatsapp__contains=numero_cliente
-            ).exists()
-            
-            if not is_client and not bot_config.aceitar_nao_clientes:
-                return bot_config.mensagem_nao_cliente
-            
-            # Processa mensagem baseado no estágio atual
-            context = ConversationContext(estabelecimento_id, numero_cliente)
-            resposta = processar_estagio_conversa(pergunta, context)
-            
-            # Registra interação
-            Interacao.objects.create(
-                salao=estabelecimento,
-                tipo='bot_response',
-                descricao=f"Pergunta: {pergunta}\nResposta: {resposta}"
-            )
-            
-            return resposta
-            
+        print(f"Pergunta Filtrada: {pergunta_filtrada}")
+        
+        # Gera prompt
+        prompt = gerar_prompt_bot1() if bot_tipo == 1 else gerar_prompt_bot2(
+            pergunta_filtrada,
+            estabelecimento_id,
+            numero_cliente
+        )
+        print(f"Prompt Gerado: {prompt}")
+        
+        # Chama LLM
+        resposta = chamar_llm(prompt)
+        print(f"Resposta LLM: {resposta}")
+        print("=== FIM PROCESSAMENTO ===\n")
+        
+        return resposta
+        
     except Exception as e:
-        print(f"Erro ao processar pergunta: {str(e)}")
+        print(f"ERRO no processamento: {str(e)}")
         return "Desculpe, ocorreu um erro ao processar sua mensagem."
 
 def processar_estagio_conversa(pergunta: str, context: ConversationContext) -> str:
@@ -184,3 +178,54 @@ def chamar_llm(prompt):
         return data["results"][0]["generated_text"]
     else:
         return "Erro ao se comunicar com a LLM."
+
+class ConversationManager:
+    def __init__(self):
+        self.conversations = {}
+        
+    def get_conversation(self, conversation_id: str) -> list:
+        """Retorna histórico da conversa ou cria novo"""
+        if conversation_id not in self.conversations:
+            self.conversations[conversation_id] = []
+        return self.conversations[conversation_id]
+        
+    def add_message(self, conversation_id: str, role: str, content: str):
+        """Adiciona mensagem ao histórico"""
+        if conversation_id not in self.conversations:
+            self.conversations[conversation_id] = []
+        
+        self.conversations[conversation_id].append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now().isoformat()
+        })
+        
+        # Mantém apenas as últimas 10 mensagens para não sobrecarregar
+        if len(self.conversations[conversation_id]) > 10:
+            self.conversations[conversation_id].pop(0)
+            
+    def get_context(self, conversation_id: str) -> str:
+        """Formata o contexto para a LLM"""
+        messages = self.conversations.get(conversation_id, [])
+        context = "\n".join([
+            f"{msg['role']}: {msg['content']}"
+            for msg in messages
+        ])
+        return context
+
+# Instância global do gerenciador
+conversation_manager = ConversationManager()
+
+def gerar_resposta_padrao(stage: str) -> str:
+    """
+    Gera resposta padrão baseada no estágio da conversa
+    """
+    respostas = {
+        'initial': 'Como posso ajudar você hoje?',
+        'service_selection': 'Por favor, escolha um dos serviços listados acima.',
+        'professional_selection': 'Por favor, escolha um dos profissionais listados.',
+        'date_selection': 'Em qual data você gostaria de agendar?',
+        'time_selection': 'Qual horário você prefere?',
+        'confirmation': 'Posso confirmar seu agendamento?'
+    }
+    return respostas.get(stage, 'Como posso ajudar?')

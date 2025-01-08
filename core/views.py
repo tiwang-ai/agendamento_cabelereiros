@@ -2,7 +2,7 @@ import requests
 from rest_framework import viewsets, status, serializers
 from django.contrib.auth import get_user_model
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog, Transaction
-from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer
+from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer
 from django.conf import settings
 from django.db import connection
 from django_redis import get_redis_connection
@@ -36,9 +36,11 @@ from .serializers import (
     ClienteSerializer,
     ServicoSerializer,
     AgendamentoSerializer,
-    UserSerializer
+    UserSerializer,
+    SystemConfigSerializer,
+    StaffSerializer
 )
-from .llm_utils import processar_pergunta
+from .llm_utils import processar_pergunta, conversation_manager, chamar_llm
 
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -1026,50 +1028,39 @@ class ClienteProfissionalViewSet(viewsets.ModelViewSet):
 
 @api_view(['POST'])
 def whatsapp_webhook(request):
-    data = request.data
-    event_type = data.get('event')
-    instance_id = data.get('instanceId')
-    
+    """Processa webhooks do WhatsApp"""
     try:
-        estabelecimento = Estabelecimento.objects.get(evolution_instance_id=instance_id)
+        data = request.data
+        print("Webhook recebido:", data)  # Debug
         
-        if event_type == 'connection.update':
-            instance_data = data.get('instance', {})
-            status = instance_data.get('state', 'disconnected')
-            estabelecimento.status = status
-            estabelecimento.save()
+        event_type = data.get('event')
+        instance_name = data.get('instance', {}).get('instanceName')
+        
+        if not instance_name:
+            return Response({'error': 'Instance name not provided'}, status=400)
             
-            Interacao.objects.create(
-                salao=estabelecimento,
-                tipo='connection_status',
-                descricao=f"Status atualizado para: {status}"
-            )
-            
-        elif event_type == 'messages.upsert':
-            message = data.get('message', {})
-            from_number = message.get('from')
-            text = message.get('body', '')
-            
-            # Processa com o bot
-            resposta = processar_pergunta(
-                pergunta=text,
-                bot_tipo=2,
-                estabelecimento_id=estabelecimento.id,
-                numero_cliente=from_number
-            )
-            
-            # Envia resposta
-            api = EvolutionAPI()
-            api.send_message(
-                instance_id=instance_id,
-                phone=from_number,
-                message=resposta
-            )
-            
-        return Response({"status": "success"})
+        # Identifica se é bot de suporte ou salão
+        if instance_name == 'support_bot':
+            config = SystemConfig.objects.first()
+            if config:
+                if event_type == 'connection.update':
+                    config.status = data.get('state', 'disconnected')
+                    config.save()
+        else:
+            salon_id = instance_name.replace('salon_', '')
+            try:
+                estabelecimento = Estabelecimento.objects.get(id=salon_id)
+                if event_type == 'connection.update':
+                    estabelecimento.status = data.get('state', 'disconnected')
+                    estabelecimento.save()
+            except Estabelecimento.DoesNotExist:
+                print(f"Estabelecimento não encontrado: {salon_id}")
+        
+        return Response({'status': 'success'})
+        
     except Exception as e:
         print(f"Erro no webhook: {str(e)}")
-        return Response({"error": str(e)}, status=500)
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -1322,138 +1313,125 @@ def bot_metricas(request, estabelecimento_id):
         ).count()
     })
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@api_view(['GET', 'POST', 'PATCH'])
+@permission_classes([IsAdminUser])
 def manage_whatsapp_connection(request, estabelecimento_id):
-    """
-    Gerencia conexão do WhatsApp: verifica, cria ou reconecta instância
-    """
+    """Gerencia a conexão do WhatsApp para um estabelecimento"""
     try:
-        estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
         api = EvolutionAPI()
+        instance_name = f"salon_{estabelecimento_id}"
         
-        # Verifica instâncias existentes
-        instances = api.fetch_instances()
-        instance_name = f"estabelecimento_{estabelecimento_id}"
+        # Verifica se já existe uma instância
+        instance_check = api.check_instance_exists(instance_name)
         
-        instance_exists = any(inst.get('instanceName') == instance_name for inst in instances)
-        
-        # Se não existe, cria nova instância
-        if not instance_exists:
-            # Cria nova instância
-            instance_response = api.criar_instancia(
-                estabelecimento_id=str(estabelecimento_id),
-                phone=estabelecimento.whatsapp
-            )
-            
-            if instance_response and instance_response.get('instanceId'):
-                estabelecimento.evolution_instance_id = instance_response['instanceId']
-                estabelecimento.save()
-                
-                # Tenta conexão automática
-                connect_response = api.connect_instance(instance_name)
-                
-                return Response({
-                    'success': True,
-                    'message': 'Nova instância criada e tentativa de conexão iniciada',
-                    'instanceId': instance_response['instanceId'],
-                    'connection_data': connect_response
-                })
+        if instance_check['exists']:
+            # Reconfigura o webhook para garantir
+            webhook_result = api.configurar_webhooks(instance_name)
+            if webhook_result.get('error'):
+                print(f"Erro ao reconfigurar webhook: {webhook_result['error']}")
         else:
-            # Verifica status e reconecta se necessário
-            status = api.check_connection_status(estabelecimento.evolution_instance_id)
-            if status.get('status') in ['disconnected', 'error']:
-                connect_response = api.connect_instance(instance_name)
-                return Response({
-                    'success': True,
-                    'message': 'Tentativa de reconexão iniciada',
-                    'connection_data': connect_response
-                })
+            # Busca o número do WhatsApp do estabelecimento
+            estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
+            if not estabelecimento.whatsapp:
+                return Response({'error': 'Número de WhatsApp não configurado'}, status=400)
+            
+            # Cria a instância
+            instance = api.criar_instancia(
+                estabelecimento_id=estabelecimento_id,
+                phone=estabelecimento.whatsapp,
+                is_support=False
+            )
+            if instance.get('error'):
+                return Response({'error': instance['error']}, status=400)
         
+        # Gera o QR Code
+        qr_response = api.get_qr_code(instance_name)
+        if qr_response.get('error'):
+            return Response({'error': qr_response['error']}, status=400)
+            
         return Response({
-            'success': False,
-            'error': 'Instância já existe e está conectada'
+            'success': True,
+            'connection_data': qr_response
         })
+        
+    except Estabelecimento.DoesNotExist:
+        return Response({'error': 'Estabelecimento não encontrado'}, status=404)
     except Exception as e:
-        print(f"Erro detalhado: {str(e)}")
-        return Response({
-            'success': False,
-            'error': f'Erro ao gerenciar conexão: {str(e)}'
-        }, status=500)
+        print(f"Erro ao gerenciar conexão WhatsApp: {str(e)}")
+        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAdminUser])
 def bot_settings_view(request):
+    """
+    Gerencia configurações do bot de suporte
+    """
     try:
         config = SystemConfig.objects.first()
         if not config:
             config = SystemConfig.objects.create()
 
-        if request.method in ['POST', 'PATCH']:
-            data = request.data
-            if not isinstance(config.bot_settings, dict):
-                config.bot_settings = {}
+        if request.method == 'GET':
+            return Response(SystemConfigSerializer(config).data)
+            
+        elif request.method in ['POST', 'PATCH']:
+            print("\n=== DEBUG BOT SETTINGS ===")
+            print(f"Método: {request.method}")
+            print(f"Dados recebidos: {request.data}")
+            
+            serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                print(f"Configuração salva: {serializer.data}")
                 
-            config.bot_settings.update(data)
-            config.save()
-
-            # Tenta criar/atualizar instância na Evolution API
-            if not config.evolution_instance_id:
-                evolution_api = EvolutionAPI()
-                instance = evolution_api.criar_instancia(
-                    estabelecimento_id='support',
-                    phone=phone,
-                    is_support=True
-                )
-                if instance and not instance.get('error'):
-                    config.evolution_instance_id = instance.get('instanceId')
-                    config.status = 'pending_connection'
-                    config.save()
-
-            return Response({
-                'support_whatsapp': config.support_whatsapp,
-                'status': config.status,
-                'instance_created': bool(config.evolution_instance_id)
-            })
-
-        return Response({
-            'support_whatsapp': config.support_whatsapp,
-            'status': config.status
-        })
-
+                # Configura webhook se necessário
+                if request.data.get('webhook_settings'):
+                    api = EvolutionAPI()
+                    webhook_result = api.configurar_webhooks('support_bot')
+                    print(f"Resultado webhook: {webhook_result}")
+                
+                print("=== FIM DEBUG SETTINGS ===\n")
+                return Response(serializer.data)
+                
+            print(f"Erros de validação: {serializer.errors}")
+            return Response(serializer.errors, status=400)
+            
     except Exception as e:
-        print(f"Erro em bot_config_view: {str(e)}")
+        print(f"Erro em bot_settings: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def generate_qr_code(request):
-    """
-    Gera QR Code para conexão do WhatsApp
-    """
+    """Gera QR Code para conexão do WhatsApp"""
     try:
         config = SystemConfig.objects.first()
         if not config:
             return Response({'error': 'Configuração não encontrada'}, status=404)
             
         api = EvolutionAPI()
+        instance_name = 'support_bot'
         
-        # Se não tem instância, cria
-        if not config.evolution_instance_id:
+        # Verifica se já existe uma instância
+        instance_check = api.check_instance_exists(instance_name)
+        
+        # Se não existe instância, cria uma nova
+        if not instance_check['exists']:
+            if not config.support_whatsapp:
+                return Response({'error': 'Número de WhatsApp não configurado'}, status=400)
+                
             instance = api.criar_instancia(
                 estabelecimento_id='support',
                 phone=config.support_whatsapp,
                 is_support=True
             )
-            if instance and not instance.get('error'):
-                config.evolution_instance_id = instance.get('instanceId')
-                config.status = 'pending_connection'
-                config.save()
+            if instance.get('error'):
+                return Response({'error': instance['error']}, status=400)
         
-        # Gera QR Code
-        qr_response = api.get_qr_code(config.evolution_instance_id)
-        if 'error' in qr_response:
-            return Response({'error': qr_response['error']}, status=500)
+        # Gera o QR Code
+        qr_response = api.get_qr_code(instance_name)
+        if qr_response.get('error'):
+            return Response({'error': qr_response['error']}, status=400)
             
         return Response(qr_response)
         
@@ -1468,26 +1446,6 @@ def health_check(request):
         return Response({'status': 'ok'})
     except Exception as e:
         return Response({'status': 'error', 'details': str(e)}, status=500)
-
-@api_view(['POST'])
-def webhook_handler(request):
-    try:
-        data = request.data
-        # Log do webhook para debug
-        print("Webhook recebido:", data)
-        
-        # Processe os diferentes tipos de eventos
-        event_type = data.get('type')
-        if event_type == 'message':
-            # Processe mensagens
-            pass
-        elif event_type == 'status':
-            # Processe mudanças de status
-            pass
-            
-        return Response({'status': 'success'})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
@@ -1596,13 +1554,37 @@ def register_activity(user, action, details=""):
 def support_webhook(request):
     """Webhook para o bot de suporte (Bot 1)"""
     try:
+        print("\n=== WEBHOOK RECEBIDO (SUPORTE) ===")
+        print(f"Dados: {request.data}")
+        
         data = request.data
-        # Processar mensagens do bot de suporte
         if data.get('type') == 'message':
-            # Implementar lógica do Bot 1
-            pass
-        return Response({'status': 'ok'})
+            # Extrai informações da mensagem
+            message = data.get('message', {})
+            sender = message.get('from')
+            text = message.get('text', '')
+            
+            print(f"De: {sender}")
+            print(f"Mensagem: {text}")
+            
+            # Processa com LLM
+            conversation_id = f"support_{sender}"
+            conversation_manager.add_message(conversation_id, "user", text)
+            
+            # Gera resposta
+            context = conversation_manager.get_context(conversation_id)
+            response_text = chamar_llm(context)
+            
+            print(f"Resposta: {response_text}")
+            
+            # Envia resposta
+            api = EvolutionAPI()
+            api.send_text_message("support_bot", sender, response_text)
+            
+            return Response({'status': 'ok'})
+            
     except Exception as e:
+        print(f"ERRO no webhook: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
@@ -1712,69 +1694,72 @@ def check_connection(request):
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
-@api_view(['GET', 'POST'])
+@api_view(['GET', 'POST', 'PATCH'])
 @permission_classes([IsAdminUser])
 def bot_settings_view(request):
+    """
+    Gerencia configurações do bot de suporte
+    """
     try:
-        if request.method == 'POST':
-            data = request.data
-            # Usa o prompt existente como base
-            if 'prompt_template' not in data:
-                data['prompt_template'] = gerar_prompt_bot1("")
-            
-            # Salva configurações
-            config = SystemConfig.objects.first()
-            if not config:
-                config = SystemConfig.objects.create()
-            
-            config.bot_settings = data
-            config.save()
-            
-            return Response(data)
-            
-        # GET
         config = SystemConfig.objects.first()
         if not config:
-            return Response({
-                'bot_ativo': True,
-                'prompt_template': gerar_prompt_bot1(""),
-                'attendance_mode': 'auto',
-                'evolution_settings': {
-                    'reject_calls': True,
-                    'read_messages': True,
-                    'groups_ignore': True
-                },
-                'horario_atendimento': {
-                    'inicio': '09:00',
-                    'fim': '18:00'
-                }
-            })
+            config = SystemConfig.objects.create()
+
+        if request.method == 'GET':
+            return Response(SystemConfigSerializer(config).data)
             
-        return Response(config.bot_settings)
-        
+        elif request.method in ['POST', 'PATCH']:
+            print("\n=== DEBUG BOT SETTINGS ===")
+            print(f"Método: {request.method}")
+            print(f"Dados recebidos: {request.data}")
+            
+            serializer = SystemConfigSerializer(config, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                print(f"Configuração salva: {serializer.data}")
+                
+                # Configura webhook se necessário
+                if request.data.get('webhook_settings'):
+                    api = EvolutionAPI()
+                    webhook_result = api.configurar_webhooks('support_bot')
+                    print(f"Resultado webhook: {webhook_result}")
+                
+                print("=== FIM DEBUG SETTINGS ===\n")
+                
+                return Response(serializer.data)
+                
+            print(f"Erros de validação: {serializer.errors}")
+            return Response(serializer.errors, status=400)
+            
     except Exception as e:
-        print(f"Erro em bot_settings_view: {str(e)}")
+        print(f"Erro em bot_settings: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
 @permission_classes([IsAdminUser])
-def check_instance_exists(request):
+def check_instance(request):
+    """
+    Verifica se existe uma instância do bot de suporte
+    """
     try:
         config = SystemConfig.objects.first()
-        api = EvolutionAPI()
-        
         if not config:
-            return Response({'exists': False})
+            return Response({'exists': False, 'instance_id': None, 'status': None})
             
-        instances = api.fetch_instances()
-        instance_exists = any(
-            inst.get('instanceName') == 'support_bot' 
-            for inst in instances
-        )
+        api = EvolutionAPI()
+        result = api.check_connection_status('support_bot')
         
+        # Atualiza o ID da instância se necessário
+        if result['exists'] and result.get('instance_id') and result['instance_id'] != config.evolution_instance_id:
+            config.evolution_instance_id = result['instance_id']
+            config.save()
+            
         return Response({
-            'exists': instance_exists,
-            'instance_id': config.evolution_instance_id if instance_exists else None
+            'exists': result['exists'],
+            'instance_id': result.get('instance_id'),
+            'status': result.get('status', 'disconnected')
         })
+        
     except Exception as e:
+        print(f"Erro ao verificar instância: {str(e)}")
         return Response({'error': str(e)}, status=500)

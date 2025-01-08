@@ -16,11 +16,31 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import WhatsAppSetup from './components/WhatsAppSetup';
 import BotMetrics from './components/BotMetrics';
 import BotSettings from './components/BotSettings';
+import { BotConfigService } from '../../services/botConfig';
 
 const BotConfig = () => {
     const [tabValue, setTabValue] = useState(0);
+    const [configLoaded, setConfigLoaded] = useState(false);
+
+    useEffect(() => {
+        checkInitialConfig();
+    }, []);
+
+    const checkInitialConfig = async () => {
+        try {
+            const config = await BotConfigService.getConfig();
+            setConfigLoaded(!!config.support_whatsapp);
+        } catch (error) {
+            console.error('Erro ao verificar configuração inicial:', error);
+        }
+    };
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+        // Só permite mudar para outras abas se já tiver configuração básica
+        if (newValue !== 1 && !configLoaded) {
+            alert('Configure primeiro o WhatsApp do bot');
+            return;
+        }
         setTabValue(newValue);
     };
 
@@ -32,20 +52,20 @@ const BotConfig = () => {
                 </Typography>
 
                 <Tabs value={tabValue} onChange={handleTabChange}>
-                    <Tab label="Configurações Gerais" />
                     <Tab label="Conexão WhatsApp" />
+                    <Tab label="Configurações Gerais" />
                     <Tab label="Métricas" />
                 </Tabs>
 
                 {tabValue === 0 && (
-                    <BotSettings />
-                )}
-
-                {tabValue === 1 && (
                     <WhatsAppSetup isSupport={true} />
                 )}
 
-                {tabValue === 2 && (
+                {tabValue === 1 && configLoaded && (
+                    <BotSettings />
+                )}
+
+                {tabValue === 2 && configLoaded && (
                     <BotMetrics />
                 )}
             </Paper>

@@ -319,25 +319,39 @@ class Plan(models.Model):
 class SystemConfig(models.Model):
     support_whatsapp = models.CharField(max_length=20, null=True, blank=True)
     evolution_instance_id = models.CharField(max_length=100, null=True, blank=True)
-    status = models.CharField(max_length=20, default='disconnected')
+    status = models.CharField(
+        max_length=20, 
+        choices=[
+            ('disconnected', 'Desconectado'),
+            ('connected', 'Conectado'),
+            ('pending', 'Pendente'),
+            ('error', 'Erro')
+        ],
+        default='disconnected'
+    )
     bot_settings = models.JSONField(default=dict, blank=True)
+    last_qr_code = models.TextField(null=True, blank=True)
+    qr_code_timestamp = models.DateTimeField(null=True, blank=True)
+
+    def get_default_settings(self):
+        return {
+            'bot_ativo': True,
+            'prompt_template': '',
+            'attendance_mode': 'auto',
+            'evolution_settings': {
+                'reject_calls': True,
+                'read_messages': True,
+                'groups_ignore': True
+            },
+            'horario_atendimento': {
+                'inicio': '09:00',
+                'fim': '18:00'
+            }
+        }
 
     def save(self, *args, **kwargs):
         if not self.bot_settings:
-            self.bot_settings = {
-                'bot_ativo': True,
-                'prompt_template': '',
-                'attendance_mode': 'auto',
-                'evolution_settings': {
-                    'reject_calls': True,
-                    'read_messages': True,
-                    'groups_ignore': True
-                },
-                'horario_atendimento': {
-                    'inicio': '09:00',
-                    'fim': '18:00'
-                }
-            }
+            self.bot_settings = self.get_default_settings()
         super().save(*args, **kwargs)
 
 class BotConfig(models.Model):

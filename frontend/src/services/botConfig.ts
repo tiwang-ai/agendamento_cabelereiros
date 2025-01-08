@@ -2,14 +2,15 @@
 import api from './api';
 import { WhatsAppService } from './whatsapp';
 import type { BotSettingsData } from '../types/bot';
+import { gerar_prompt_bot1 } from '../utils/prompts';
 
 export const BotConfigService = {
     getConfig: async () => {
         try {
-            const response = await api.get('/api/admin/bot-config/');
+            const response = await api.get('/api/admin/bot/config/');
             return response.data;
         } catch (error) {
-            console.error('Erro detalhado ao obter configuração:', error);
+            console.error('Erro ao obter configuração:', error);
             throw error;
         }
     },
@@ -19,26 +20,29 @@ export const BotConfigService = {
         bot_ativo?: boolean;
     }) => {
         try {
-            const response = await api.post('/api/admin/bot-config/', config);
+            const response = await api.post('/api/admin/bot/config/', {
+                ...config,
+                prompt_template: gerar_prompt_bot1()
+            });
             return response.data;
         } catch (error) {
-            console.error('Erro detalhado ao salvar configuração:', error);
+            console.error('Erro ao salvar configuração:', error);
             throw error;
         }
     },
 
     getStatus: async () => {
-        const response = await api.get('/api/admin/bot-config/status/');
+        const response = await api.get('/api/admin/bot/status/');
         return response.data;
     },
     
     getConnectionStatus: async () => {
-        const response = await api.get('/api/admin/bot-config/connection/');
+        const response = await api.get('/api/admin/bot/connection/');
         return response.data;
     },
 
     generateQRCode: async () => {
-        const response = await api.post('/api/admin/bot-config/qr-code/');
+        const response = await api.post('/api/admin/bot/qr-code/');
         return response.data;
     },
 
@@ -48,7 +52,7 @@ export const BotConfigService = {
 
     getBotSettings: async (): Promise<BotSettingsData> => {
         try {
-            const response = await api.get('/api/admin/bot-config/settings/');
+            const response = await api.get('/api/admin/bot/config/');
             return response.data || {
                 bot_ativo: true,
                 prompt_template: '',
@@ -71,7 +75,17 @@ export const BotConfigService = {
 
     saveBotSettings: async (settings: BotSettingsData) => {
         try {
-            const response = await api.patch('/api/admin/bot-config/settings/', settings);
+            const baseUrl = import.meta.env.VITE_NGROK_URL || window.location.origin;
+            
+            const { status, ...settingsWithoutStatus } = settings;
+            
+            if (settingsWithoutStatus.webhook_settings?.enabled) {
+                settingsWithoutStatus.webhook_settings.url = `${baseUrl}/api/webhooks/support/`;
+            }
+
+            console.log('Enviando configurações:', settingsWithoutStatus);
+
+            const response = await api.post('/api/admin/bot/config/', settingsWithoutStatus);
             return response.data;
         } catch (error) {
             console.error('Erro ao salvar configurações:', error);
@@ -80,7 +94,7 @@ export const BotConfigService = {
     },
 
     getMetrics: async () => {
-        const response = await api.get('/api/admin/bot-config/metrics/');
+        const response = await api.get('/api/admin/bot/metrics/');
         return response.data;
     },
 
@@ -99,24 +113,38 @@ export const BotConfigService = {
             fim: string;
         };
     }) => {
-        const response = await api.patch('/api/admin/bot-config/settings/', settings);
+        const response = await api.patch('/api/admin/bot/settings/', settings);
         return response.data;
     },
 
     getConnectionData: async () => {
-        const response = await api.get('/api/admin/bot-config/connection/');
+        const response = await api.get('/api/admin/bot/connection/');
         return response.data;
     },
 
     getQrCode: async () => {
         try {
-            const response = await api.post('/api/admin/bot-config/qr-code/');
+            const response = await api.post('/api/admin/bot/qr-code/');
             if (response.data.error) {
                 throw new Error(response.data.error);
             }
             return response.data;
         } catch (error) {
             console.error('Erro ao gerar QR code:', error);
+            throw error;
+        }
+    },
+
+    updateWebhookConfig: async (webhookConfig: {
+        enabled: boolean;
+        url: string;
+        events: string[];
+    }) => {
+        try {
+            const response = await api.post('/api/admin/bot/webhook/config/', webhookConfig);
+            return response.data;
+        } catch (error) {
+            console.error('Erro ao atualizar webhook:', error);
             throw error;
         }
     }

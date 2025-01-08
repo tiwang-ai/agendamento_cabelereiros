@@ -1,6 +1,6 @@
 import WhatsAppConnection from '../../settings/WhatsAppConnection';
-import { Box, Typography, Alert, TextField, Button } from '@mui/material';
-import { useState } from 'react';
+import { Box, Typography, Alert, TextField, Button, CircularProgress } from '@mui/material';
+import { useState, useEffect } from 'react';
 import { BotConfigService } from '../../../services/botConfig';
 
 interface WhatsAppSetupProps {
@@ -10,16 +10,56 @@ interface WhatsAppSetupProps {
 const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
     const [phone, setPhone] = useState('');
     const [saved, setSaved] = useState(false);
+    const [hasInstance, setHasInstance] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        checkExistingConfig();
+    }, []);
+
+    const checkExistingConfig = async () => {
+        try {
+            const config = await BotConfigService.getConfig();
+            if (config.support_whatsapp) {
+                setPhone(config.support_whatsapp);
+                setHasInstance(true);
+            }
+        } catch (error) {
+            console.error('Erro ao verificar configuração:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSavePhone = async () => {
         try {
-            await BotConfigService.saveConfig({ support_whatsapp: phone });
+            setError(null);
+            const configData = {
+                support_whatsapp: phone,
+                bot_ativo: true,
+                evolution_settings: {
+                    reject_calls: true,
+                    read_messages: true,
+                    groups_ignore: true
+                }
+            };
+            
+            console.log('Enviando configuração:', configData); // Debug
+            
+            await BotConfigService.saveConfig(configData);
             setSaved(true);
+            setHasInstance(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (error) {
             console.error('Erro ao salvar número:', error);
+            setError('Erro ao salvar número. Verifique o formato e tente novamente.');
         }
     };
+
+    if (loading) {
+        return <CircularProgress />;
+    }
 
     return (
         <Box>
@@ -36,19 +76,33 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
                     onChange={(e) => setPhone(e.target.value)}
                     helperText="Formato: 5511999999999"
                     sx={{ mb: 2 }}
+                    error={!!error}
                 />
                 <Button
                     variant="contained"
                     onClick={handleSavePhone}
+                    disabled={!phone}
                 >
-                    Salvar Número
+                    {hasInstance ? 'Alterar Número' : 'Salvar Número'}
                 </Button>
+                {error && (
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                        {error}
+                    </Alert>
+                )}
+                {saved && (
+                    <Alert severity="success" sx={{ mt: 2 }}>
+                        Número salvo com sucesso!
+                    </Alert>
+                )}
             </Box>
             
-            <WhatsAppConnection 
-                isSupport={isSupport}
-                title="Bot de Suporte"
-            />
+            {hasInstance && (
+                <WhatsAppConnection 
+                    isSupport={isSupport}
+                    title="Bot de Suporte"
+                />
+            )}
         </Box>
     );
 };

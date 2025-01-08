@@ -63,8 +63,9 @@ const WhatsAppStatus = () => {
           setOpenQRDialog(true);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao reconectar:', error);
+      alert(error.response?.data?.error || 'Erro ao reconectar WhatsApp');
     } finally {
       setLoading(false);
     }
@@ -77,7 +78,7 @@ const WhatsAppStatus = () => {
 
   useEffect(() => {
     loadInstances();
-    const interval = setInterval(loadInstances, 300000);
+    const interval = setInterval(loadInstances, 10000);
     return () => clearInterval(interval);
   }, []);
 

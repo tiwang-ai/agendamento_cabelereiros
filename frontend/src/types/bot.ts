@@ -11,6 +11,13 @@ export interface BotSettingsData {
         inicio: string;
         fim: string;
     };
+    webhook_settings: {
+        enabled: boolean;
+        url: string;
+        events: string[];
+    };
+    support_whatsapp?: string;
+    status?: string;
 }
 
 export interface BotMetrics {
