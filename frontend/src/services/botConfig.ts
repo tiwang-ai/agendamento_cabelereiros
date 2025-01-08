@@ -113,7 +113,7 @@ export const BotConfigService = {
             fim: string;
         };
     }) => {
-        const response = await api.patch('/api/admin/bot/settings/', settings);
+        const response = await api.patch('/api/admin/bot/config/', settings);
         return response.data;
     },
 

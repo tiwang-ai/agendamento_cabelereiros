@@ -169,21 +169,16 @@ class EvolutionAPI:
         Configura os webhooks para a instância
         """
         try:
-            # Força o uso do NGROK_URL para desenvolvimento
-            base_url = settings.NGROK_URL
-            if not base_url:
+            if not settings.NGROK_URL:
                 raise ValueError("NGROK_URL não configurada")
             
-            webhook_url = (
-                f"{base_url}/api/webhooks/support/"
-                if instance_name == "support_bot"
-                else f"{base_url}/api/webhooks/salon/{instance_name}/"
-            )
+            webhook_url = f"{settings.NGROK_URL}/api/webhooks/support/"
             
+            # Payload com eventos corretos conforme documentação
             payload = {
                 "webhook": {
                     "enabled": True,
-                    "url": f"{webhook_url}/api/webhooks/support/",
+                    "url": webhook_url,
                     "webhookByEvents": True,
                     "webhookBase64": True,
                     "events": [
@@ -191,19 +186,25 @@ class EvolutionAPI:
                         "MESSAGES_UPDATE",
                         "SEND_MESSAGE",
                         "CONNECTION_UPDATE",
-                        "QR_UPDATE"
+                        "QRCODE_UPDATED"
                     ]
                 }
             }
             
-            url = self._validate_url(f'webhook/set/{instance_name}')
-            print(f"\nConfigurando Webhook:")
+            url = f"{self.base_url}/webhook/set/{instance_name}"
+            
+            print("\nConfigurando Webhook:")
             print(f"Payload: {payload}")
             
-            response = requests.post(url, json=payload, headers=self.headers)
-            response.raise_for_status()
+            # Garantindo que o Content-Type está correto
+            headers = {
+                'apikey': settings.EVOLUTION_API_KEY,
+                'Content-Type': 'application/json'
+            }
             
+            response = requests.post(url, json=payload, headers=headers)
             print(f"Resposta: {response.json()}\n")
+            
             return response.json()
             
         except Exception as e:

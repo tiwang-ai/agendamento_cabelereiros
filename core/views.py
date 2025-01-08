@@ -1375,29 +1375,22 @@ def bot_settings_view(request):
             return Response(SystemConfigSerializer(config).data)
             
         elif request.method in ['POST', 'PATCH']:
-            print("\n=== DEBUG BOT SETTINGS ===")
-            print(f"Método: {request.method}")
-            print(f"Dados recebidos: {request.data}")
-            
             serializer = SystemConfigSerializer(config, data=request.data, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                print(f"Configuração salva: {serializer.data}")
                 
-                # Configura webhook se necessário
-                if request.data.get('webhook_settings'):
+                # Configura webhook se necessário e se NGROK_URL estiver configurado
+                if request.data.get('webhook_settings') and settings.NGROK_URL:
                     api = EvolutionAPI()
                     webhook_result = api.configurar_webhooks('support_bot')
-                    print(f"Resultado webhook: {webhook_result}")
+                    if 'error' in webhook_result:
+                        return Response({'error': webhook_result['error']}, status=400)
                 
-                print("=== FIM DEBUG SETTINGS ===\n")
                 return Response(serializer.data)
                 
-            print(f"Erros de validação: {serializer.errors}")
             return Response(serializer.errors, status=400)
             
     except Exception as e:
-        print(f"Erro em bot_settings: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['POST'])
@@ -1603,7 +1596,6 @@ def salon_webhook(request, salon_id):
         return Response({'error': 'Salão não encontrado'}, status=404)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
 class BotConfigViewSet(viewsets.ViewSet):
     permission_classes = [IsAdminUser]
     

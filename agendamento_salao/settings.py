@@ -278,7 +278,7 @@ if DEBUG:
     BASE_URL = 'http://localhost:8000'  # Desenvolvimento
 
 # Adicione nas configurações
-NGROK_URL = os.getenv('NGROK_URL', '').rstrip('/')
+NGROK_URL = 'https://7f25-186-220-156-104.ngrok-free.app'
 BASE_URL = NGROK_URL if NGROK_URL else 'http://localhost:8000'
 
 # Adicionar o domínio do ngrok aos CORS e CSRF
