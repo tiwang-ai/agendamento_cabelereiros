@@ -31,6 +31,7 @@ interface ConnectionData {
 interface WhatsAppConnectionProps {
     isSupport?: boolean;
     title?: string;
+    salonId?: string;
 }
 
 const TabPanel = (props: TabPanelProps): ReactElement => {
@@ -49,7 +50,11 @@ const TabPanel = (props: TabPanelProps): ReactElement => {
   );
 };
 
-const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: WhatsAppConnectionProps) => {
+const WhatsAppConnection = ({ 
+    isSupport = false, 
+    title = "Conexão WhatsApp",
+    salonId 
+}: WhatsAppConnectionProps) => {
   const { user } = useAuth();
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +63,12 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
   const [hasInstance, setHasInstance] = useState<boolean>(false);
 
+  const currentSalonId = salonId || user?.estabelecimento_id;
+
   useEffect(() => {
     const checkInstance = async () => {
         try {
-          const instanceId = isSupport ? 'support' : salonId; // Define 'support' para bot de suporte
+          const instanceId = isSupport ? 'support' : currentSalonId;
           const instanceData = await WhatsAppService.checkExistingInstance(instanceId, isSupport);
             
             if (instanceData.exists) {
@@ -79,8 +86,10 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
         }
     };
 
-    checkInstance();
-  }, [isSupport, salonId]);
+    if (currentSalonId || isSupport) {
+        checkInstance();
+    }
+  }, [isSupport, currentSalonId]);
 
   const handleGeneratePairingCode = async () => {
     try {
