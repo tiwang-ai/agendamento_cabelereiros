@@ -13,10 +13,11 @@ import {
   FormControlLabel,
   Box,
 } from '@mui/material';
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent, useEffect } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { SalonBotService } from '../../services/salonBot';
 
 import WhatsAppConnection from './WhatsAppConnection';
 
@@ -262,30 +263,51 @@ const Settings = () => {
 };
 
 const BotSettings = () => {
+  const { user } = useAuth();
   const [config, setConfig] = useState({
     bot_ativo: true,
     ignorar_grupos: true,
     tempo_debounce: 5,
     horario_atendimento_inicio: '09:00',
     horario_atendimento_fim: '18:00',
-    dias_atendimento: [1,2,3,4,5], // seg a sex
+    dias_atendimento: [1,2,3,4,5],
     mensagem_fora_horario: '',
     mensagem_bot_desativado: ''
   });
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleConfigChange = (setting: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setConfig(prev => ({
-      ...prev,
-      [setting]: event.target.checked
-    }));
+  useEffect(() => {
+    loadBotConfig();
+  }, []);
+
+  const loadBotConfig = async () => {
+    try {
+      const response = await SalonBotService.getConfig(user?.estabelecimento_id || '');
+      setConfig(response);
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error);
+    }
   };
 
-  const handleConfigSubmit = async () => {
+  const handleBotStatusChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
-      await api.put('/api/users/bot-settings/', config);
-      // Mostrar mensagem de sucesso
+      setIsLoading(true);
+      const newStatus = event.target.checked;
+      
+      await SalonBotService.updateBotStatus(
+        user?.estabelecimento_id || '', 
+        newStatus
+      );
+      
+      setConfig(prev => ({
+        ...prev,
+        bot_ativo: newStatus
+      }));
+      
     } catch (error) {
-      // Mostrar erro
+      console.error('Erro ao atualizar status do bot:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -296,8 +318,14 @@ const BotSettings = () => {
       </Typography>
       
       <FormControlLabel
-        control={<Switch checked={config.bot_ativo} />}
-        label="Bot Ativo"
+        control={
+          <Switch 
+            checked={config.bot_ativo}
+            onChange={handleBotStatusChange}
+            disabled={isLoading}
+          />
+        }
+        label={isLoading ? "Atualizando..." : "Bot Ativo"}
       />
       
       <FormControlLabel

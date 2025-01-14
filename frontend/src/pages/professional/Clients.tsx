@@ -72,7 +72,7 @@ const ProfessionalClients = () => {
 
   const loadClients = async () => {
     try {
-      const response = await api.get('/profissional/clientes/');
+      const response = await api.get('/api/profissional/clientes/');
       setClients(response.data);
     } catch (error) {
       console.error('Erro ao carregar clientes:', error);
@@ -113,9 +113,9 @@ const ProfessionalClients = () => {
     e.preventDefault();
     try {
       if (selectedClient) {
-        await api.patch(`/profissional/clientes/${selectedClient.id}/`, formData);
+        await api.patch(`/api/profissional/clientes/${selectedClient.id}/`, formData);
       } else {
-        await api.post('/profissional/clientes/', formData);
+        await api.post('/api/profissional/clientes/', formData);
       }
       loadClients();
       handleCloseDialog();
@@ -128,7 +128,7 @@ const ProfessionalClients = () => {
   const handleDelete = async (id: number) => {
     if (window.confirm('Tem certeza que deseja excluir este cliente?')) {
       try {
-        await api.delete(`/profissional/clientes/${id}/`);
+        await api.delete(`/api/profissional/clientes/${id}/`);
         loadClients();
       } catch (error) {
         console.error('Erro ao excluir cliente:', error);

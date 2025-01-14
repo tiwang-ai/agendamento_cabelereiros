@@ -1,6 +1,6 @@
 import requests
 from rest_framework import viewsets, status, serializers
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from .models import Estabelecimento, Profissional, Cliente, Servico, Agendamento, Calendario_Estabelecimento, Interacao, Plan, SystemConfig, BotConfig, SystemService, SalonService, ActivityLog, Transaction
 from .serializers import EstabelecimentoSerializer, ProfissionalSerializer, ClienteSerializer, ServicoSerializer, AgendamentoSerializer, UserSerializer, ChatConfigSerializer, SystemServiceSerializer, SalonServiceSerializer, StaffSerializer, SystemConfigSerializer, InteracaoSerializer, BotConfigSerializer
 from django.conf import settings
@@ -15,22 +15,21 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.permissions import IsAdminUser, IsAuthenticated, AllowAny
 from .services.system_logs import SystemMonitor
 from django.http import JsonResponse
-from .integrations.evolution import (
-    EvolutionAPI
-)
+from .integrations.evolution import (EvolutionAPI)
 from .llm_utils import processar_pergunta, conversation_manager, chamar_llm
-
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth import authenticate
-
 import mercadopago
 import time
+from django.utils import timezone
+import logging
 
 User = get_user_model()
 
 # Singleton para EvolutionAPI
 evolution_api = EvolutionAPI()
+
+logger = logging.getLogger(__name__)
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
@@ -768,6 +767,7 @@ def get_connection_status(request, estabelecimento_id):
         return JsonResponse({'error': 'Salão não encontrado'}, status=404)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def dashboard_stats(request):
     """
     Retorna estatísticas do dashboard para o estabelecimento do usuário
@@ -775,27 +775,31 @@ def dashboard_stats(request):
     try:
         # Verifica se o usuário tem estabelecimento associado
         if not hasattr(request.user, 'estabelecimento') or not request.user.estabelecimento:
+            logger.error('Usuário não está associado a um estabelecimento')
             return Response({
                 'error': 'Usuário não está associado a um estabelecimento',
                 'code': 'NO_ESTABLISHMENT'
             }, status=400)
-
+        
         estabelecimento = request.user.estabelecimento
         hoje = timezone.now().date()
 
         # Busca estatísticas
+        logger.info(f'Coletando estatísticas para o estabelecimento ID: {estabelecimento.id} em {hoje}')
+
+        # Correção das consultas utilizando relações adequadas
         clientes_hoje = Agendamento.objects.filter(
-            estabelecimento=estabelecimento,
+            profissional__estabelecimento=estabelecimento,
             data_agendamento=hoje
         ).values('cliente').distinct().count()
 
         agendamentos_hoje = Agendamento.objects.filter(
-            estabelecimento=estabelecimento,
+            profissional__estabelecimento=estabelecimento,
             data_agendamento=hoje
         ).count()
 
         faturamento_hoje = Agendamento.objects.filter(
-            estabelecimento=estabelecimento,
+            profissional__estabelecimento=estabelecimento,
             data_agendamento=hoje,
             status='completed'
         ).aggregate(total=Sum('servico__preco'))['total'] or 0
@@ -803,6 +807,8 @@ def dashboard_stats(request):
         clientes_total = Cliente.objects.filter(
             estabelecimento=estabelecimento
         ).count()
+
+        logger.info(f'Estatísticas coletadas: Clientes Hoje={clientes_hoje}, Agendamentos Hoje={agendamentos_hoje}, Faturamento Hoje={faturamento_hoje}, Clientes Total={clientes_total}')
 
         return Response({
             'clientesHoje': clientes_hoje,
@@ -812,6 +818,7 @@ def dashboard_stats(request):
         })
 
     except Exception as e:
+        logger.exception('Erro ao coletar estatísticas do dashboard')
         return Response({
             'error': str(e)
         }, status=500)

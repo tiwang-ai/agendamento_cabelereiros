@@ -45,7 +45,7 @@ const History = () => {
 
   const loadHistory = async () => {
     try {
-      const response = await api.get('/agendamentos/profissional/historico/');
+      const response = await api.get('/api/agendamentos/profissional/historico/');
       setAppointments(response.data);
     } catch (error) {
       console.error('Erro ao carregar histórico:', error);

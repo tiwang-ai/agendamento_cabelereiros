@@ -87,10 +87,10 @@ const OnboardingFlow = () => {
       // Último passo - processar pagamento e finalizar
       try {
         // 1. Criar salão e configurações iniciais
-        const salonResponse = await api.post('/onboarding/', data);
+        const salonResponse = await api.post('/api/onboarding/', data);
         
         // 2. Processar pagamento
-        const paymentResponse = await api.post('/payments/process/', {
+        const paymentResponse = await api.post('/api/payments/process/', {
           planId: data.payment.planId,
           salonId: salonResponse.data.salonId,
           method: data.payment.method

@@ -40,7 +40,7 @@ const Profile = () => {
 
   const loadProfile = async () => {
     try {
-      const response = await api.get('/professional/profile/');
+      const response = await api.get('/api/professional/profile/');
       setProfileData(response.data);
     } catch (error) {
       setError('Erro ao carregar perfil');
@@ -54,7 +54,7 @@ const Profile = () => {
     setSuccess(null);
 
     try {
-      await api.put('/professional/profile/', profileData);
+      await api.put('/api/professional/profile/', profileData);
       setSuccess('Perfil atualizado com sucesso!');
     } catch (error) {
       setError('Erro ao atualizar perfil');
@@ -71,7 +71,7 @@ const Profile = () => {
     formData.append('foto', file);
 
     try {
-      const response = await api.post('/professional/profile/photo/', formData);
+      const response = await api.post('/api/professional/profile/photo/', formData);
       setProfileData(prev => ({ ...prev, foto: response.data.foto }));
       setSuccess('Foto atualizada com sucesso!');
     } catch (error) {

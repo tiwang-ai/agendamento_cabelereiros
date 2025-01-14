@@ -68,6 +68,9 @@ class EvolutionAPI:
                 "webhookEvents": ["MESSAGES_UPSERT", "SEND_MESSAGE"]
             }
             
+            # Adicionando log do corpo da requisição
+            print(f"Payload da requisição para criar instância: {payload}")
+            
             response = requests.post(
                 self._validate_url('instance/create'),
                 json=payload,

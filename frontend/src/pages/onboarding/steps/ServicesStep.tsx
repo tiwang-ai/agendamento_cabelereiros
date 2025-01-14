@@ -37,7 +37,7 @@ export const ServicesStep = ({ data, onUpdate }: Props) => {
 
   const loadSystemServices = async () => {
     try {
-      const response = await api.get('/system-services/');
+      const response = await api.get('/api/system-services/');
       setSystemServices(response.data);
     } catch (error) {
       console.error('Erro ao carregar serviços:', error);
