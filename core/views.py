@@ -1711,33 +1711,6 @@ class BotConfigViewSet(viewsets.ViewSet):
             
         return Response(result)
 
-@api_view(['GET'])
-@permission_classes([IsAdminUser])
-def bot_status(request):
-    """Retorna o status do bot de suporte"""
-    try:
-        config = SystemConfig.objects.first()
-        if not config:
-            return Response({
-                'status': 'disconnected',
-                'support_whatsapp': None
-            })
-            
-        api = EvolutionAPI()
-        if config.evolution_instance_id:
-            status_response = api.check_connection_status(config.evolution_instance_id)
-            status = status_response.get('status', 'disconnected')
-        else:
-            status = 'disconnected'
-            
-        return Response({
-            'status': status,
-            'support_whatsapp': config.support_whatsapp,
-            'instance_id': config.evolution_instance_id
-        })
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
-
 @api_view(['GET', 'POST'])
 @permission_classes([IsAdminUser])
 def check_connection(request):
@@ -1759,36 +1732,23 @@ def check_connection(request):
             return Response({'error': 'Falha ao conectar'}, status=400)
         
         # GET - apenas verifica status
-        status = api.check_connection_status(config.evolution_instance_id)
+        status = api.check_connection_status('support_bot', True)
         return Response(status)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
-@permission_classes([IsAdminUser])
-def check_instance(request):
+def check_instance(request, instance_id):
     """
-    Verifica se existe uma instância do bot de suporte
+    Verifica se existe uma instância do bot de suporte ou do salão
     """
     try:
-        config = SystemConfig.objects.first()
-        if not config:
-            return Response({'exists': False, 'instance_id': None, 'status': None})
-            
+        is_support = instance_id == 'support'
         api = EvolutionAPI()
-        result = api.check_connection_status('support_bot')
-        
-        # Atualiza o ID da instância se necessário
-        if result['exists'] and result.get('instance_id') and result['instance_id'] != config.evolution_instance_id:
-            config.evolution_instance_id = result['instance_id']
-            config.save()
-            
-        return Response({
-            'exists': result['exists'],
-            'instance_id': result.get('instance_id'),
-            'status': result.get('status', 'disconnected')
-        })
-        
+        # Aqui está a correção principal
+        instance_name = 'support_bot' if instance_id == 'support' else f'salon_{instance_id}'
+        status_data = api.check_connection_status(instance_name)
+        return Response(status_data)
     except Exception as e:
         print(f"Erro ao verificar instância: {str(e)}")
         return Response({'error': str(e)}, status=500)

@@ -8,19 +8,17 @@ export const WhatsAppService = {
     return response.data;
   },
 
-  getStatus: async (salonId: string, isSupport: boolean = false) => {
+  getStatus: async (instanceId: string, isSupport: boolean = false) => {
     const endpoint = isSupport 
       ? '/api/admin/bot/status/'
-      : `/api/whatsapp/status/${salonId}/`;
+      : `/api/whatsapp/status/${instanceId}/`;
+    
     const response = await api.get(endpoint);
     return response.data;
   },
 
-  connect: async (salonId: string, isSupport: boolean = false) => {
-    const endpoint = isSupport 
-      ? '/api/admin/bot/connection/'
-      : `/api/whatsapp/connect/${salonId}/`;
-    const response = await api.get(endpoint);
+  connect: async (instanceId: string) => {
+    const response = await api.post(`/api/whatsapp/instance/connect/${instanceId}/`);
     return response.data;
   },
 
@@ -32,22 +30,13 @@ export const WhatsAppService = {
     return response.data;
   },
 
-  generateQrCode: async (salonId: string, isSupport: boolean = false): Promise<QRCodeResponse> => {
+  generateQrCode: async (instanceId: string, isSupport: boolean = false) => {
     const endpoint = isSupport 
       ? '/api/admin/bot/qr-code/'
-      : `/api/whatsapp/qr-code/${salonId}/`;
+      : `/api/whatsapp/qr-code/${instanceId}/`;
     
     const response = await api.post(endpoint);
-    
-    if (response.data.error) {
-      throw new Error(response.data.error);
-    }
-    
-    return {
-      code: response.data.code,
-      pairingCode: response.data.pairingCode,
-      count: response.data.count
-    };
+    return response.data;
   },
 
   sendMessage: async (salonId: string, number: string, message: string, options?: any) => {
@@ -59,17 +48,10 @@ export const WhatsAppService = {
     return response.data;
   },
 
-  checkExistingInstance: async (salonId: string, isSupport: boolean = false) => {
-    const endpoint = isSupport 
-      ? '/api/admin/bot/instance/check/'
-      : `/api/whatsapp/instance/check/${salonId}/`;
-    
-    const response = await api.get(endpoint);
-    
-    return {
-      exists: response.data.exists,
-      instanceName: response.data.instance_name,
-      status: response.data.status
-    };
+  checkExistingInstance: async (instanceId: string, isSupport: boolean = false) => {
+    const response = await api.get(isSupport 
+        ? '/api/admin/bot/instance/check/support/'
+        : `/api/whatsapp/instance/check/${instanceId}/`);
+    return response.data;
   }
 };

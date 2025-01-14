@@ -43,9 +43,7 @@ class EvolutionAPI:
             
             # Garante que a URL do webhook está formatada corretamente
             webhook_url = (
-                f"{settings.BASE_URL.rstrip('/')}/api/webhooks/support/"
-                if is_support
-                else f"{settings.BASE_URL.rstrip('/')}/api/webhooks/salon/{estabelecimento_id}/"
+                f"{settings.NGROK_URL}/api/webhooks/{'support' if is_support else estabelecimento_id}/"
             )
             
             if not webhook_url.startswith(('http://', 'https://')):
@@ -89,29 +87,19 @@ class EvolutionAPI:
             print(f"Erro ao criar instância: {e}")
             return {"error": str(e)}
 
-    def check_connection_status(self, instance_name: str) -> Dict:
-        """Verifica o status de conexão de uma instância"""
+    def check_connection_status(self, instance_id: str, is_support: bool = False) -> Dict:
+        instance_name = "support_bot" if is_support or instance_id == "support" else f"salon_{instance_id}"
+        url = f"{self.base_url}/instance/connectionState/{instance_name}"
+        
         try:
+            instance_name = "support_bot" if is_support or instance_id == "support" else f"salon_{instance_id}"
             url = self._validate_url(f'instance/connectionState/{instance_name}')
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            
-            data = response.json()
-            # Processa a resposta conforme o formato da Evolution API
-            return {
-                'exists': True,
-                'status': data.get('instance', {}).get('state', 'disconnected'),
-                'instance_name': data.get('instance', {}).get('instanceName'),
-                'instance_id': data.get('instance', {}).get('instanceId')
-            }
+            return response.json()
         except Exception as e:
             print(f"Erro ao verificar status: {str(e)}")
-            return {
-                'exists': False,
-                'status': 'disconnected',
-                'instance_name': None,
-                'instance_id': None
-            }
+            return {"error": str(e)}
 
     def disconnect_instance(self, instance_id: str) -> bool:
         """

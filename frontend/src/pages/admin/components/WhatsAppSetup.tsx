@@ -1,4 +1,4 @@
-import WhatsAppConnection from '../../settings/WhatsAppConnection';
+import WhatsAppConnection from '../components/WhatsAppConnection';
 import { Box, Typography, Alert, TextField, Button, CircularProgress } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { StaffBotService } from '../../../services/botConfig';

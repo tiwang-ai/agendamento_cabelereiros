@@ -45,8 +45,11 @@ export const SalonBotService = {
     },
     
     checkConnection: async (salonId: string) => {
-        const response = await api.get(`/api/whatsapp/check-connection/${salonId}/`);
-        return response.data;
+        return WhatsAppService.getStatus(salonId, false);
+    },
+    
+    checkExistingInstance: async (salonId: string) => {
+        return WhatsAppService.checkExistingInstance(salonId, false);
     },
     
     updateSettings: async (salonId: string, settings: {

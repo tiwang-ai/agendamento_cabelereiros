@@ -19,7 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { SalonBotService } from '../../services/salonBot';
 
-import WhatsAppConnection from './WhatsAppConnection';
+import SalonWhatsAppConnection from './components/SalonWhatsAppConnection';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -247,7 +247,7 @@ const Settings = () => {
 
           {tabValue === 2 && (
             <Grid item xs={12}>
-              <WhatsAppConnection />
+              <SalonWhatsAppConnection />
             </Grid>
           )}
 

@@ -13,8 +13,8 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useState, useEffect, ReactElement } from 'react';
 
-import { useAuth } from '../../contexts/AuthContext';
-import { WhatsAppService } from '../../services/whatsapp';
+import { useAuth } from '../../../contexts/AuthContext';
+import { WhatsAppService } from '../../../services/whatsapp';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -61,8 +61,8 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
   useEffect(() => {
     const checkInstance = async () => {
         try {
-            const instanceData = await WhatsAppService.checkExistingInstance(isSupport);
-            setHasInstance(instanceData.exists);
+          const instanceId = isSupport ? 'support' : salonId; // Define 'support' para bot de suporte
+          const instanceData = await WhatsAppService.checkExistingInstance(instanceId, isSupport);
             
             if (instanceData.exists) {
                 // Atualiza o status baseado na resposta da Evolution API
@@ -80,7 +80,7 @@ const WhatsAppConnection = ({ isSupport = false, title = "Conexão WhatsApp" }: 
     };
 
     checkInstance();
-  }, [isSupport, user?.estabelecimento_id]);
+  }, [isSupport, salonId]);
 
   const handleGeneratePairingCode = async () => {
     try {

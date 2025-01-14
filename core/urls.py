@@ -5,7 +5,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from datetime import datetime
 from .views import (
-    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, system_metrics, health_check, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message, support_webhook, salon_webhook, bot_status, check_connection, bot_settings_view, check_instance, bot_metrics, list_interactions, verificar_disponibilidade, bot_verificar_agenda, salon_bot_settings
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, system_metrics, health_check, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message, support_webhook, salon_webhook, check_connection, bot_settings_view, check_instance, bot_metrics, list_interactions, verificar_disponibilidade, bot_verificar_agenda, salon_bot_settings
 )
 
 router = DefaultRouter()
@@ -53,7 +53,7 @@ urlpatterns = [
         path('bot/', include([
             path('config/', bot_settings_view, name='bot-config'),
             path('qr-code/', generate_qr_code, name='bot-qr-code'),
-            path('status/', bot_status, name='bot-status'),
+            path('status/', check_instance, name='bot-status'),
             path('connection/', check_connection, name='check-connection'),
             path('instance/check/', check_instance, name='check-instance-exists'),
             path('metrics/', bot_metrics, name='bot_metrics'),
@@ -68,7 +68,8 @@ urlpatterns = [
         path('connect/<str:estabelecimento_id>/', manage_whatsapp_connection, name='connect-whatsapp'),
         path('bot-config/<str:estabelecimento_id>/', salon_bot_settings, name='salon-bot-config'),
         path('webhook/', whatsapp_webhook, name='whatsapp-webhook'),
-        path('send-message/<str:estabelecimento_id>/', send_whatsapp_message, name='send-message'),        
+        path('send-message/<str:estabelecimento_id>/', send_whatsapp_message, name='send-message'),
+        path('instance/check/<str:instance_id>/', check_instance, name='check_instance'),
     ])),
     path('estabelecimentos/<int:pk>/', EstabelecimentoViewSet.as_view({
         'get': 'retrieve',

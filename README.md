@@ -2,7 +2,10 @@
 
 ## Descrição
 
-Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para salões de beleza e barbearias, com integração de uma LLM para comunicação automatizada. Ele permite a configuração de dois bots: um para nós atendermos os salões (nossos clientes) (Bot 1); e outro para atender os clientes finais dos salões (Bot 2).
+Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para salões de beleza e barbearias, com integração de uma LLM para comunicação automatizada. Ele permite a configuração de dois bots:
+
+- **Bot 1**: Atendimento aos salões (nossos clientes).
+- **Bot 2**: Atendimento aos clientes finais dos salões.
 
 ## Configuração do Ambiente
 
@@ -15,7 +18,7 @@ Este projeto fornece um sistema de agendamento e atendimento via WhatsApp para s
 
 ### Backend
 
-1. Criar ambiente virtual:
+1. **Criar ambiente virtual:**
 
 ```
 python -m venv venv
@@ -545,3 +548,12 @@ Relacionamentos:
 - Agenda de serviços
 - Relatórios automáticos
 - Gestão de clientes
+
+## Reorganização Futura
+
+Planejamos separar claramente a infraestrutura e o código dos Bots 1 e 2 para evitar misturas e seguir as melhores práticas do mercado. Isso incluirá:
+
+- **Separação de Componentes:** Componentes específicos para Bot 1 (staff/admin) e Bot 2 (salões) serão organizados em pastas distintas.
+- **Serviços Dedicados:** Serviços e APIs para cada bot serão centralizados em arquivos separados, utilizando condicionais para evitar redundâncias.
+- **Modelos e Serializers:** Manter modelos e serializers específicos para cada bot, garantindo clareza e facilidade de manutenção.
+- **Endpoints Distintos:** Manter endpoints separados para Bot 1 e Bot 2, evitando sobreposição e erros de roteamento.
