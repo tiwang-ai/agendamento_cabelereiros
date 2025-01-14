@@ -9,8 +9,8 @@ import {
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { WhatsAppService } from '../../../services/whatsapp';
+import { SalonBotService } from '../../../services/salonBot';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface ConnectionData {
   pairingCode?: string;
@@ -18,33 +18,126 @@ interface ConnectionData {
   count?: number;
 }
 
-const SalonWhatsAppConnection = () => {
-  const { salonId } = useParams();
+interface SalonWhatsAppConnectionProps {
+  salonId: string;
+}
+
+const SalonWhatsAppConnection = ({ salonId }: SalonWhatsAppConnectionProps) => {
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [connectionData, setConnectionData] = useState<ConnectionData | null>(null);
+  const [hasInstance, setHasInstance] = useState(false);
 
   useEffect(() => {
-    checkStatus();
+    if (salonId) {
+      console.log('=== INICIANDO VERIFICAÇÃO DE INSTÂNCIA ===');
+      console.log('SalonId:', salonId);
+      checkInstance();
+    }
   }, [salonId]);
+
+  const checkInstance = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('=== VERIFICANDO EXISTÊNCIA DA INSTÂNCIA ===');
+      console.log('SalonId:', salonId);
+      
+      const instanceExists = await SalonBotService.checkExistingInstance(salonId);
+      console.log('Resposta da verificação:', instanceExists);
+      setHasInstance(instanceExists.exists);
+      
+      if (instanceExists.exists) {
+        console.log('Instância existe, verificando status...');
+        await checkStatus();
+      } else {
+        console.log('Instância não existe, criando uma nova instância...');
+        await createInstance();
+      }
+    } catch (error) {
+      console.error('Erro ao verificar instância:', error);
+      setError('Erro ao verificar instância');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const checkStatus = async () => {
     try {
-      const response = await WhatsAppService.getStatus(salonId!, false);
-      setStatus(response.status);
+      console.log('=== VERIFICANDO STATUS DA CONEXÃO ===');
+      console.log('SalonId:', salonId);
+      
+      const response = await SalonBotService.getStatus(salonId);
+      console.log('Resposta do status:', response);
+      setStatus(response.status === 'open' ? 'connected' : 'disconnected');
     } catch (error) {
       console.error('Erro ao verificar status:', error);
       setError('Erro ao verificar status da conexão');
     }
   };
 
-  const handleGeneratePairingCode = async () => {
-    setIsLoading(true);
-    setError(null);
+  const createInstance = async () => {
     try {
-      const data = await WhatsAppService.generateQrCode(salonId!, false);
-      setConnectionData(data);
+      console.log('=== CRIANDO INSTÂNCIA ===');
+      
+      const webhookUrl = `${import.meta.env.VITE_NGROK_URL}/api/webhooks/${salonId}/`;
+      
+      const payload = {
+        instanceName: `salon_${salonId}`,
+        number: "<número-do-whatsapp>", // Substitua pelo número correto
+        qrcode: true,
+        integration: "WHATSAPP-BAILEYS",
+        reject_call: true,
+        groupsIgnore: true,
+        alwaysOnline: true,
+        readMessages: true,
+        readStatus: true,
+        syncFullHistory: false,
+        webhookUrl: webhookUrl,
+        webhookByEvents: true,
+        webhookBase64: true,
+        webhookEvents: ["MESSAGES_UPSERT"]
+      };
+
+      console.log('Payload da criação da instância:', payload);
+      
+      const response = await SalonBotService.createInstance(salonId, payload);
+      console.log('Resposta da criação da instância:', response);
+      
+      if (response.success) {
+        setHasInstance(true);
+        setStatus('disconnected');
+        console.log('Instância criada com sucesso.');
+        await handleGeneratePairingCode(); // Gera QR code automaticamente após criar
+      } else {
+        setError('Erro ao criar instância');
+      }
+    } catch (error) {
+      console.error('Erro ao criar instância:', error);
+      setError('Erro ao criar instância');
+    }
+  };
+
+  const handleGeneratePairingCode = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      console.log('=== GERANDO QR CODE ===');
+      console.log('SalonId:', salonId);
+      
+      const qrData = await SalonBotService.generateQrCode(salonId);
+      console.log('Resposta do QR Code:', qrData);
+      
+      // Certifique-se de que o código está no formato correto para exibir no QRCodeSVG
+      if (qrData.code && !qrData.code.startsWith('data:image')) {
+        qrData.code = `data:image/png;base64,${qrData.code}`;
+      }
+      
+      setConnectionData(qrData);
+      setStatus('connecting');
     } catch (error) {
       console.error('Erro ao gerar código:', error);
       setError('Erro ao gerar código de pareamento');
@@ -89,42 +182,47 @@ const SalonWhatsAppConnection = () => {
                   }}>
                     <CircularProgress />
                     <Typography color="text.secondary">
-                      Gerando código de pareamento...
+                      Verificando status da conexão...
                     </Typography>
                   </Box>
-                ) : connectionData?.pairingCode ? (
-                  <>
-                    <Typography variant="h4" sx={{ letterSpacing: 2 }}>
-                      {connectionData.pairingCode}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" align="center">
-                      Abra o WhatsApp no seu celular e digite este código em Configurações {'>'} Dispositivos Conectados
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      onClick={handleGeneratePairingCode}
-                      sx={{ mt: 2 }}
-                    >
-                      Gerar Novo Código
-                    </Button>
-                  </>
                 ) : (
                   <Box sx={{ 
                     display: 'flex', 
                     flexDirection: 'column', 
                     alignItems: 'center', 
-                    gap: 2 
+                    gap: 3 
                   }}>
-                    <Typography variant="body1" color="text.secondary" align="center">
-                      Clique no botão abaixo para gerar um código de pareamento
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={handleGeneratePairingCode}
-                      disabled={isLoading}
-                    >
-                      Gerar Código de Pareamento
-                    </Button>
+                    {connectionData?.code ? (
+                      <>
+                        <Box component="div">
+                          <Box
+                            component={QRCodeSVG}
+                            value={connectionData.code}
+                            size={256}
+                            style={{ display: 'block', margin: 'auto' }}
+                          />
+                        </Box>
+                        <Typography variant="body2" color="text.secondary" align="center">
+                          Abra o WhatsApp no seu celular e escaneie o QR Code
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          onClick={handleGeneratePairingCode}
+                          sx={{ mt: 2 }}
+                        >
+                          Gerar Novo QR Code
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        onClick={handleGeneratePairingCode}
+                        disabled={isLoading}
+                        sx={{ mt: 4 }}
+                      >
+                        Gerar Código de Pareamento
+                      </Button>
+                    )}
                   </Box>
                 )}
               </Box>

@@ -25,7 +25,7 @@ class EvolutionAPI:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         return url
 
-    def criar_instancia(self, estabelecimento_id: str, phone: str, is_support: bool = False) -> Optional[Dict]:
+    def criar_instancia(self, estabelecimento_id: str, phone: str, is_support: bool = False) -> Dict:
         """
         Cria uma instância do WhatsApp na Evolution API
         Args:
@@ -43,7 +43,7 @@ class EvolutionAPI:
             
             # Garante que a URL do webhook está formatada corretamente
             webhook_url = (
-                f"{settings.NGROK_URL}/api/webhooks/{'support' if is_support else estabelecimento_id}/"
+                f"{settings.NGROK_URL}/api/webhooks/{estabelecimento_id}/" if not is_support else f"{settings.NGROK_URL}/api/admin/bot/webhook"
             )
             
             if not webhook_url.startswith(('http://', 'https://')):
@@ -87,16 +87,25 @@ class EvolutionAPI:
             print(f"Erro ao criar instância: {e}")
             return {"error": str(e)}
 
-    def check_connection_status(self, instance_id: str, is_support: bool = False) -> Dict:
-        instance_name = "support_bot" if is_support or instance_id == "support" else f"salon_{instance_id}"
-        url = f"{self.base_url}/instance/connectionState/{instance_name}"
-        
+    def check_connection_status(self, instance_name: str, is_support: bool = False) -> Dict:
+        """
+        Verifica o estado de conexão de uma instância
+        """
         try:
-            instance_name = "support_bot" if is_support or instance_id == "support" else f"salon_{instance_id}"
+            print(f"\n=== VERIFICANDO STATUS {instance_name} ===")
+            
             url = self._validate_url(f'instance/connectionState/{instance_name}')
+            print(f"URL: {url}")
+            print(f"Headers: {self.headers}")
+            
             response = requests.get(url, headers=self.headers)
             response.raise_for_status()
-            return response.json()
+            result = response.json()
+            
+            print(f"Resposta: {result}")
+            print("=== FIM VERIFICAÇÃO STATUS ===\n")
+            
+            return result
         except Exception as e:
             print(f"Erro ao verificar status: {str(e)}")
             return {"error": str(e)}
@@ -135,25 +144,31 @@ class EvolutionAPI:
         except requests.exceptions.RequestException as e:
             return {"status": "error", "message": str(e)}
 
-    def check_instance_exists(self, instance_name: str) -> Dict:
-        """Verifica se uma instância específica existe e seu status"""
+    def check_instance_exists(self, instance_id: str, is_support: bool = False) -> Dict:
+        """
+        Verifica se uma instância existe
+        """
         try:
-            # Usa o connectionState para verificar a instância
-            status = self.check_connection_status(instance_name)
+            instance_name = f"salon_{instance_id}"
+            print(f"\n=== VERIFICANDO INSTÂNCIA {instance_name} ===")
             
-            return {
-                'exists': status['exists'],
-                'instance_id': status['instance_id'],
-                'status': status['status']
+            instances = self.fetch_instances()
+            exists = any(
+                inst.get('instance', {}).get('instanceName') == instance_name 
+                for inst in instances
+            )
+            
+            result = {
+                "exists": exists,
+                "status": "success"
             }
+            print(f"Resultado: {result}")
+            print("=== FIM VERIFICAÇÃO ===\n")
             
+            return result
         except Exception as e:
             print(f"Erro ao verificar instância: {str(e)}")
-            return {
-                'exists': False,
-                'instance_id': None,
-                'status': None
-            }
+            return {"error": str(e)}
 
     def configurar_webhooks(self, instance_name: str, enabled: bool = True) -> Dict:
         """
@@ -213,20 +228,27 @@ class EvolutionAPI:
             return False
 
     def get_qr_code(self, instance_name: str) -> Dict:
-        """Gera QR Code para uma instância"""
+        """
+        Gera QR Code para uma instância
+        """
+        print(f"\n=== GERANDO QR CODE PARA {instance_name} ===")
         try:
-            # Primeiro tenta conectar a instância
-            connect_url = self._validate_url(f'instance/connect/{instance_name}')
-            connect_response = requests.get(connect_url, headers=self.headers)
-            connect_response.raise_for_status()
+            url = self._validate_url(f'instance/connect/{instance_name}')
+            print(f"URL: {url}")
+            print(f"Headers: {self.headers}")
             
-            data = connect_response.json()
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            result = response.json()
+            
+            print(f"Resposta: {result}")
+            print("=== FIM GERAÇÃO QR CODE ===\n")
+            
             return {
-                'code': data.get('qrcode', data.get('code')),
-                'pairingCode': data.get('pairingCode'),
-                'count': data.get('count', 0)
+                'code': result.get('qrcode', result.get('code')),
+                'pairingCode': result.get('pairingCode'),
+                'count': result.get('count', 0)
             }
-            
         except Exception as e:
             print(f"Erro ao gerar QR code: {str(e)}")
             return {"error": str(e)}

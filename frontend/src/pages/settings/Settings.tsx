@@ -12,13 +12,13 @@ import {
   Tab,
   FormControlLabel,
   Box,
+  Alert,
 } from '@mui/material';
 import React, { useState, ChangeEvent, useEffect } from 'react';
 
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import { SalonBotService } from '../../services/salonBot';
-
 import SalonWhatsAppConnection from './components/SalonWhatsAppConnection';
 
 const Settings = () => {
@@ -247,7 +247,13 @@ const Settings = () => {
 
           {tabValue === 2 && (
             <Grid item xs={12}>
-              <SalonWhatsAppConnection />
+              {user?.estabelecimento_id ? (
+                <SalonWhatsAppConnection salonId={user.estabelecimento_id} />
+              ) : (
+                <Alert severity="warning">
+                  ID do estabelecimento não encontrado.
+                </Alert>
+              )}
             </Grid>
           )}
 

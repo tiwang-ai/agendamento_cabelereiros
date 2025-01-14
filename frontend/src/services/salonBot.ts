@@ -1,74 +1,64 @@
 import api from './api';
-import { WhatsAppService } from './whatsapp';
-import type { BotSettingsData, SalonBotConfig } from '../types/bot';
 
 export const SalonBotService = {
-  getConfig: async (estabelecimentoId: string) => {
-    const response = await api.get(`/api/admin/bot/status/${estabelecimentoId}/`);
-    return response.data;
-  },
-
-  saveConfig: async (estabelecimentoId: string, config: any) => {
-    const response = await api.patch(`/api/admin/bot/status/${estabelecimentoId}/`, config);
-    return response.data;
-  },
-  
-  // Implementação do método updateBotStatus
-  updateBotStatus: async (estabelecimentoId: string, status: boolean) => {
-    const response = await api.patch(`/api/admin/bot/status/${estabelecimentoId}/`, { bot_ativo: status });
-    return response.data;
-  },
-
-  connect: async (estabelecimentoId: string) => {
-    const response = await api.post(`/api/whatsapp/instance/connect/${estabelecimentoId}/`);
-    return response.data;
-  },
-
-  disconnect: async (estabelecimentoId: string, isSupport: boolean = false) => {
-    const endpoint = isSupport 
-      ? '/api/admin/bot/disconnect/'
-      : `/api/whatsapp/disconnect/${estabelecimentoId}/`;
-    const response = await api.post(endpoint);
-    return response.data;
-  },
-
-  generateQrCode: async (estabelecimentoId: string, isSupport: boolean = false) => {
-    const endpoint = isSupport 
-      ? '/api/admin/bot/qr-code/'
-      : `/api/whatsapp/qr-code/${estabelecimentoId}/`;
+  checkExistingInstance: async (salonId: string) => {
+    console.log('=== VERIFICANDO INSTÂNCIA DO SALÃO ===');
+    console.log('SalonId:', salonId);
     
-    const response = await api.post(endpoint);
-    return response.data;
-  },
-
-  sendMessage: async (estabelecimentoId: string, number: string, message: string, options?: any) => {
-    const response = await api.post(`/api/whatsapp/send-message/${estabelecimentoId}/`, {
-      number,
-      message,
-      ...options
-    });
-    return response.data;
-  },
-
-  checkExistingInstance: async (estabelecimentoId: string, isSupport: boolean = false) => {
-    const response = await api.get(isSupport 
-      ? `/api/admin/bot/instance/check/support/`
-      : `/api/whatsapp/instance/check/${estabelecimentoId}/`);
-    return response.data;
-  },
-    updateSettings: async (salonId: string, settings: {
-        bot_ativo: boolean;
-        aceitar_nao_clientes: boolean;
-        mensagem_nao_cliente?: string;
-        horario_atendimento: {
-            inicio: string;
-            fim: string;
-        };
-        dias_atendimento: string[];
-        mensagem_fora_horario?: string;
-        mensagem_bot_desativado?: string;
-    }) => {
-        const response = await api.patch(`/api/whatsapp/bot-config/${salonId}/`, settings);
-        return response.data;
+    const response = await api.get(`/api/salon/${salonId}/whatsapp/instance/check/`);
+    
+    if (!response.data.exists) {
+      // Se não existe, criar instância automaticamente
+      return await SalonBotService.createInstance(salonId);
     }
+    
+    // Se existe, verificar status
+    const statusResponse = await SalonBotService.getStatus(salonId);
+    if (statusResponse.state === 'disconnected') {
+      // Se desconectado, gerar QR code
+      const qrResponse = await SalonBotService.generateQrCode(salonId);
+      return {
+        ...statusResponse,
+        qrCode: qrResponse.code
+      };
+    }
+    
+    return statusResponse;
+  },
+
+  createInstance: async (salonId: string) => {
+    console.log('=== CRIANDO INSTÂNCIA DO SALÃO ===');
+    const response = await api.post(`/api/salon/${salonId}/whatsapp/instance/create/`);
+    
+    if (response.data.success) {
+      // Se criou com sucesso, gerar QR code
+      const qrResponse = await SalonBotService.generateQrCode(salonId);
+      return {
+        ...response.data,
+        qrCode: qrResponse.code
+      };
+    }
+    
+    return response.data;
+  },
+
+  getStatus: async (salonId: string) => {
+    console.log('=== VERIFICANDO STATUS DO BOT DO SALÃO ===');
+    const response = await api.get(`/api/salon/${salonId}/whatsapp/status/`);
+    return response.data;
+  },
+
+  generateQrCode: async (salonId: string) => {
+    console.log('=== GERANDO QR CODE PARA SALÃO ===');
+    const response = await api.post(`/api/salon/${salonId}/whatsapp/qr-code/`);
+    return response.data;
+  },
+
+  connect: async (salonId: string) => {
+    return api.post(`/api/salon/${salonId}/whatsapp/connect/`);
+  },
+
+  disconnect: async (salonId: string) => {
+    return api.post(`/api/salon/${salonId}/whatsapp/disconnect/`);
+  }
 }; 

@@ -2,6 +2,7 @@ import WhatsAppConnection from '../components/WhatsAppConnection';
 import { Box, Typography, Alert, TextField, Button, CircularProgress } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { StaffBotService } from '../../../services/botConfig';
+import { WhatsAppService } from '../../../services/whatsapp';
 
 interface WhatsAppSetupProps {
     isSupport?: boolean;
@@ -13,9 +14,50 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
     const [hasInstance, setHasInstance] = useState(false);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+
+    const handleGeneratePairingCode = async () => {
+        try {
+            const qrData = await StaffBotService.generateQRCode();
+            if (qrData.error) {
+                throw new Error(qrData.error);
+            }
+            return qrData;
+        } catch (error) {
+            console.error('Erro ao gerar código:', error);
+            setError('Erro ao gerar código de pareamento');
+        }
+    };
 
     useEffect(() => {
-        checkExistingConfig();
+        const initializeBot = async () => {
+            try {
+                // 1. Verifica existência da instância
+                const instanceData = await StaffBotService.checkExistingInstance();
+                
+                if (instanceData.exists) {
+                    setHasInstance(true);
+                    // 2. Se existe, verifica status
+                    const statusData = await StaffBotService.getStatus();
+                    setStatus(statusData.status === 'open' ? 'connected' : 'disconnected');
+                    
+                    // 3. Se desconectado, gera QR code
+                    if (statusData.status !== 'open') {
+                        await handleGeneratePairingCode();
+                    }
+                } else {
+                    // 4. Se não existe, cria instância
+                    await createSupportInstance();
+                }
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                setError('Erro ao inicializar bot de suporte');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initializeBot();
     }, []);
 
     const checkExistingConfig = async () => {
@@ -45,8 +87,6 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
                 }
             };
             
-            console.log('Enviando configuração:', configData); // Debug
-            
             await StaffBotService.saveConfig(configData);
             setSaved(true);
             setHasInstance(true);
@@ -54,6 +94,27 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
         } catch (error) {
             console.error('Erro ao salvar número:', error);
             setError('Erro ao salvar número. Verifique o formato e tente novamente.');
+        }
+    };
+
+    const createSupportInstance = async () => {
+        try {
+            const webhookUrl = `${import.meta.env.VITE_NGROK_URL}/api/admin/bot/webhook/`;
+            
+            const response = await WhatsAppService.createInstance({
+                instanceName: 'support_bot',
+                webhookUrl,
+                isSupport: true
+            });
+
+            if (response.success) {
+                setStatus('disconnected');
+                setHasInstance(true);
+                await handleGeneratePairingCode();
+            }
+        } catch (error) {
+            console.error('Erro ao criar instância:', error);
+            setError('Erro ao criar instância do bot de suporte');
         }
     };
 
@@ -99,7 +160,7 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
             
             {hasInstance && (
                 <WhatsAppConnection 
-                    isSupport={isSupport}
+                    isSupport={true}
                     title="Bot de Suporte"
                 />
             )}

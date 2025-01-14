@@ -27,8 +27,12 @@ export const StaffBotService = {
     },
 
     getStatus: async () => {
-        const response = await api.get('/api/admin/bot/status/');
-        return response.data;
+        try {
+            return await WhatsAppService.getStatus('support', true);
+        } catch (error) {
+            console.error('Erro ao verificar status:', error);
+            throw error;
+        }
     },
     
     getConnectionStatus: async () => {
@@ -36,13 +40,17 @@ export const StaffBotService = {
         return response.data;
     },
 
-    generateQRCode: async () => {
-        const response = await api.post('/api/admin/bot/qr-code/');
-        return response.data;
+    generateQrCode: async () => {
+        try {
+            return await WhatsAppService.generateQrCode('support', true);
+        } catch (error) {
+            console.error('Erro ao gerar QR code:', error);
+            throw error;
+        }
     },
 
     connect: async () => {
-        return WhatsAppService.connect('support', true);
+        return WhatsAppService.connect('support_bot', true);
     },
 
     getBotSettings: async (): Promise<BotSettingsData> => {
@@ -151,12 +159,30 @@ export const StaffBotService = {
         enabled: boolean;
         url: string;
         events: string[];
+        salonId?: string;
     }) => {
         try {
-            const response = await api.post('/api/admin/bot/webhook/config/', webhookConfig);
+            const endpoint = webhookConfig.salonId 
+                ? `/api/webhooks/${webhookConfig.salonId}/`
+                : '/api/admin/bot/webhook/config/';
+            const data = {
+                enabled: webhookConfig.enabled,
+                url: webhookConfig.enabled ? webhookConfig.url : '',
+                events: webhookConfig.enabled ? webhookConfig.events : []
+            };
+            const response = await api.post(endpoint, data);
             return response.data;
         } catch (error) {
             console.error('Erro ao atualizar webhook:', error);
+            throw error;
+        }
+    },
+
+    checkExistingInstance: async () => {
+        try {
+            return await WhatsAppService.checkExistingInstance('support', true);
+        } catch (error) {
+            console.error('Erro ao verificar instância:', error);
             throw error;
         }
     }

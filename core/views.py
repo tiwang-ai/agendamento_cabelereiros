@@ -719,23 +719,34 @@ def whatsapp_status(request, estabelecimento_id):
     Retorna o status do WhatsApp para um estabelecimento específico
     """
     try:
+        print(f"\n=== VERIFICANDO STATUS DO WHATSAPP DO SALÃO {estabelecimento_id} ===")
         estabelecimento = Estabelecimento.objects.get(id=estabelecimento_id)
         api = EvolutionAPI()
+
+        instance_name = f"salon_{estabelecimento_id}"
+        status_data = api.check_connection_status(instance_name, is_support=False)
         
-        status_data = {
-            'id': estabelecimento.id,
-            'nome': estabelecimento.nome,
-            'instance_id': estabelecimento.evolution_instance_id,
-            'whatsapp': estabelecimento.whatsapp,
-            'status': estabelecimento.status
-        }
-        
-        if estabelecimento.evolution_instance_id:
-            status_response = evolution_api.get_instance_status(estabelecimento.evolution_instance_id)
-            status_data['status'] = status_response.get('status', 'disconnected')
-            
+        print(f"Status data: {status_data}")
         return Response(status_data)
     except Exception as e:
+        print(f"Erro ao verificar status: {str(e)}")
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+def check_instance(request, salon_id):
+    """
+    Verifica se existe uma instância do salão
+    """
+    try:
+        print(f"\n=== VERIFICANDO INSTÂNCIA DO SALÃO {salon_id} ===")
+        api = EvolutionAPI()
+        instance_name = f"salon_{salon_id}"
+        
+        status_data = api.check_instance_exists(salon_id, is_support=False)
+        print(f"Resultado: {status_data}")
+        return Response(status_data)
+    except Exception as e:
+        print(f"Erro ao verificar instância: {str(e)}")
         return Response({'error': str(e)}, status=500)
 
 @api_view(['GET'])
@@ -972,7 +983,8 @@ def reconnect_whatsapp(request, estabelecimento_id):
             # Cria nova instância
             instance_response = api.criar_instancia(
                 estabelecimento_id=str(estabelecimento_id),
-                phone=estabelecimento.whatsapp
+                phone=estabelecimento.whatsapp,
+                is_support=False
             )
             
             if instance_response and instance_response.get('instanceId'):
@@ -1736,23 +1748,68 @@ def check_connection(request):
         return Response(status)
     except Exception as e:
         return Response({'error': str(e)}, status=500)
-
 @api_view(['GET'])
 def check_instance(request, instance_id):
     """
     Verifica se existe uma instância do bot de suporte ou do salão
     """
     try:
-        is_support = instance_id == 'support'
+        is_support = instance_id == 'support_bot'
         api = EvolutionAPI()
-        # Aqui está a correção principal
-        instance_name = 'support_bot' if instance_id == 'support' else f'salon_{instance_id}'
+        
+        print(f"\n=== VERIFICANDO INSTÂNCIA DO SALÃO {instance_id} ===")
+        instance_name = 'support_bot' if is_support else f"salon_{instance_id}"
+        
+        # Verifica se a instância existe
+        instance_exists = api.check_instance_exists(instance_name)
+        
+        if not instance_exists.get('exists'):
+            return Response({'exists': False})
+            
+        # Se existe, verifica o status
         status_data = api.check_connection_status(instance_name)
-        return Response(status_data)
+        return Response({
+            'exists': True,
+            'state': status_data.get('instance', {}).get('state', 'disconnected')
+        })
+        
     except Exception as e:
         print(f"Erro ao verificar instância: {str(e)}")
         return Response({'error': str(e)}, status=500)
-    
+
+@api_view(['POST'])
+def create_instance(request, salon_id):
+    """
+    Cria uma nova instância para o salão
+    """
+    try:
+        estabelecimento = Estabelecimento.objects.get(id=salon_id)
+        if not estabelecimento.whatsapp:
+            return Response({'error': 'Número de WhatsApp não configurado'}, status=400)
+            
+        api = EvolutionAPI()
+        instance = api.criar_instancia(
+            estabelecimento_id=salon_id,
+            phone=estabelecimento.whatsapp,
+            is_support=False
+        )
+        
+        if instance.get('error'):
+            return Response({'error': instance['error']}, status=400)
+            
+        # Gera QR code após criar instância
+        qr_response = api.get_qr_code(f"salon_{salon_id}")
+        
+        return Response({
+            'success': True,
+            'qrCode': qr_response.get('code')
+        })
+        
+    except Estabelecimento.DoesNotExist:
+        return Response({'error': 'Salão não encontrado'}, status=404)
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def salon_webhook(request, salon_id):
