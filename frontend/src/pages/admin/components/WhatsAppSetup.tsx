@@ -2,7 +2,6 @@ import WhatsAppConnection from '../components/WhatsAppConnection';
 import { Box, Typography, Alert, TextField, Button, CircularProgress } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { StaffBotService } from '../../../services/botConfig';
-import { WhatsAppService } from '../../../services/whatsapp';
 
 interface WhatsAppSetupProps {
     isSupport?: boolean;
@@ -18,7 +17,7 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
 
     const handleGeneratePairingCode = async () => {
         try {
-            const qrData = await StaffBotService.generateQRCode();
+            const qrData = await StaffBotService.generateQrCode();
             if (qrData.error) {
                 throw new Error(qrData.error);
             }
@@ -32,21 +31,17 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
     useEffect(() => {
         const initializeBot = async () => {
             try {
-                // 1. Verifica existência da instância
                 const instanceData = await StaffBotService.checkExistingInstance();
                 
                 if (instanceData.exists) {
                     setHasInstance(true);
-                    // 2. Se existe, verifica status
                     const statusData = await StaffBotService.getStatus();
-                    setStatus(statusData.status === 'open' ? 'connected' : 'disconnected');
+                    setStatus(statusData.state);
                     
-                    // 3. Se desconectado, gera QR code
-                    if (statusData.status !== 'open') {
+                    if (statusData.state === 'disconnected') {
                         await handleGeneratePairingCode();
                     }
                 } else {
-                    // 4. Se não existe, cria instância
                     await createSupportInstance();
                 }
             } catch (error) {
@@ -99,15 +94,9 @@ const WhatsAppSetup = ({ isSupport = false }: WhatsAppSetupProps) => {
 
     const createSupportInstance = async () => {
         try {
-            const webhookUrl = `${import.meta.env.VITE_NGROK_URL}/api/admin/bot/webhook/`;
+            const response = await StaffBotService.createInstance();
             
-            const response = await WhatsAppService.createInstance({
-                instanceName: 'support_bot',
-                webhookUrl,
-                isSupport: true
-            });
-
-            if (response.success) {
+            if (response.exists) {
                 setStatus('disconnected');
                 setHasInstance(true);
                 await handleGeneratePairingCode();

@@ -1,13 +1,17 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from datetime import datetime
+from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet, listar_agendamentos_calendario, relatorio_frequencia_clientes, relatorio_servicos_populares, relatorio_horarios_pico, solicitar_relatorio_whatsapp, register, finance_stats, finance_transactions, UserViewSet, admin_stats, create_payment_preference, process_payment, bot_responder, whatsapp_status, generate_qr_code, dashboard_stats, create_professional, whatsapp_instances_status, system_logs, ClienteProfissionalViewSet, whatsapp_webhook, CustomTokenObtainPairView, ChatConfigViewSet, salon_finance_stats, salon_finance_transactions, SystemServiceViewSet, SalonServiceViewSet, manage_whatsapp_connection, system_metrics, health_check, staff_list, staff_detail, staff_activities, staff_user_activities, send_whatsapp_message, support_webhook, salon_webhook, check_connection, bot_settings_view, check_instance, bot_metrics, list_interactions, verificar_disponibilidade, bot_verificar_agenda, salon_bot_settings, create_instance, create_salon_instance
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, 
+    ServicoViewSet, AgendamentoViewSet,
+    ChatConfigViewSet,
+    SupportBotViewSet, SalonBotViewSet, bot_views, auth_views, payment_views, report_views, salon_views, UserViewSet, health_check, 
+    staff_list, staff_activities, staff_user_activities, system_logs, system_metrics, staff_bot_metrics, staff_interactions, staff_bot_status, staff_webhook,
+    create_payment_preference, process_payment, export_data, salon_analytics, verificar_disponibilidade, create_professional,
+    register, CustomTokenObtainPairView, staff_detail,
 )
 
+# Configuração do Router
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'estabelecimentos', EstabelecimentoViewSet, basename='estabelecimento')
@@ -15,78 +19,92 @@ router.register(r'profissionais', ProfissionalViewSet, basename='profissional')
 router.register(r'clientes', ClienteViewSet, basename='cliente')
 router.register(r'servicos', ServicoViewSet, basename='servico')
 router.register(r'agendamentos', AgendamentoViewSet, basename='agendamento')
-router.register(r'profissional/clientes', ClienteProfissionalViewSet, basename='profissional-clientes')
-router.register(r'whatsapp/chats', ChatConfigViewSet, basename='chat-config')
-router.register(r'system-services', SystemServiceViewSet, basename='system-services')
-router.register(r'salon-services', SalonServiceViewSet, basename='salon-services')
+router.register(r'support-bot', SupportBotViewSet, basename='support-bot')
+router.register(r'salon-bot', SalonBotViewSet, basename='salon-bot')
+router.register(r'chat-config', ChatConfigViewSet, basename='chat-config')
 
 urlpatterns = [
+    # Rotas base
     path('', include(router.urls)),
-    path('agendamentos/calendario/', listar_agendamentos_calendario, name='listar_agendamentos_calendario'),
-    path('relatorios/frequencia-clientes/', relatorio_frequencia_clientes, name='relatorio_frequencia_clientes'),
-    path('relatorios/servicos-populares/', relatorio_servicos_populares, name='relatorio_servicos_populares'),
-    path('relatorios/horarios-pico/', relatorio_horarios_pico, name='relatorio_horarios_pico'),
-    path('solicitar-relatorio/', solicitar_relatorio_whatsapp, name='solicitar_relatorio_whatsapp'),
-    path('payments/preference/', create_payment_preference, name='create_payment_preference'),
-    path('payments/process/', process_payment, name='process_payment'),
-    path('bot/process/', bot_responder, name='bot_responder'),
-    path('dashboard/stats/', dashboard_stats, name='dashboard-stats'),
-    path('profissionais/', create_professional, name='create-professional'),
-    path('finance/salon/stats/', salon_finance_stats, name='salon-finance-stats'),
-    path('finance/salon/transactions/', salon_finance_transactions, name='salon-finance-transactions'),
+    path('health-check/', health_check, name='health-check'),
+    
+    # Autenticação
     path('auth/', include([
         path('register/', register, name='register'),
         path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
         path('refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     ])),
+
+    # Área Administrativa (Staff Bot - Bot 1)
     path('admin/', include([
-        path('stats/', admin_stats, name='admin-stats'),
+        # Staff Management
         path('staff/', staff_list, name='staff-list'),
+        path('staff/<int:pk>/', staff_detail, name='staff-detail'),
         path('staff/activities/', staff_activities, name='staff-activities'),
         path('staff/activities/<int:user_id>/', staff_user_activities, name='staff-user-activities'),
-        path('finance/stats/', finance_stats, name='finance_stats'),
-        path('staff/<int:pk>/', staff_detail, name='staff-detail'),
-        path('finance/transactions/', finance_transactions, name='finance_transactions'),
+        
+        # Sistema e Métricas
         path('system-logs/', system_logs, name='system-logs'),
         path('system-metrics/', system_metrics, name='system-metrics'),
-        # Endpoints para o bot do sistema (staff)
+        
+        # Bot Staff (Bot 1)
         path('bot/', include([
-            path('config/', bot_settings_view, name='bot-config'),
-            path('qr-code/', generate_qr_code, name='bot-qr-code'),
-            path('status/', check_instance, name='bot-status'),
-            path('connection/', check_connection, name='check-connection'),
-            path('instance/check/', check_instance, name='check-instance-exists'),
-            path('metrics/', bot_metrics, name='bot_metrics'),
-            path('interactions/', list_interactions, name='list-interactions'),
+            path('config/', StaffBotViewSet.as_view({
+                'get': 'retrieve',
+                'patch': 'update',
+                'post': 'connect'
+            }), name='staff-bot-config'),
+            path('metrics/', staff_bot_metrics, name='staff-bot-metrics'),
+            path('interactions/', staff_interactions, name='staff-bot-interactions'),
+            path('status/', staff_bot_status, name='staff-bot-status'),
+            path('webhook/', staff_webhook, name='staff-webhook'),
+        ])),
+        
+        # Finanças Admin
+        path('finance/', include([
+            path('stats/', finance_stats, name='finance-stats'),
+            path('transactions/', finance_transactions, name='finance-transactions'),
         ])),
     ])),
-    # Endpoints para WhatsApp dos salões
-    path('whatsapp/', include([
-        path('instances/status/', whatsapp_instances_status, name='whatsapp-instances-status'),
-        path('status/<str:estabelecimento_id>/', whatsapp_status, name='whatsapp-status'),
-        path('qr-code/<str:estabelecimento_id>/', generate_qr_code, name='generate-qr-code'),
-        path('connect/<str:estabelecimento_id>/', manage_whatsapp_connection, name='connect-whatsapp'),
-        path('bot-config/<str:estabelecimento_id>/', salon_bot_settings, name='salon-bot-config'),
-        path('webhook/', whatsapp_webhook, name='whatsapp-webhook'),
-        path('send-message/<str:estabelecimento_id>/', send_whatsapp_message, name='send-message'),
-        path('instance/check/<str:instance_id>/', check_instance, name='check_instance'),
-        path('instance/create/<str:salon_id>/', create_instance, name='create_instance'),
+
+    # Área dos Salões (Salon Bot - Bot 2)
+    path('salon/', include([
+        # Gestão do Salão
+        path('analytics/<int:estabelecimento_id>/', salon_analytics, name='salon-analytics'),
+        path('disponibilidade/', verificar_disponibilidade, name='verificar-disponibilidade'),
+        path('profissionais/', create_professional, name='create-professional'),
+        
+        # Bot do Salão (Bot 2)
+        path('bot/', include([
+            path('config/<str:estabelecimento_id>/', SalonBotViewSet.as_view({
+                'get': 'retrieve',
+                'patch': 'update',
+                'post': 'connect'
+            }), name='salon-bot-config'),
+            path('metrics/<str:estabelecimento_id>/', salon_bot_metrics, name='salon-bot-metrics'),
+            path('interactions/<str:estabelecimento_id>/', salon_interactions, name='salon-bot-interactions'),
+            path('status/<str:estabelecimento_id>/', salon_bot_status, name='salon-bot-status'),
+            path('webhook/<str:estabelecimento_id>/', salon_webhook, name='salon-webhook'),
+        ])),
+        
+        # Finanças do Salão
+        path('finance/', include([
+            path('stats/', salon_finance_stats, name='salon-finance-stats'),
+            path('transactions/', salon_finance_transactions, name='salon-finance-transactions'),
+        ])),
     ])),
-    path('api/whatsapp/create-instance/<str:salon_id>/', create_salon_instance, name='create_salon_instance'),
-    path('estabelecimentos/<int:pk>/', EstabelecimentoViewSet.as_view({
-        'get': 'retrieve',
-        'put': 'update',
-        'patch': 'partial_update',
-        'delete': 'destroy'
-    }), name='estabelecimento-detail'),
-    path('estabelecimentos/<int:pk>/details/', EstabelecimentoViewSet.as_view({
-        'get': 'retrieve_details'
-    }), name='estabelecimento-details'),
-    path('health-check/', health_check, name='health-check'),
-    path('webhooks/support/', support_webhook, name='support-webhook'),
-    path('webhooks/salon/<str:salon_id>/', salon_webhook, name='salon-webhook'),
-    path('agendamentos/disponibilidade/', verificar_disponibilidade, name='verificar-disponibilidade'),
-    path('bot/agenda/', bot_verificar_agenda, name='bot-verificar-agenda'),
+
+    # Relatórios
+    path('reports/', include([
+        path('export/', export_data, name='export-data'),
+        path('analytics/', salon_analytics, name='salon-analytics'),
+    ])),
+
+    # Pagamentos
+    path('payments/', include([
+        path('preference/', create_payment_preference, name='create-payment-preference'),
+        path('process/', process_payment, name='process-payment'),
+    ])),
 ]
 
 

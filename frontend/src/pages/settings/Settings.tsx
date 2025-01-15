@@ -288,7 +288,7 @@ const BotSettings = () => {
 
   const loadBotConfig = async () => {
     try {
-      const response = await SalonBotService.getConfig(user?.estabelecimento_id || '');
+      const response = await SalonBotService.getBotConfig(user?.estabelecimento_id || '');
       setConfig(response);
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
@@ -300,9 +300,9 @@ const BotSettings = () => {
       setIsLoading(true);
       const newStatus = event.target.checked;
       
-      await SalonBotService.updateBotStatus(
+      await SalonBotService.updateBotConfig(
         user?.estabelecimento_id || '', 
-        newStatus
+        { bot_ativo: newStatus }
       );
       
       setConfig(prev => ({

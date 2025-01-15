@@ -14,7 +14,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import React, { useState, useEffect, ReactElement } from 'react';
 
 import { useAuth } from '../../../contexts/AuthContext';
-import { WhatsAppService } from '../../../services/whatsapp';
+import { StaffBotService } from '../../../services/botConfig';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -68,51 +68,41 @@ const WhatsAppConnection = ({
   useEffect(() => {
     const checkInstance = async () => {
         try {
-          const instanceId = isSupport ? 'support' : currentSalonId;
-          const instanceData = await WhatsAppService.checkExistingInstance(instanceId, isSupport);
+          const instanceData = await StaffBotService.checkExistingInstance();
             
-            if (instanceData.exists) {
-                // Atualiza o status baseado na resposta da Evolution API
-                setStatus(instanceData.status === 'open' ? 'connected' : 'disconnected');
-                
-                if (instanceData.status !== 'open') {
-                    // Se existe mas não está conectada, permite reconectar
-                    setConnectionData(null);
-                }
-            }
+          if (instanceData.exists) {
+              setStatus(instanceData.state);
+              setHasInstance(true);
+              
+              if (instanceData.state === 'disconnected') {
+                  setConnectionData(null);
+              }
+          }
         } catch (err) {
             console.error('Erro ao verificar instância:', err);
             setError('Erro ao verificar status da conexão');
         }
     };
 
-    if (currentSalonId || isSupport) {
-        checkInstance();
-    }
-  }, [isSupport, currentSalonId]);
+    checkInstance();
+  }, []);
 
   const handleGeneratePairingCode = async () => {
     try {
       setIsLoading(true);
       setError(null);
       
-      const response = await WhatsAppService.generateQrCode(
-        isSupport ? 'support' : user?.estabelecimento_id || '',
-        isSupport
-      );
+      const qrData = await StaffBotService.generateQrCode();
       
-      if (response.error) {
-        throw new Error(response.error);
+      if (qrData.code && !qrData.code.startsWith('data:image')) {
+        qrData.code = `data:image/png;base64,${qrData.code}`;
       }
       
-      if (response.code && !response.code.startsWith('data:image')) {
-        response.code = `data:image/png;base64,${response.code}`;
-      }
-      
-      setConnectionData(response);
-    } catch (err) {
-      setError('Erro ao gerar código. Por favor, tente novamente.');
-      console.error('Erro detalhado:', err);
+      setConnectionData(qrData);
+      setStatus('connecting');
+    } catch (error) {
+      console.error('Erro ao gerar QR code:', error);
+      setError('Erro ao gerar QR code');
     } finally {
       setIsLoading(false);
     }

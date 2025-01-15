@@ -18,8 +18,7 @@ import {
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
 import { useState, useEffect } from 'react';
-
-import { WhatsAppService } from '../../services/whatsapp';
+import { StaffBotService } from '../../services/botConfig';
 
 interface SalonStatus {
   id: string;
@@ -43,7 +42,7 @@ const WhatsAppStatus = () => {
 
   const loadInstances = async () => {
     try {
-      const response = await WhatsAppService.getAllInstances();
+      const response = await StaffBotService.getAllInstances();
       setInstances(response);
     } catch (error) {
       console.error('Erro ao carregar instâncias:', error);
@@ -53,7 +52,7 @@ const WhatsAppStatus = () => {
   const handleReconnect = async (estabelecimentoId: string) => {
     try {
       setLoading(true);
-      const response = await WhatsAppService.connect(estabelecimentoId);
+      const response = await StaffBotService.connect(estabelecimentoId);
       
       if (response.success) {
         await loadInstances();

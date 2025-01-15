@@ -71,7 +71,7 @@ const SalonWhatsAppConnection = ({ salonId }: SalonWhatsAppConnectionProps) => {
       
       const response = await SalonBotService.getStatus(salonId);
       console.log('Resposta do status:', response);
-      setStatus(response.status === 'open' ? 'connected' : 'disconnected');
+      setStatus(response.state);
     } catch (error) {
       console.error('Erro ao verificar status:', error);
       setError('Erro ao verificar status da conexão');
@@ -82,35 +82,14 @@ const SalonWhatsAppConnection = ({ salonId }: SalonWhatsAppConnectionProps) => {
     try {
       console.log('=== CRIANDO INSTÂNCIA ===');
       
-      const webhookUrl = `${import.meta.env.VITE_NGROK_URL}/api/webhooks/${salonId}/`;
-      
-      const payload = {
-        instanceName: `salon_${salonId}`,
-        number: "<número-do-whatsapp>", // Substitua pelo número correto
-        qrcode: true,
-        integration: "WHATSAPP-BAILEYS",
-        reject_call: true,
-        groupsIgnore: true,
-        alwaysOnline: true,
-        readMessages: true,
-        readStatus: true,
-        syncFullHistory: false,
-        webhookUrl: webhookUrl,
-        webhookByEvents: true,
-        webhookBase64: true,
-        webhookEvents: ["MESSAGES_UPSERT"]
-      };
-
-      console.log('Payload da criação da instância:', payload);
-      
-      const response = await SalonBotService.createInstance(salonId, payload);
+      const response = await SalonBotService.createInstance(salonId);
       console.log('Resposta da criação da instância:', response);
       
-      if (response.success) {
+      if (response.exists) {
         setHasInstance(true);
         setStatus('disconnected');
         console.log('Instância criada com sucesso.');
-        await handleGeneratePairingCode(); // Gera QR code automaticamente após criar
+        await handleGeneratePairingCode();
       } else {
         setError('Erro ao criar instância');
       }
@@ -139,7 +118,7 @@ const SalonWhatsAppConnection = ({ salonId }: SalonWhatsAppConnectionProps) => {
       setConnectionData(qrData);
       setStatus('connecting');
     } catch (error) {
-      console.error('Erro ao gerar código:', error);
+      console.error('Erro ao gerar código de pareamento:', error);
       setError('Erro ao gerar código de pareamento');
     } finally {
       setIsLoading(false);

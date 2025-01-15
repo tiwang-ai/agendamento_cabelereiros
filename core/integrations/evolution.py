@@ -25,48 +25,69 @@ class EvolutionAPI:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         return url
 
-    def criar_instancia(self, estabelecimento_id: str, phone: str, is_support: bool = False) -> Dict:
-        """
-        Cria uma instância do WhatsApp na Evolution API
-        Args:
-            estabelecimento_id: ID do estabelecimento ou 'support' para bot de suporte
-            phone: Número do WhatsApp
-            is_support: Flag para identificar se é instância de suporte
-        """
+    def _get_instance_name(self, estabelecimento_id: str, is_support: bool = False) -> str:
+        """Padroniza a nomenclatura das instâncias"""
+        return "support_bot" if is_support else f"salon_{estabelecimento_id}"
+
+    def _get_webhook_url(self, estabelecimento_id: str, is_support: bool = False) -> str:
+        """Retorna a URL do webhook baseado no tipo de bot"""
+        base_url = settings.NGROK_URL.rstrip('/')
+        if not base_url.startswith(('http://', 'https://')):
+            base_url = f"https://{base_url}"
+
+        if is_support:
+            return f"{base_url}/api/admin/bot/webhook/"
+        return f"{base_url}/api/salon/{estabelecimento_id}/webhook/"
+
+    # Funções específicas para Bot 1 (Suporte)
+    def criar_instancia_suporte(self, phone: str) -> Dict:
+        """Cria uma instância para o bot de suporte"""
+        instance_name = self._get_instance_name('', is_support=True)
+        webhook_url = self._get_webhook_url('', is_support=True)
+        
+        payload = {
+            "instanceName": instance_name,
+            "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
+            "qrcode": True,
+            "integration": "WHATSAPP-BAILEYS",
+            "reject_call": True,
+            "groupsIgnore": True,
+            "alwaysOnline": True,
+            "readMessages": True,
+            "webhookUrl": webhook_url,
+            "webhookByEvents": True,
+            "webhookBase64": True,
+            "webhookEvents": ["MESSAGES_UPSERT", "MESSAGES_UPDATE", "STATUS_INSTANCE"]
+        }
+        
+        return self._criar_instancia(payload)
+
+    # Funções específicas para Bot 2 (Salões)
+    def criar_instancia_salao(self, estabelecimento_id: str, phone: str) -> Dict:
+        """Cria uma instância para o bot do salão"""
+        instance_name = self._get_instance_name(estabelecimento_id)
+        webhook_url = self._get_webhook_url(estabelecimento_id)
+        
+        payload = {
+            "instanceName": instance_name,
+            "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
+            "qrcode": True,
+            "integration": "WHATSAPP-BAILEYS",
+            "reject_call": True,
+            "groupsIgnore": True,
+            "alwaysOnline": False,  # Diferente do bot de suporte
+            "readMessages": True,
+            "webhookUrl": webhook_url,
+            "webhookByEvents": True,
+            "webhookBase64": True,
+            "webhookEvents": ["MESSAGES_UPSERT", "MESSAGES_UPDATE"]
+        }
+        
+        return self._criar_instancia(payload)
+
+    def _criar_instancia(self, payload: Dict) -> Dict:
+        """Função interna para criar instância"""
         try:
-            instance_name = "support_bot" if is_support else f"salon_{estabelecimento_id}"
-            
-            # Verifica se já existe uma instância
-            instances = self.fetch_instances()
-            if any(inst.get('instance', {}).get('instanceName') == instance_name for inst in instances):
-                return {"error": "Instância já existe"}
-            
-            # Garante que a URL do webhook está formatada corretamente
-            webhook_url = (
-                f"{settings.NGROK_URL}/api/webhooks/{estabelecimento_id}/" if not is_support else f"{settings.NGROK_URL}/api/admin/bot/webhook"
-            )
-            
-            if not webhook_url.startswith(('http://', 'https://')):
-                webhook_url = f"https://{webhook_url}"
-            
-            payload = {
-                "instanceName": instance_name,
-                "number": phone.replace("+", "").replace("-", "").replace(" ", ""),
-                "qrcode": True,
-                "integration": "WHATSAPP-BAILEYS",
-                "reject_call": True,
-                "groupsIgnore": True,
-                "alwaysOnline": True,
-                "readMessages": True,
-                "readStatus": True,
-                "syncFullHistory": False,
-                "webhookUrl": webhook_url,
-                "webhookByEvents": True,
-                "webhookBase64": True,
-                "webhookEvents": ["MESSAGES_UPSERT", "SEND_MESSAGE"]
-            }
-            
-            # Adicionando log do corpo da requisição
             print(f"Payload da requisição para criar instância: {payload}")
             
             response = requests.post(
@@ -77,9 +98,8 @@ class EvolutionAPI:
             response.raise_for_status()
             instance_data = response.json()
             
-            # Configura o webhook imediatamente após a criação
             if instance_data.get('instance', {}).get('instanceName'):
-                self.configurar_webhooks(instance_name)
+                self.configurar_webhooks(instance_data['instance']['instanceName'])
             
             return instance_data
             

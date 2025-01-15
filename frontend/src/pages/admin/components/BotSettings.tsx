@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 import { StaffBotService } from '../../../services/botConfig';
-import type { BotSettingsData } from '../../../types/bot';
+import type { StaffBotConfig } from '../../../types/bot';
 import { gerar_prompt_bot1 } from '../../../utils/prompts';
 import { useSnackbar } from 'notistack';
 
@@ -27,7 +27,7 @@ const DEFAULT_WEBHOOK_EVENTS = [
 ];
 
 // Estado inicial das configurações
-const initialSettings: BotSettingsData = {
+const initialSettings: StaffBotConfig = {
     bot_ativo: true,
     prompt_template: gerar_prompt_bot1(),
     attendance_mode: 'auto',
@@ -48,7 +48,7 @@ const initialSettings: BotSettingsData = {
 };
 
 const BotSettings = () => {
-    const [settings, setSettings] = useState<BotSettingsData>(initialSettings);
+    const [settings, setSettings] = useState<StaffBotConfig>(initialSettings);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);

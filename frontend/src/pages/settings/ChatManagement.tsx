@@ -18,7 +18,7 @@ import {
 } from '@mui/material';
 import { useState, useEffect, ChangeEvent } from 'react';
 
-import { WhatsAppService } from '../../services/whatsapp';
+import { SalonBotService } from '../../services/salonBot';
 
 interface ChatConfig {
   id: number;
@@ -40,7 +40,7 @@ const ChatManagement = () => {
   const loadChats = async () => {
     try {
       setLoading(true);
-      const data = await WhatsAppService.getChats();
+      const data = await SalonBotService.getChats();
       setChats(data);
     } catch (error) {
       console.error('Erro ao carregar conversas:', error);
@@ -55,7 +55,7 @@ const ChatManagement = () => {
 
   const handleBotToggle = async (chatId: number, checked: boolean) => {
     try {
-      await WhatsAppService.toggleBot(chatId, checked);
+      await SalonBotService.toggleBot(chatId, checked);
       await loadChats();
     } catch (error) {
       console.error('Erro ao atualizar status do bot:', error);

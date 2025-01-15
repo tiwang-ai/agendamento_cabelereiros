@@ -1,7 +1,6 @@
 // frontend/src/services/botConfig.ts
 import api from './api';
-import { WhatsAppService } from './whatsapp';
-import type { BotSettingsData } from '../types/bot';
+import type { StaffBotConfig, WhatsAppInstance, WhatsAppStatus, QRCodeResponse, ConnectionResponse } from '../types/bot';
 import { gerar_prompt_bot1 } from '../utils/prompts';
 
 export const StaffBotService = {
@@ -26,13 +25,10 @@ export const StaffBotService = {
         }
     },
 
-    getStatus: async () => {
-        try {
-            return await WhatsAppService.getStatus('support', true);
-        } catch (error) {
-            console.error('Erro ao verificar status:', error);
-            throw error;
-        }
+    getStatus: async (): Promise<WhatsAppStatus> => {
+        console.log('=== VERIFICANDO STATUS DO BOT DE SUPORTE ===');
+        const response = await api.get('/api/admin/bot/status/');
+        return response.data;
     },
     
     getConnectionStatus: async () => {
@@ -40,20 +36,18 @@ export const StaffBotService = {
         return response.data;
     },
 
-    generateQrCode: async () => {
-        try {
-            return await WhatsAppService.generateQrCode('support', true);
-        } catch (error) {
-            console.error('Erro ao gerar QR code:', error);
-            throw error;
-        }
+    generateQrCode: async (): Promise<QRCodeResponse> => {
+        console.log('=== GERANDO QR CODE PARA BOT DE SUPORTE ===');
+        const response = await api.post('/api/admin/bot/qr-code/');
+        return response.data;
     },
 
-    connect: async () => {
-        return WhatsAppService.connect('support_bot', true);
+    connect: async (estabelecimentoId: string): Promise<ConnectionResponse> => {
+        const response = await api.post(`/api/admin/bot/connect/${estabelecimentoId}/`);
+        return response.data;
     },
 
-    getBotSettings: async (): Promise<BotSettingsData> => {
+    getBotSettings: async (): Promise<StaffBotConfig> => {
         try {
             const response = await api.get('/api/admin/bot/config/');
             return response.data || {
@@ -76,7 +70,7 @@ export const StaffBotService = {
         }
     },
 
-    saveBotSettings: async (settings: BotSettingsData) => {
+    saveBotSettings: async (settings: StaffBotConfig) => {
         try {
             const baseUrl = import.meta.env.VITE_NGROK_URL || window.location.origin;
             
@@ -178,12 +172,38 @@ export const StaffBotService = {
         }
     },
 
-    checkExistingInstance: async () => {
-        try {
-            return await WhatsAppService.checkExistingInstance('support', true);
-        } catch (error) {
-            console.error('Erro ao verificar instância:', error);
-            throw error;
+    checkExistingInstance: async (): Promise<WhatsAppInstance> => {
+        console.log('=== VERIFICANDO INSTÂNCIA DO BOT DE SUPORTE ===');
+        const response = await api.get('/api/admin/bot/instance/check/');
+        
+        if (!response.data.exists) {
+            return await StaffBotService.createInstance();
         }
+        
+        const statusResponse = await StaffBotService.getStatus();
+        if (statusResponse.state === 'disconnected') {
+            const qrResponse = await StaffBotService.generateQrCode();
+            return {
+                ...statusResponse,
+                qrCode: qrResponse.code,
+                exists: true
+            };
+        }
+        
+        return {
+            ...statusResponse,
+            exists: true
+        };
+    },
+
+    createInstance: async (): Promise<WhatsAppInstance> => {
+        console.log('=== CRIANDO INSTÂNCIA DO BOT DE SUPORTE ===');
+        const response = await api.post('/api/admin/bot/instance/create/');
+        return response.data;
+    },
+
+    getAllInstances: async () => {
+        const response = await api.get('/api/admin/bot/instances/');
+        return response.data;
     }
 };

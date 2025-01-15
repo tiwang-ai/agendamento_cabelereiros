@@ -62,7 +62,23 @@ Teste_Agendamento-TIWANG/
 │   ├── services/
 │   │   ├── reports.py         # Serviços para relatórios
 │   │   └── system_logs.py     # Serviços para monitoramento e logs do sistema
-│   ├── views.py               # Views principais, incluindo o processamento de perguntas para os bots
+│   ├── views/
+│   │   ├── __init__.py
+│   │   ├── bot_views.py      # Views relacionadas aos bots (WhatsApp)
+│   │   ├── salon_views.py    # Views relacionadas aos salões
+│   │   ├── staff_views.py    # Views administrativas
+│   │   ├── client_views.py   # Views relacionadas aos clientes
+│   │   ├── service_views.py  # Views de serviços e agendamentos
+│   │   ├── auth_views.py     # Views de autenticação
+│   │   ├── report_views.py    # Views de relatórios
+│   │   ├── payment_views.py  # Views de pagamento
+│   │   ├── system_views.py   # Views de sistema
+│   │   ├── onboarding_views.py # Views de onboarding
+│   ├── llm/
+│   │   ├── __init__.py
+│   │   ├── base.py          # Funções base/compartilhadas
+│   │   ├── staff_bot.py     # LLM específico para Bot 1 (staff)
+│   │   └── salon_bot.py     # LLM específico para Bot 2 (salões)
 │   ├── admin.py               # Configuração do painel administrativo
 │   ├── apps.py                # Configuração dos apps do projeto
 │   ├── models.py              # Modelos do banco de dados (Salão, Agendamento, etc.)
@@ -112,6 +128,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   │   ├── BotMetrics.tsx
 │   │   │   │   │   ├── BotConfig.tsx
 │   │   │   │   │   └── WhatsAppSetup.tsx
+│   │   │   │   │   └── WhatsAppConnection.tsx
 │   │   │   │   ├── Dashboard.tsx
 │   │   │   │   ├── Finance.tsx
 │   │   │   │   ├── SalonDetails.tsx
@@ -151,9 +168,10 @@ Teste_Agendamento-TIWANG/
 │   │   │   │   ├── Profile.tsx
 │   │   │   │   └── History.tsx
 │   │   │   └── settings/
+│   │   │       ├── components
+│   │   │       │   ├── SalonWhatsappConnection.tsx
 │   │   │       ├── Settings.tsx
 │   │   │       ├── ChatManagement.tsx
-│   │   │       └── WhatsAppConnection.tsx
 │   │   ├── services/      # Serviços de API
 │   │   │   ├── payment.ts
 │   │   │   ├── auth.ts
@@ -161,7 +179,7 @@ Teste_Agendamento-TIWANG/
 │   │   │   ├── finance.ts
 │   │   │   ├── salons.ts
 │   │   │   ├── users.ts
-│   │   │   ├── whatsapp.ts
+│   │   │   ├── salonBot.ts
 │   │   │   ├── permissions.ts
 │   │   │   ├── botConfig.ts
 │   │   │   ├── staff.ts
@@ -172,7 +190,6 @@ Teste_Agendamento-TIWANG/
 │   │   ├── contexts/      # Contextos React
 │   │   │   └── AuthContext.tsx
 │   │   ├── types/         # Tipos/Interfaces
-│   │   │   ├── whatsapp.ts
 │   │   │   ├── onboarding.ts
 │   │   │   ├── global.d.ts
 │   │   │   ├── qrcode.d.ts
