@@ -2,9 +2,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAdminUser
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from ..models import ActivityLog
+from ..models import ActivityLog, Estabelecimento, Transaction
 from ..serializers import StaffSerializer
 import logging
+from django.db.models import Count, Sum
 
 User = get_user_model()
 logger = logging.getLogger(__name__)
@@ -106,4 +107,43 @@ def staff_user_activities(request, user_id):
         
         return Response(data)
     except Exception as e:
+        return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def admin_stats(request):
+    """Retorna estatísticas gerais para o dashboard administrativo"""
+    try:
+        # Cálculo das estatísticas
+        total_salons = Estabelecimento.objects.count()
+        active_salons = Estabelecimento.objects.filter(is_active=True).count()
+        total_revenue = Transaction.objects.filter(
+            status='approved'
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        active_subscriptions = Estabelecimento.objects.filter(
+            is_active=True,
+            plano__isnull=False
+        ).count()
+
+        # Buscar atividades recentes
+        recent_activities = ActivityLog.objects.select_related('user').order_by(
+            '-timestamp'
+        )[:10]
+
+        activities_data = [{
+            'id': activity.id,
+            'type': activity.action,
+            'description': activity.details,
+            'date': activity.timestamp.isoformat()
+        } for activity in recent_activities]
+
+        return Response({
+            'totalSalons': total_salons,
+            'activeSalons': active_salons,
+            'totalRevenue': float(total_revenue),
+            'activeSubscriptions': active_subscriptions,
+            'recentActivities': activities_data
+        })
+    except Exception as e:
+        logger.error(f"Erro ao buscar estatísticas administrativas: {str(e)}")
         return Response({'error': str(e)}, status=500) 

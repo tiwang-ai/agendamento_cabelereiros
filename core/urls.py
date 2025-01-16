@@ -2,13 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, 
-    ServicoViewSet, AgendamentoViewSet,
-    ChatConfigViewSet,
-    SupportBotViewSet, SalonBotViewSet, bot_views, auth_views, payment_views, report_views, salon_views, UserViewSet, health_check, 
-    staff_list, staff_activities, staff_user_activities, system_logs, system_metrics, staff_bot_metrics, staff_interactions, staff_bot_status, staff_webhook,
-    create_payment_preference, process_payment, export_data, salon_analytics, verificar_disponibilidade, create_professional,
-    register, CustomTokenObtainPairView, staff_detail,
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet,ChatConfigViewSet, SupportBotViewSet, SalonBotViewSet, bot_views, auth_views, payment_views, report_views, salon_views, UserViewSet, health_check, staff_list, staff_activities, staff_user_activities, system_logs, system_metrics, staff_bot_metrics, staff_interactions, staff_bot_status, staff_webhook, export_data, salon_analytics, verificar_disponibilidade, create_professional, register, CustomTokenObtainPairView, staff_detail, finance_stats, finance_transactions, salon_finance_stats, salon_finance_transactions, create_payment_preference, process_payment, salon_bot_metrics, salon_interactions, salon_bot_status, salon_webhook, bot_verificar_agenda, create_whatsapp_instance, list_chats, check_instance, get_connection_status, admin_stats,
 )
 
 # Configuração do Router
@@ -37,6 +31,7 @@ urlpatterns = [
 
     # Área Administrativa (Staff Bot - Bot 1)
     path('admin/', include([
+        path('stats/', admin_stats, name='admin-stats'),
         # Staff Management
         path('staff/', staff_list, name='staff-list'),
         path('staff/<int:pk>/', staff_detail, name='staff-detail'),
@@ -49,7 +44,7 @@ urlpatterns = [
         
         # Bot Staff (Bot 1)
         path('bot/', include([
-            path('config/', StaffBotViewSet.as_view({
+            path('config/', SupportBotViewSet.as_view({
                 'get': 'retrieve',
                 'patch': 'update',
                 'post': 'connect'

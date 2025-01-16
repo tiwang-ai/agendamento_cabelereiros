@@ -23,7 +23,9 @@ from .bot_views import (
 )
 from .payment_views import (
     create_payment_preference,
-    process_payment,
+    process_payment
+)
+from .finance_views import (
     finance_stats,
     finance_transactions,
     salon_finance_stats,
@@ -44,7 +46,8 @@ from .staff_views import (
     staff_list,
     staff_detail,
     staff_activities,
-    staff_user_activities
+    staff_user_activities,
+    admin_stats
 )
 from .salon_views import (
     EstabelecimentoViewSet,
@@ -52,8 +55,7 @@ from .salon_views import (
     ServicoViewSet,
     AgendamentoViewSet,
     verificar_disponibilidade,
-    create_professional,
-    salon_analytics
+    create_professional
 )
 from .client_views import (
     ClienteViewSet,
@@ -81,6 +83,26 @@ __all__ = [
     'salon_interactions',
     'salon_bot_status',
     'salon_webhook',
+    'bot_verificar_agenda',
+    'create_whatsapp_instance',
+    'list_chats',
+    'check_instance',
+    'get_connection_status',
+    
+    # Payment
+    'create_payment_preference',
+    'process_payment',
+    
+    # Finance
+    'finance_stats',
+    'finance_transactions',
+    'salon_finance_stats',
+    'salon_finance_transactions',
+    
+    # Report
+    'export_data',
+    'salon_analytics',
+    'staff_analytics',
     
     # System
     'health_check',
@@ -93,6 +115,7 @@ __all__ = [
     'staff_detail',
     'staff_activities',
     'staff_user_activities',
+    'admin_stats',
     
     # Salon
     'EstabelecimentoViewSet',
@@ -101,17 +124,11 @@ __all__ = [
     'AgendamentoViewSet',
     'verificar_disponibilidade',
     'create_professional',
-    'salon_analytics',
-    'bot_verificar_agenda',
-    'create_whatsapp_instance',
-    'list_chats',
-    'check_instance',
-    'get_connection_status',
-
+    
     # Client
     'ClienteViewSet',
     'relatorio_frequencia_clientes',
-
+    
     # Service
     'relatorio_servicos_populares'
 ] 
