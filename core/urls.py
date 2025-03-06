@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
-    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet,ChatConfigViewSet, SupportBotViewSet, SalonBotViewSet, bot_views, auth_views, payment_views, report_views, salon_views, UserViewSet, health_check, staff_list, staff_activities, staff_user_activities, system_logs, system_metrics, staff_bot_metrics, staff_interactions, staff_bot_status, staff_webhook, export_data, salon_analytics, verificar_disponibilidade, create_professional, register, CustomTokenObtainPairView, staff_detail, finance_stats, finance_transactions, salon_finance_stats, salon_finance_transactions, create_payment_preference, process_payment, salon_bot_metrics, salon_interactions, salon_bot_status, salon_webhook, bot_verificar_agenda, create_whatsapp_instance, list_chats, check_instance, get_connection_status, admin_stats,
+    EstabelecimentoViewSet, ProfissionalViewSet, ClienteViewSet, ServicoViewSet, AgendamentoViewSet,ChatConfigViewSet, SupportBotViewSet, SalonBotViewSet, bot_views, auth_views, payment_views, report_views, salon_views, UserViewSet, health_check, staff_list, staff_activities, staff_user_activities, system_logs, system_metrics, staff_bot_metrics, staff_interactions, staff_bot_status, staff_webhook, export_data, salon_analytics, verificar_disponibilidade, create_professional, register, CustomTokenObtainPairView, staff_detail, finance_stats, finance_transactions, salon_finance_stats, salon_finance_transactions, create_payment_preference, process_payment, salon_bot_metrics, salon_interactions, salon_bot_status, salon_webhook, bot_verificar_agenda, create_whatsapp_instance, list_chats, check_instance, get_connection_status, admin_stats, list_instances, 
 )
 
 # Configuração do Router
@@ -53,6 +53,7 @@ urlpatterns = [
             path('interactions/', staff_interactions, name='staff-bot-interactions'),
             path('status/', staff_bot_status, name='staff-bot-status'),
             path('webhook/', staff_webhook, name='staff-webhook'),
+            path('instances/', list_instances, name='list-instances'),
         ])),
         
         # Finanças Admin

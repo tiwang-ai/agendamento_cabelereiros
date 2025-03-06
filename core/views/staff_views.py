@@ -120,10 +120,12 @@ def admin_stats(request):
         total_revenue = Transaction.objects.filter(
             status='approved'
         ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        # Contagem de assinaturas ativas baseada em transações aprovadas
         active_subscriptions = Estabelecimento.objects.filter(
             is_active=True,
-            plano__isnull=False
-        ).count()
+            transaction__status='approved'
+        ).distinct().count()
 
         # Buscar atividades recentes
         recent_activities = ActivityLog.objects.select_related('user').order_by(

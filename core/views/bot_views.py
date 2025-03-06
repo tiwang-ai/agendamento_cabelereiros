@@ -828,3 +828,38 @@ def salon_bot_status(request, estabelecimento_id):
     except Exception as e:
         logger.error(f"Erro ao verificar status do bot do salão: {str(e)}")
         return Response({'error': str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def list_instances(request):
+    """Lista todas as instâncias WhatsApp ativas"""
+    try:
+        # Busca todos os estabelecimentos que têm instâncias configuradas
+        estabelecimentos = Estabelecimento.objects.filter(
+            evolution_instance_id__isnull=False
+        ).select_related('user')
+        
+        instances = [{
+            'id': str(estab.id),
+            'nome': estab.nome_estabelecimento,
+            'instance_id': estab.evolution_instance_id,
+            'whatsapp': estab.whatsapp or '',
+            'status': estab.status or 'disconnected'
+        } for estab in estabelecimentos]
+        
+        # Adiciona a instância do bot de suporte
+        support_config = SystemConfig.objects.first()
+        if support_config and support_config.evolution_instance_id:
+            instances.append({
+                'id': 'support',
+                'nome': 'Bot de Suporte',
+                'instance_id': support_config.evolution_instance_id,
+                'whatsapp': support_config.support_whatsapp or '',
+                'status': support_config.status or 'disconnected'
+            })
+            
+        return Response(instances)
+        
+    except Exception as e:
+        logger.error(f"Erro ao listar instâncias: {str(e)}")
+        return Response({'error': str(e)}, status=500)

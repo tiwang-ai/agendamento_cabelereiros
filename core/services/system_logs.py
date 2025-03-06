@@ -3,7 +3,7 @@ from typing import Dict, List
 import psutil
 import docker
 from django.conf import settings
-from ..models import Estabelecimento, Interacao
+from ..models import Estabelecimento, Interacao, ActivityLog
 
 class SystemMonitor:
     def __init__(self):
@@ -79,3 +79,15 @@ class SystemMonitor:
         interactions = Interacao.objects.filter(tipo='bot_response')
         total_time = sum(interaction.response_time for interaction in interactions if hasattr(interaction, 'response_time'))
         return total_time / interactions.count() if interactions.count() > 0 else 0
+
+    @staticmethod
+    def get_system_logs() -> List[Dict]:
+        """Centraliza a lógica de logs do sistema"""
+        logs = ActivityLog.objects.select_related('user').order_by('-timestamp')[:100]
+        return [{
+            'id': str(log.id),
+            'action': log.action,
+            'user': log.user.get_full_name() or log.user.username,
+            'timestamp': log.timestamp.isoformat(),
+            'details': log.details
+        } for log in logs]

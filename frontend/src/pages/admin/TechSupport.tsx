@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import { useState, useEffect } from 'react';
 
-import api from '../../services/api';
+import { StaffService } from '../../services/staff';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -87,11 +87,11 @@ const TechSupport = () => {
     try {
       setRefreshing(true);
       const [logsResponse, metricsResponse] = await Promise.all([
-        api.get('/api/admin/system-logs/'),
-        api.get('/api/admin/system-metrics/')
+        StaffService.getSystemLogs(),
+        StaffService.getSystemMetrics()
       ]);
-      setSystemLogs(logsResponse.data);
-      setMetrics(metricsResponse.data);
+      setSystemLogs(logsResponse);
+      setMetrics(metricsResponse);
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
     } finally {

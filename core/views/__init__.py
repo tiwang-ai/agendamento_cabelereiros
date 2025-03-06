@@ -19,7 +19,8 @@ from .bot_views import (
     create_whatsapp_instance,
     list_chats,
     check_instance,
-    get_connection_status
+    get_connection_status,
+    list_instances
 )
 from .payment_views import (
     create_payment_preference,
@@ -88,6 +89,7 @@ __all__ = [
     'list_chats',
     'check_instance',
     'get_connection_status',
+    'list_instances',
     
     # Payment
     'create_payment_preference',

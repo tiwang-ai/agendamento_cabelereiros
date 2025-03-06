@@ -16,8 +16,7 @@ import {
   useTheme
 } from '@mui/material';
 import { useState, useEffect } from 'react';
-
-import api from '../../services/api';
+import { StaffService } from '../../services/staff';
 
 interface StatsData {
   totalSalons: number;
@@ -34,27 +33,34 @@ interface Activity {
   date: string;
 }
 
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: string;
+}
+
 const AdminDashboard = () => {
   const theme = useTheme();
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
+    const fetchStats = async () => {
+      try {
+        const data = await StaffService.getStats();
+        setStats(data);
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
   }, []);
 
-  const loadStats = async () => {
-    try {
-      const response = await api.get('/api/admin/stats/');
-      setStats(response.data);
-    } catch (error) {
-      console.error('Erro ao carregar estatísticas:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const StatCard = ({ title, value, icon, color }: any) => (
+  const StatCard = ({ title, value, icon, color }: StatCardProps) => (
     <Card sx={{ height: '100%' }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -91,7 +97,7 @@ const AdminDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Total de Salões"
-            value={stats?.totalSalons}
+            value={stats?.totalSalons || 0}
             icon={<BusinessIcon sx={{ color: 'white' }} />}
             color={theme.palette.primary.main}
           />
@@ -99,7 +105,7 @@ const AdminDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Salões Ativos"
-            value={stats?.activeSalons}
+            value={stats?.activeSalons || 0}
             icon={<PeopleIcon sx={{ color: 'white' }} />}
             color={theme.palette.success.main}
           />
@@ -107,7 +113,7 @@ const AdminDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Receita Total"
-            value={`R$ ${stats?.totalRevenue.toFixed(2)}`}
+            value={`R$ ${(stats?.totalRevenue || 0).toFixed(2)}`}
             icon={<MoneyIcon sx={{ color: 'white' }} />}
             color={theme.palette.warning.main}
           />
@@ -115,7 +121,7 @@ const AdminDashboard = () => {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Assinaturas Ativas"
-            value={stats?.activeSubscriptions}
+            value={stats?.activeSubscriptions || 0}
             icon={<TimelineIcon sx={{ color: 'white' }} />}
             color={theme.palette.info.main}
           />
@@ -126,7 +132,7 @@ const AdminDashboard = () => {
             <Typography variant="h6" gutterBottom>
               Atividades Recentes
             </Typography>
-            {stats?.recentActivities.map((activity) => (
+            {stats?.recentActivities?.map((activity: Activity) => (
               <Box
                 key={activity.id}
                 sx={{

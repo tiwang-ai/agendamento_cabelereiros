@@ -4,19 +4,11 @@ from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from django.db import connection
 from django_redis import get_redis_connection
-import psutil  # Para estatísticas do sistema
+import psutil
+from ..models import ActivityLog
+from ..services.system_logs import SystemMonitor
 
 logger = logging.getLogger(__name__)
-
-class SystemMonitor:
-    """Monitor do sistema"""
-    @staticmethod
-    def get_system_stats():
-        return {
-            'cpu_percent': psutil.cpu_percent(),
-            'memory_percent': psutil.virtual_memory().percent,
-            'disk_percent': psutil.disk_usage('/').percent
-        }
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -57,10 +49,8 @@ def health_check(request):
 def system_logs(request):
     """Retorna logs do sistema"""
     try:
-        # Implementar lógica de logs aqui
-        return Response({
-            'logs': 'Sistema de logs em desenvolvimento'
-        })
+        monitor = SystemMonitor()
+        return Response(monitor.get_system_logs())
     except Exception as e:
         logger.error(f"Erro ao buscar logs do sistema: {str(e)}")
         return Response({'error': str(e)}, status=500)
@@ -71,7 +61,7 @@ def system_metrics(request):
     """Retorna métricas do sistema"""
     try:
         monitor = SystemMonitor()
-        return Response(monitor.get_system_stats())
+        return Response(monitor.get_system_metrics())
     except Exception as e:
         logger.error(f"Erro ao buscar métricas do sistema: {str(e)}")
         return Response({'error': str(e)}, status=500)
