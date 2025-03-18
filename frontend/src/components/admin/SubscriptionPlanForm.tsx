@@ -1,0 +1,214 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { XMarkIcon } from '@heroicons/react/24/outline';
+
+interface SubscriptionPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  features: Record<string, boolean>;
+  limits: Record<string, number>;
+}
+
+interface SubscriptionPlanFormProps {
+  salonId: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function SubscriptionPlanForm({ salonId, onClose, onSuccess }: SubscriptionPlanFormProps) {
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('subscription_plans')
+          .select('*')
+          .eq('active', true)
+          .order('price');
+
+        if (error) throw error;
+        setPlans(data || []);
+        if (data && data.length > 0) {
+          setSelectedPlanId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+        setError('Erro ao carregar planos. Por favor, tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlans();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedPlanId) {
+      setError('Por favor, selecione um plano');
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      // Check for existing active subscription
+      const { data: existingSubscription } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('salon_id', salonId)
+        .eq('status', 'active')
+        .single();
+
+      if (existingSubscription) {
+        // Update existing subscription
+        const { error: updateError } = await supabase
+          .from('subscriptions')
+          .update({
+            plan_id: selectedPlanId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingSubscription.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Create new subscription
+        const { error: createError } = await supabase
+          .from('subscriptions')
+          .insert([{
+            salon_id: salonId,
+            plan_id: selectedPlanId,
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+          }]);
+
+        if (createError) throw createError;
+      }
+
+      onSuccess();
+    } catch (error) {
+      console.error('Error saving subscription:', error);
+      setError('Erro ao salvar assinatura. Por favor, tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="flex justify-between items-start">
+        <h2 className="text-lg font-medium text-gray-900">
+          Selecionar Plano
+        </h2>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-500"
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {plans.map((plan) => (
+          <div
+            key={plan.id}
+            className={`relative border rounded-lg p-6 cursor-pointer ${
+              selectedPlanId === plan.id
+                ? 'border-primary-500 ring-2 ring-primary-500'
+                : 'border-gray-200 hover:border-primary-300'
+            }`}
+            onClick={() => setSelectedPlanId(plan.id)}
+          >
+            <div className="flex flex-col h-full">
+              <h3 className="text-lg font-semibold text-gray-900">{plan.name}</h3>
+              <p className="text-2xl font-bold text-primary-600 mt-2">
+                R$ {plan.price.toFixed(2)}/mês
+              </p>
+              {plan.description && (
+                <p className="text-sm text-gray-500 mt-2">{plan.description}</p>
+              )}
+
+              <div className="mt-4 flex-grow">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Recursos</h4>
+                <ul className="space-y-1">
+                  {Object.entries(plan.features || {}).map(([feature, enabled]) => (
+                    <li key={feature} className="flex items-center text-sm">
+                      <span className={`mr-2 ${enabled ? 'text-green-500' : 'text-red-500'}`}>
+                        {enabled ? '✓' : '✗'}
+                      </span>
+                      {feature.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Limites</h4>
+                <ul className="space-y-1">
+                  {Object.entries(plan.limits || {}).map(([limit, value]) => (
+                    <li key={limit} className="flex justify-between text-sm">
+                      <span>{limit.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+                      <span className="font-medium">{value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            <div className="absolute top-4 right-4">
+              <input
+                type="radio"
+                name="plan"
+                value={plan.id}
+                checked={selectedPlanId === plan.id}
+                onChange={() => setSelectedPlanId(plan.id)}
+                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex justify-end space-x-3">
+        <button
+          type="button"
+          onClick={onClose}
+          className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={submitting || !selectedPlanId}
+          className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
+        >
+          {submitting ? 'Salvando...' : 'Confirmar'}
+        </button>
+      </div>
+    </form>
+  );
+}

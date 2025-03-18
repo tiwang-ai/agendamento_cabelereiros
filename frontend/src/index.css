@@ -1,0 +1,126 @@
+/* Tailwind styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FullCalendar styles */
+@import '@fullcalendar/react/dist/vdom';
+@import '@fullcalendar/daygrid/main.css';
+@import '@fullcalendar/timegrid/main.css';
+
+/* Custom styles */
+.prose {
+  @apply text-gray-900;
+}
+
+/* Rest of the existing styles remain the same */
+.prose code {
+  @apply text-primary-600 bg-primary-50 px-1 py-0.5 rounded;
+}
+
+.prose pre {
+  @apply bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto;
+}
+
+.prose pre code {
+  @apply bg-transparent text-inherit p-0;
+}
+
+.prose a {
+  @apply text-primary-600 hover:text-primary-700;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-primary-200 pl-4 italic;
+}
+
+.prose ul {
+  @apply list-disc list-inside;
+}
+
+.prose ol {
+  @apply list-decimal list-inside;
+}
+
+.prose table {
+  @apply min-w-full divide-y divide-gray-200;
+}
+
+.prose thead {
+  @apply bg-gray-50;
+}
+
+.prose th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.prose td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+
+.prose tr {
+  @apply bg-white;
+}
+
+.prose tr:nth-child(even) {
+  @apply bg-gray-50;
+}
+
+/* FullCalendar custom styles */
+.fc {
+  @apply font-sans;
+}
+
+.fc .fc-toolbar-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.fc .fc-button {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  @apply bg-primary-700;
+}
+
+.fc .fc-button-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.fc .fc-daygrid-day.fc-day-today,
+.fc .fc-timegrid-col.fc-day-today {
+  @apply bg-primary-50;
+}
+
+.fc .fc-event {
+  @apply cursor-pointer;
+}
+
+.fc .fc-event-main {
+  @apply p-1;
+}
+
+.fc .fc-event-title {
+  @apply font-medium;
+}
+
+.fc .fc-event-time {
+  @apply text-sm opacity-75;
+}
+
+.fc .fc-timegrid-slot {
+  @apply h-12;
+}
+
+.fc .fc-timegrid-slot-label {
+  @apply text-sm text-gray-500;
+}
+
+.fc .fc-col-header-cell {
+  @apply bg-gray-50 py-2;
+}
+
+.fc .fc-col-header-cell-cushion {
+  @apply text-sm font-medium text-gray-700;
+}
