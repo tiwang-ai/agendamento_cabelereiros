@@ -1,13 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import ProfessionalForm from '@/components/ProfessionalForm';
 import ProfessionalEditForm from '@/components/ProfessionalEditForm';
 import ProfessionalSchedule from '@/components/ProfessionalSchedule';
-import { Database } from '@/lib/database.types';
+import { Professional } from '@/types';
 
-type Professional = Database['public']['Tables']['professionals']['Row'];
+// Dados mockados para simular os profissionais do salão
+const MOCK_PROFESSIONALS: Professional[] = [
+  {
+    id: '1',
+    name: 'Ana Silva',
+    email: 'ana.silva@exemplo.com',
+    phone: '(11) 95555-1234',
+    salon_id: '1',
+    specialties: ['Corte Feminino', 'Coloração', 'Mechas'],
+    color: '#4F46E5',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Carlos Oliveira',
+    email: 'carlos.oliveira@exemplo.com',
+    phone: '(11) 95555-2345',
+    salon_id: '1',
+    specialties: ['Corte Masculino', 'Barba'],
+    color: '#DC2626',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Beatriz Santos',
+    email: 'beatriz.santos@exemplo.com',
+    phone: '(11) 95555-3456',
+    salon_id: '1',
+    specialties: ['Manicure', 'Pedicure', 'Unhas em Gel'],
+    color: '#7C3AED',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    name: 'Marcelo Pereira',
+    email: 'marcelo.pereira@exemplo.com',
+    phone: '(11) 95555-4567',
+    salon_id: '1',
+    specialties: ['Corte Masculino', 'Barba', 'Coloração Masculina'],
+    color: '#059669',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+];
 
+/**
+ * Componente para gestão de profissionais do salão
+ */
 export default function Professionals() {
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -17,28 +65,20 @@ export default function Professionals() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  /**
+   * Busca os profissionais do salão (simulada com dados mockados)
+   */
   const fetchProfessionals = async () => {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (salonData) {
-        const { data } = await supabase
-          .from('professionals')
-          .select('*')
-          .eq('salon_id', salonData.id)
-          .eq('active', true)
-          .order('name');
-
-        setProfessionals(data || []);
-      }
+      // Simulando um atraso de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Usando dados mockados
+      setProfessionals(MOCK_PROFESSIONALS);
     } catch (error) {
-      console.error('Error fetching professionals:', error);
+      console.error('Erro ao buscar profissionais:', error);
     } finally {
       setLoading(false);
     }
@@ -48,11 +88,17 @@ export default function Professionals() {
     fetchProfessionals();
   }, [user]);
 
+  /**
+   * Função para editar um profissional
+   */
   const handleEdit = (professional: Professional) => {
     setSelectedProfessional(professional);
     setShowEditForm(true);
   };
 
+  /**
+   * Função para visualizar a agenda de um profissional
+   */
   const handleViewSchedule = (professional: Professional) => {
     setSelectedProfessional(professional);
     setShowSchedule(true);
@@ -69,19 +115,19 @@ export default function Professionals() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Professionals</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Profissionais</h1>
         <button
           onClick={() => setShowForm(true)}
           className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
         >
-          New Professional
+          Novo Profissional
         </button>
       </div>
 
       {showForm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">New Professional</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Novo Profissional</h2>
             <ProfessionalForm
               onClose={() => setShowForm(false)}
               onSuccess={() => {
@@ -96,7 +142,7 @@ export default function Professionals() {
       {showEditForm && selectedProfessional && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Edit Professional</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Editar Profissional</h2>
             <ProfessionalEditForm
               professional={selectedProfessional}
               onClose={() => {
@@ -144,7 +190,7 @@ export default function Professionals() {
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{professional.name}</h3>
-                <p className="text-gray-500">{professional.email || 'No email'}</p>
+                <p className="text-gray-500">{professional.email || 'Sem email'}</p>
               </div>
             </div>
             <div className="mt-4">
@@ -153,9 +199,9 @@ export default function Professionals() {
                   className="w-4 h-4 rounded-full"
                   style={{ backgroundColor: professional.color || '#4F46E5' }}
                 ></div>
-                <span className="text-sm text-gray-600">Calendar Color</span>
+                <span className="text-sm text-gray-600">Cor do Calendário</span>
               </div>
-              <p className="text-sm text-gray-500">Specialties:</p>
+              <p className="text-sm text-gray-500">Especialidades:</p>
               <div className="mt-1 flex flex-wrap gap-2">
                 {professional.specialties?.map((specialty, index) => (
                   <span
@@ -172,13 +218,13 @@ export default function Professionals() {
                 onClick={() => handleEdit(professional)}
                 className="text-primary-600 hover:text-primary-900"
               >
-                Edit
+                Editar
               </button>
               <button
                 onClick={() => handleViewSchedule(professional)}
                 className="text-primary-600 hover:text-primary-900"
               >
-                View Schedule
+                Ver Agenda
               </button>
             </div>
           </div>

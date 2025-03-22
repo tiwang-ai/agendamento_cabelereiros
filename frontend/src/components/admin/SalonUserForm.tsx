@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-
-interface SalonUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  role: 'admin' | 'owner' | 'professional' | 'receptionist';
-}
+import { salonService } from '@/services/salon';
+import { SalonUser } from '@/types/index';
 
 interface SalonUserFormProps {
   user?: SalonUser | null;
@@ -51,33 +44,25 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
     try {
       if (user) {
         // Atualizar usuário existente
-        const { error: updateError } = await supabase
-          .from('salon_users')
-          .update({
-            name: data.name,
-            email: data.email,
-            phone: data.phone || null,
-            role: data.role,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
+        const updatedUser = await salonService.updateSalonUser(salonId, user.id, {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || null,
+          role: data.role,
+        });
 
-        if (updateError) throw updateError;
+        if (!updatedUser) throw new Error('Falha ao atualizar usuário');
       } else {
         // Criar novo usuário
-        const { error: createError } = await supabase
-          .from('salon_users')
-          .insert([{
-            salon_id: salonId,
-            name: data.name,
-            email: data.email,
-            phone: data.phone || null,
-            role: data.role,
-            active: true,
-            temp_password: 'changeme123' // Senha temporária
-          }]);
+        const newUser = await salonService.createSalonUser(salonId, {
+          name: data.name,
+          email: data.email,
+          phone: data.phone || null,
+          role: data.role,
+          active: true
+        });
 
-        if (createError) throw createError;
+        if (!newUser) throw new Error('Falha ao criar usuário');
       }
 
       onSuccess();

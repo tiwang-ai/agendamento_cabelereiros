@@ -1,126 +1,155 @@
-/* Tailwind styles */
+/**
+ * Estilos globais da aplicação
+ * 
+ * Este arquivo contém estilos globais utilizados em toda a aplicação,
+ * incluindo Tailwind CSS e personalizações para componentes específicos.
+ */
+
+/* ---------------------------------------------
+ * Tailwind CSS - Framework utilitário de CSS
+ * ---------------------------------------------
+ * As diretivas abaixo instruem o Tailwind a injetar seus estilos:
+ * - base: estilos básicos de reset
+ * - components: estilos de componentes
+ * - utilities: classes utilitárias
+ */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* FullCalendar styles */
-@import '@fullcalendar/react/dist/vdom';
-@import '@fullcalendar/daygrid/main.css';
-@import '@fullcalendar/timegrid/main.css';
-
-/* Custom styles */
+/* ---------------------------------------------
+ * Estilos personalizados para conteúdo de texto
+ * ---------------------------------------------
+ * Classes .prose são utilizadas para estilizar conteúdo de texto,
+ * especialmente útil para textos formatados ou markdown
+ */
 .prose {
-  @apply text-gray-900;
+  @apply text-gray-900; /* Define cor padrão de texto */
 }
 
-/* Rest of the existing styles remain the same */
 .prose code {
-  @apply text-primary-600 bg-primary-50 px-1 py-0.5 rounded;
+  @apply text-primary-600 bg-primary-50 px-1 py-0.5 rounded; /* Estiliza blocos de código inline */
 }
 
 .prose pre {
-  @apply bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto;
+  @apply bg-gray-800 text-gray-100 p-4 rounded-lg overflow-x-auto; /* Estiliza blocos de código */
 }
 
 .prose pre code {
-  @apply bg-transparent text-inherit p-0;
+  @apply bg-transparent text-inherit p-0; /* Remove estilo de código inline quando dentro de blocos */
 }
 
 .prose a {
-  @apply text-primary-600 hover:text-primary-700;
+  @apply text-primary-600 hover:text-primary-700; /* Estiliza links */
 }
 
 .prose blockquote {
-  @apply border-l-4 border-primary-200 pl-4 italic;
+  @apply border-l-4 border-primary-200 pl-4 italic; /* Estiliza citações */
 }
 
 .prose ul {
-  @apply list-disc list-inside;
+  @apply list-disc list-inside; /* Lista com marcadores */
 }
 
 .prose ol {
-  @apply list-decimal list-inside;
+  @apply list-decimal list-inside; /* Lista numerada */
 }
 
+/* ---------------------------------------------
+ * Estilos de tabela para conteúdo prose
+ * ---------------------------------------------
+ */
 .prose table {
-  @apply min-w-full divide-y divide-gray-200;
+  @apply min-w-full divide-y divide-gray-200; /* Tabela de largura completa com separadores */
 }
 
 .prose thead {
-  @apply bg-gray-50;
+  @apply bg-gray-50; /* Cabeçalho com fundo cinza claro */
 }
 
 .prose th {
-  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider; /* Células de cabeçalho */
 }
 
 .prose td {
-  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500; /* Células de dados */
 }
 
 .prose tr {
-  @apply bg-white;
+  @apply bg-white; /* Linhas com fundo branco */
 }
 
 .prose tr:nth-child(even) {
-  @apply bg-gray-50;
+  @apply bg-gray-50; /* Linhas pares com fundo alternado */
 }
 
-/* FullCalendar custom styles */
+/* ---------------------------------------------
+ * FullCalendar - Customização do componente de calendário
+ * ---------------------------------------------
+ * Sobrescreve os estilos padrão do FullCalendar para 
+ * combinar com o design do sistema
+ */
 .fc {
-  @apply font-sans;
+  @apply font-sans; /* Define a fonte para todo o calendário */
 }
 
 .fc .fc-toolbar-title {
-  @apply text-xl font-semibold text-gray-900;
+  @apply text-xl font-semibold text-gray-900; /* Título da barra de ferramentas */
 }
 
+/* Botões do calendário */
 .fc .fc-button {
   @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500;
 }
 
+/* Estado ativo dos botões */
 .fc .fc-button-primary:not(:disabled).fc-button-active,
 .fc .fc-button-primary:not(:disabled):active {
   @apply bg-primary-700;
 }
 
+/* Botões desabilitados */
 .fc .fc-button-primary:disabled {
   @apply opacity-50 cursor-not-allowed;
 }
 
+/* Destaque para o dia atual */
 .fc .fc-daygrid-day.fc-day-today,
 .fc .fc-timegrid-col.fc-day-today {
   @apply bg-primary-50;
 }
 
+/* Estilos para eventos */
 .fc .fc-event {
-  @apply cursor-pointer;
+  @apply cursor-pointer; /* Torna eventos clicáveis */
 }
 
 .fc .fc-event-main {
-  @apply p-1;
+  @apply p-1; /* Padding para o conteúdo dos eventos */
 }
 
 .fc .fc-event-title {
-  @apply font-medium;
+  @apply font-medium; /* Título dos eventos */
 }
 
 .fc .fc-event-time {
-  @apply text-sm opacity-75;
+  @apply text-sm opacity-75; /* Horário dos eventos */
 }
 
+/* Slots de tempo na visualização de grade de tempo */
 .fc .fc-timegrid-slot {
-  @apply h-12;
+  @apply h-12; /* Altura dos slots de tempo */
 }
 
 .fc .fc-timegrid-slot-label {
-  @apply text-sm text-gray-500;
+  @apply text-sm text-gray-500; /* Rótulos dos slots de tempo */
 }
 
+/* Cabeçalhos de colunas */
 .fc .fc-col-header-cell {
-  @apply bg-gray-50 py-2;
+  @apply bg-gray-50 py-2; /* Cabeçalhos de colunas (dias) */
 }
 
 .fc .fc-col-header-cell-cushion {
-  @apply text-sm font-medium text-gray-700;
+  @apply text-sm font-medium text-gray-700; /* Texto dentro dos cabeçalhos */
 }

@@ -1,12 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import ClientForm from '@/components/ClientForm';
 import ClientEditForm from '@/components/ClientEditForm';
 import ClientHistory from '@/components/ClientHistory';
-import { Database } from '@/lib/database.types';
+import { mockApi } from '@/lib/mockApi';
 
-type Client = Database['public']['Tables']['clients']['Row'];
+interface Client {
+  id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  created_at: string;
+  salon_id: string;
+}
 
 export default function Clients() {
   const [showForm, setShowForm] = useState(false);
@@ -21,19 +27,13 @@ export default function Clients() {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
+      // Simula um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const salonData = await mockApi.getSalonByOwnerId(user.id);
 
       if (salonData) {
-        const { data } = await supabase
-          .from('clients')
-          .select('*')
-          .eq('salon_id', salonData.id)
-          .order('name');
-
+        const data = await mockApi.getClientsBySalonId(salonData.id);
         setClients(data || []);
       }
     } catch (error) {

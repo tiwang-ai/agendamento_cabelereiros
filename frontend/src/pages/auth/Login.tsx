@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { useNavigate, Link } from 'react-router-dom';
-import { login } from '@/services/auth';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LoginForm {
   email: string;
@@ -11,32 +11,70 @@ interface LoginForm {
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { login, user, loading } = useAuth();
   const [loginError, setLoginError] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Verificar se o usuário já está autenticado
+  useEffect(() => {
+    if (user) {
+      console.log('Login: Usuário já autenticado:', user);
+      
+      // Atraso intencional para garantir que todos os estados sejam atualizados antes do redirecionamento
+      setTimeout(() => {
+        redirectBasedOnRole(user.role);
+      }, 100);
+    }
+  }, [user, navigate]);
+
+  const redirectBasedOnRole = (role: string) => {
+    console.log('Login: Redirecionando com base no papel:', role);
+    try {
+      if (role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else if (role === 'salon_owner') {
+        navigate('/salon/dashboard', { replace: true });
+      } else {
+        navigate('/client/dashboard', { replace: true });
+      }
+    } catch (e) {
+      console.error('Erro durante redirecionamento:', e);
+    }
+  };
 
   const onSubmit = async (data: LoginForm) => {
     setLoginError('');
     setIsLoading(true);
     
     try {
-      const response = await login(data);
-      const { user } = response;
+      console.log('Login: Tentando login com:', data.email);
+      const user = await login(data.email, data.password);
+      console.log('Login: Login bem-sucedido, usuário:', user);
       
-      // Redireciona baseado no papel do usuário
-      if (user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else if (user.role === 'salon_owner') {
-        navigate('/salon/dashboard');
-      } else {
-        navigate('/client/dashboard');
-      }
+      // Não redirecionar aqui - o useEffect acima irá cuidar disso
+      // quando o estado do usuário for atualizado
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error('Login: Erro no login:', error);
       setLoginError('Email ou senha incorretos');
-    } finally {
       setIsLoading(false);
     }
   };
+
+  // Se o usuário estiver autenticado, mostrar uma mensagem de redirecionamento
+  if (user) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex flex-col justify-center items-center">
+        <div className="bg-white p-8 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Redirecionando...</h2>
+          <p className="text-gray-600">Você já está autenticado. Redirecionando para sua área.</p>
+          <div className="mt-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-600 mx-auto"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -97,10 +135,10 @@ export default function Login() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || loading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
             >
-              {isLoading ? 'Entrando...' : 'Entrar'}
+              {(isLoading || loading) ? 'Entrando...' : 'Entrar'}
             </button>
           </form>
         </div>

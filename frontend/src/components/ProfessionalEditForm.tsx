@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
-import { Database } from '@/lib/database.types';
-
-type Professional = Database['public']['Tables']['professionals']['Row'];
-type Service = Database['public']['Tables']['services']['Row'];
+import { mockApi } from '@/mocks/data';
+import { Professional, Service } from '@/types';
 
 interface ProfessionalEditFormProps {
   professional: Professional;
@@ -44,14 +41,11 @@ export default function ProfessionalEditForm({ professional, onClose, onSuccess 
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const { data, error } = await supabase
-          .from('services')
-          .select('*')
-          .eq('salon_id', professional.salon_id)
-          .eq('active', true)
-          .order('name');
-
-        if (error) throw error;
+        // Simulando delay de rede
+        await mockApi.delay(500);
+        
+        // Usando dados mockados
+        const data = await mockApi.getServices(professional.salon_id);
         setServices(data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
@@ -66,17 +60,16 @@ export default function ProfessionalEditForm({ professional, onClose, onSuccess 
 
   const onSubmit = async (data: any) => {
     try {
-      const { error } = await supabase
-        .from('professionals')
-        .update({
-          name: data.name,
-          email: data.email || null,
-          specialties: data.specialties,
-          color: data.color
-        })
-        .eq('id', professional.id);
-
-      if (error) throw error;
+      // Simulando delay de rede
+      await mockApi.delay(500);
+      
+      // Atualizar profissional
+      await mockApi.updateProfessional(professional.id, {
+        name: data.name,
+        email: data.email || null,
+        specialties: data.specialties,
+        color: data.color
+      });
 
       onSuccess();
       onClose();

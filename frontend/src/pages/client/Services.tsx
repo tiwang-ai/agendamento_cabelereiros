@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import ServiceForm from '@/components/ServiceForm';
 import ServiceEditForm from '@/components/ServiceEditForm';
-import { Database } from '@/lib/database.types';
-
-type Service = Database['public']['Tables']['services']['Row'];
+import { mockApi } from '@/mocks/data';
+import { Service } from '@/types';
 
 export default function ClientServices() {
   const [showForm, setShowForm] = useState(false);
@@ -19,22 +17,10 @@ export default function ClientServices() {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (salonData) {
-        const { data } = await supabase
-          .from('services')
-          .select('*')
-          .eq('salon_id', salonData.id)
-          .eq('active', true)
-          .order('name');
-
-        setServices(data || []);
-      }
+      // Usando dados mockados
+      const salonId = '1'; // ID fixo para teste
+      const data = await mockApi.getServices(salonId);
+      setServices(data || []);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -55,14 +41,9 @@ export default function ClientServices() {
     if (!confirm('Tem certeza que deseja remover este serviço?')) return;
 
     try {
-      const { error } = await supabase
-        .from('services')
-        .update({ active: false })
-        .eq('id', serviceId);
-
-      if (error) throw error;
-
-      fetchServices();
+      // Simulando remoção do serviço
+      await mockApi.delay(500);
+      setServices(services.filter(service => service.id !== serviceId));
     } catch (error) {
       console.error('Error removing service:', error);
       alert('Erro ao remover serviço. Por favor, tente novamente.');

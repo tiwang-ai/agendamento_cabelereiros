@@ -1,95 +1,221 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+/**
+ * Componente principal da aplicação
+ * 
+ * Este arquivo define a estrutura de roteamento e navegação da aplicação,
+ * implementando proteção de rotas baseada em perfis de usuário.
+ */
+import React, { lazy, Suspense, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
-import AdminLayout from './components/AdminLayout';
-import ClientLayout from './components/ClientLayout';
+import Loading from '@/components/common/Loading';
+import AdminLayout from '@/components/layout/AdminLayout';
+import ClientLayout from '@/components/layout/ClientLayout';
+
+// Importação de páginas da área administrativa
 import AdminDashboard from './pages/admin/Dashboard';
-import AdminEstablishments from './pages/admin/Establishments';
+import SalonsManagement from './pages/admin/SalonsManagement';
 import SalonUsers from './pages/admin/SalonUsers';
 import Plans from './pages/admin/Plans';
 import Reports from './pages/admin/Reports';
 import Support from './pages/admin/Support';
+
+// Importação de páginas da área de salão (cliente)
 import ClientDashboard from './pages/client/Dashboard';
 import ClientAppointments from './pages/client/Appointments';
 import ClientCalendar from './pages/client/Calendar';
 import ClientServices from './pages/client/Services';
 import ClientSettings from './pages/client/Settings';
+
+// Importação de páginas públicas
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 
+/**
+ * Componente para depurar navegação
+ * 
+ * Registra no console cada mudança de rota, útil para desenvolvimento
+ * e depuração. Não renderiza nada visualmente.
+ */
+function NavigationDebug() {
+  const location = useLocation();
+  
+  useEffect(() => {
+    console.log('Navegação para:', location.pathname);
+  }, [location]);
+  
+  return null;
+}
+
+/**
+ * Componente para proteção de rotas administrativas
+ * 
+ * Verifica se o usuário está autenticado e se tem o perfil 'admin'.
+ * Redireciona para login caso contrário.
+ * 
+ * @param {Object} props - Propriedades do componente
+ * @param {React.ReactNode} props.children - Componentes filhos a serem renderizados se autenticado
+ */
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   
+  // Efeito para verificar autenticação e perfil sempre que mudar de rota
+  useEffect(() => {
+    if (!loading) {
+      console.log('AdminRoute - verificando usuário:', user);
+      if (!user) {
+        // Usuário não está autenticado
+        console.log('Redirecionando para login (sem usuário)');
+        navigate('/login', { replace: true });
+      } else if (user.role !== 'admin') {
+        // Usuário não tem perfil admin
+        console.log('Redirecionando para login (não é admin)');
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [user, loading, navigate, location]);
+  
+  // Mostra indicador de carregamento enquanto verifica autenticação
   if (loading) {
-    return <div>Carregando...</div>;
+    return <Loading />;
   }
   
-  return user?.role === 'admin' ? <>{children}</> : <Navigate to="/login" />;
+  // Renderiza os filhos apenas se o usuário for admin
+  return user?.role === 'admin' ? <>{children}</> : null;
 }
 
+/**
+ * Componente para proteção de rotas de dono de salão
+ * 
+ * Verifica se o usuário está autenticado e se tem o perfil 'salon_owner'.
+ * Redireciona para login caso contrário.
+ * 
+ * @param {Object} props - Propriedades do componente
+ * @param {React.ReactNode} props.children - Componentes filhos a serem renderizados se autenticado
+ */
 function SalonRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Efeito para verificar autenticação e perfil
+  useEffect(() => {
+    if (!loading) {
+      console.log('SalonRoute - verificando usuário:', user);
+      if (!user) {
+        // Usuário não está autenticado
+        console.log('Redirecionando para login (sem usuário)');
+        navigate('/login', { replace: true });
+      } else if (user.role !== 'salon_owner') {
+        // Usuário não é dono de salão
+        console.log('Redirecionando para login (não é salon_owner)');
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [user, loading, navigate, location]);
   
   if (loading) {
-    return <div>Carregando...</div>;
+    return <Loading />;
   }
   
-  return user?.role === 'salon_owner' ? <>{children}</> : <Navigate to="/login" />;
+  return user?.role === 'salon_owner' ? <>{children}</> : null;
 }
 
+/**
+ * Componente para proteção de rotas genéricas (requer apenas autenticação)
+ * 
+ * Verifica se o usuário está autenticado, sem verificar perfil específico.
+ * Redireciona para login caso não esteja autenticado.
+ * 
+ * @param {Object} props - Propriedades do componente
+ * @param {React.ReactNode} props.children - Componentes filhos a serem renderizados se autenticado
+ */
 function ClientRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  useEffect(() => {
+    if (!loading) {
+      console.log('ClientRoute - verificando usuário:', user);
+      if (!user) {
+        console.log('Redirecionando para login (sem usuário)');
+        navigate('/login', { replace: true });
+      }
+    }
+  }, [user, loading, navigate, location]);
   
   if (loading) {
-    return <div>Carregando...</div>;
+    return <Loading />;
   }
   
-  return user ? <>{children}</> : <Navigate to="/login" />;
+  return user ? <>{children}</> : null;
 }
 
+/**
+ * Componente principal da aplicação
+ * 
+ * Define toda a estrutura de roteamento da aplicação, com:
+ * - Rotas públicas (login, registro)
+ * - Rotas administrativas (protegidas para admin)
+ * - Rotas de salão (protegidas para salon_owner)
+ * - Redirecionamentos padrão
+ */
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      {/* Componente para depuração de navegação */}
+      <NavigationDebug />
+      
+      {/* Suspense para carregamento lazy de componentes */}
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          {/* Rotas públicas - acessíveis a qualquer usuário */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Admin routes */}
-        <Route path="/admin" element={
-          <AdminRoute>
-            <AdminLayout>
-              <Outlet />
-            </AdminLayout>
-          </AdminRoute>
-        }>
-          <Route path="dashboard" element={<AdminDashboard />} />
-          <Route path="establishments" element={<AdminEstablishments />} />
-          <Route path="establishments/:salonId/users" element={<SalonUsers />} />
-          <Route path="plans" element={<Plans />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="support" element={<Support />} />
-        </Route>
+          {/* Rotas administrativas - acessíveis apenas a usuários admin */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              {/* Layout administrativo compartilhado */}
+              <AdminLayout>
+                {/* Outlet é onde as sub-rotas serão renderizadas */}
+                <Outlet />
+              </AdminLayout>
+            </AdminRoute>
+          }>
+            {/* Definição das sub-rotas administrativas */}
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="salons" element={<SalonsManagement />} />
+            <Route path="salons/:salonId/users" element={<SalonUsers />} />
+            <Route path="plans" element={<Plans />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="support" element={<Support />} />
+          </Route>
 
-        {/* Salon routes */}
-        <Route path="/salon" element={
-          <SalonRoute>
-            <ClientLayout>
-              <Outlet />
-            </ClientLayout>
-          </SalonRoute>
-        }>
-          <Route path="dashboard" element={<ClientDashboard />} />
-          <Route path="appointments" element={<ClientAppointments />} />
-          <Route path="calendar" element={<ClientCalendar />} />
-          <Route path="services" element={<ClientServices />} />
-          <Route path="settings" element={<ClientSettings />} />
-        </Route>
+          {/* Rotas de salão - acessíveis apenas a donos de salão */}
+          <Route path="/salon" element={
+            <SalonRoute>
+              {/* Layout de salão compartilhado */}
+              <ClientLayout>
+                <Outlet />
+              </ClientLayout>
+            </SalonRoute>
+          }>
+            {/* Definição das sub-rotas de salão */}
+            <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="appointments" element={<ClientAppointments />} />
+            <Route path="calendar" element={<ClientCalendar />} />
+            <Route path="services" element={<ClientServices />} />
+            <Route path="settings" element={<ClientSettings />} />
+          </Route>
 
-        {/* Default redirects */}
-        <Route path="/" element={<Navigate to="/login" />} />
-        <Route path="*" element={<Navigate to="/login" />} />
-      </Routes>
+          {/* Redirecionamentos padrão */}
+          <Route path="/" element={<Navigate to="/login" />} />
+          <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }

@@ -1,39 +1,18 @@
+/**
+ * Página de Suporte Técnico
+ * 
+ * Esta página exibe informações de suporte técnico para administradores,
+ * incluindo logs do sistema, métricas, status dos serviços e problemas reportados.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
-
-interface SystemLog {
-  id: string;
-  action: string;
-  user: string;
-  timestamp: string;
-  details: string;
-}
-
-interface ServiceStatus {
-  id: string;
-  name: string;
-  status: 'operational' | 'degraded' | 'down';
-  lastChecked: string;
-  uptime: number;
-}
-
-interface ReportedProblem {
-  id: string;
-  title: string;
-  description: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'closed';
-  priority: 'low' | 'medium' | 'high' | 'urgent';
-  reportedBy: string;
-  createdAt: string;
-}
-
-interface Metrics {
-  activeUsers: number;
-  apiRequests: number;
-  averageResponseTime: number;
-  errorRate: number;
-}
+import { mockSupportApi } from '@/mocks/support';
+import { 
+  SystemLog, 
+  ServiceStatus, 
+  ReportedProblem, 
+  Metrics 
+} from '@/types/support';
 
 type TabType = 'logs' | 'metrics' | 'status' | 'problems';
 
@@ -48,81 +27,20 @@ export default function Support() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch system logs
-      const { data: logsData } = await supabase
-        .from('audit_logs')
-        .select(`
-          id,
-          action,
-          admin_user:admin_users(email),
-          created_at,
-          changes
-        `)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Busca dados mockados
+      const [logs, servicesStatus, reportedProblems, metricsData] = await Promise.all([
+        mockSupportApi.getSystemLogs(),
+        mockSupportApi.getServicesStatus(),
+        mockSupportApi.getReportedProblems(),
+        mockSupportApi.getMetrics()
+      ]);
 
-      if (logsData) {
-        setSystemLogs(logsData.map(log => ({
-          id: log.id,
-          action: log.action,
-          user: log.admin_user?.email || 'System',
-          timestamp: log.created_at,
-          details: JSON.stringify(log.changes)
-        })));
-      }
-
-      // Fetch reported problems
-      const { data: problemsData } = await supabase
-        .from('support_tickets')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (problemsData) {
-        setProblems(problemsData.map(ticket => ({
-          id: ticket.id,
-          title: ticket.title,
-          description: ticket.description,
-          status: ticket.status,
-          priority: ticket.priority,
-          reportedBy: ticket.reported_by,
-          createdAt: ticket.created_at
-        })));
-      }
-
-      // Fetch metrics from usage_metrics table
-      const { data: metricsData } = await supabase
-        .from('usage_metrics')
-        .select('*')
-        .order('measured_at', { ascending: false })
-        .limit(1);
-
-      if (metricsData && metricsData[0]) {
-        setMetrics({
-          activeUsers: metricsData[0].active_users || 0,
-          apiRequests: metricsData[0].api_requests || 0,
-          averageResponseTime: metricsData[0].avg_response_time || 0,
-          errorRate: metricsData[0].error_rate || 0
-        });
-      }
-
-      // Fetch service status
-      const { data: servicesData } = await supabase
-        .from('service_status')
-        .select('*')
-        .order('name');
-
-      if (servicesData) {
-        setServices(servicesData.map(service => ({
-          id: service.id,
-          name: service.name,
-          status: service.status,
-          lastChecked: service.last_checked,
-          uptime: service.uptime
-        })));
-      }
-
+      setSystemLogs(logs);
+      setServices(servicesStatus);
+      setProblems(reportedProblems);
+      setMetrics(metricsData);
     } catch (error) {
-      console.error('Error fetching support data:', error);
+      console.error('Erro ao buscar dados de suporte:', error);
     } finally {
       setLoading(false);
     }

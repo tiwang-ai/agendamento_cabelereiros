@@ -7,6 +7,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@fullcalendar/react': path.resolve(__dirname, 'node_modules/@fullcalendar/react/dist/index.js'),
     },
   },
   server: {
@@ -17,4 +18,7 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: ['@fullcalendar/react']
+  }
 })

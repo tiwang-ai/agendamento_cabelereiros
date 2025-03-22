@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { WhatsAppStatus, WhatsAppLog } from '@/types';
 
 const API_BASE_URL = import.meta.env.VITE_EVOLUTION_API_URL;
 const API_KEY = import.meta.env.VITE_EVOLUTION_API_KEY;
@@ -10,23 +11,6 @@ const api = axios.create({
     'apikey': API_KEY
   }
 });
-
-export interface WhatsAppStatus {
-  status: 'CONNECTED' | 'DISCONNECTED' | 'CONNECTING' | 'ERROR';
-  qrCode?: string;
-  error?: string;
-  batteryLevel?: number;
-  lastSeen?: string;
-  webhookUrl?: string;
-}
-
-export interface WhatsAppLog {
-  id: string;
-  timestamp: string;
-  event: string;
-  details: string;
-  level: 'info' | 'warning' | 'error';
-}
 
 export const whatsappService = {
   async getConnectionStatus(instanceId: string): Promise<WhatsAppStatus> {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   HomeIcon,
@@ -12,10 +12,12 @@ import {
   ChatBubbleLeftRightIcon,
   ArrowRightOnRectangleIcon
 } from '@heroicons/react/24/outline';
+import { useAdminAuth } from '@/contexts/auth/AdminAuthContext';
+import api from '@/lib/axios';
 
 const navigation = [
   { name: 'Dashboard', href: '/admin/dashboard', icon: HomeIcon },
-  { name: 'Estabelecimentos', href: '/admin/establishments', icon: BuildingOfficeIcon },
+  { name: 'Salões', href: '/admin/salons', icon: BuildingOfficeIcon },
   { name: 'Planos', href: '/admin/plans', icon: CurrencyDollarIcon },
   { name: 'Suporte Técnico', href: '/admin/support', icon: WrenchScrewdriverIcon },
   { name: 'Usuários', href: '/admin/users', icon: UsersIcon },
@@ -29,9 +31,17 @@ const navigation = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { adminUser, signOutAdmin } = useAdminAuth();
+
+  useEffect(() => {
+    // Verificar se o usuário está autenticado como admin
+    if (!adminUser) {
+      navigate('/login', { replace: true });
+    }
+  }, [adminUser, navigate]);
 
   const handleLogout = async () => {
-    // Implementar logout
+    await signOutAdmin();
     navigate('/login');
   };
 

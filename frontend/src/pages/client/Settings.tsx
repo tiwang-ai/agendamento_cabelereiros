@@ -1,5 +1,11 @@
+/**
+ * Configurações do Salão
+ * 
+ * Este componente permite ao proprietário do salão gerenciar suas configurações,
+ * incluindo informações básicas, telefones e horários de funcionamento.
+ * Utiliza dados mockados enquanto a integração com backend não está disponível.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -19,20 +25,32 @@ interface BusinessHour {
 }
 
 const DAYS_OF_WEEK = [
-  'Sunday',
-  'Monday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday'
+  'Domingo',
+  'Segunda-feira',
+  'Terça-feira',
+  'Quarta-feira',
+  'Quinta-feira',
+  'Sexta-feira',
+  'Sábado'
 ];
 
 const DEFAULT_BUSINESS_HOURS: BusinessHour[] = DAYS_OF_WEEK.map(day => ({
   day,
-  isOpen: day !== 'Sunday',
+  isOpen: day !== 'Domingo',
   periods: [{ open: '09:00', close: '18:00' }]
 }));
+
+/**
+ * Dados mockados para simular a resposta da API
+ */
+const MOCK_SALON: Salon = {
+  id: 'salon-123',
+  name: 'Salão de Beleza Exemplo',
+  address: 'Rua Exemplo, 123 - Bairro, Cidade - UF',
+  phones: ['(11) 99999-8888', '(11) 2222-3333'],
+  general_info: 'Salão especializado em cortes femininos e masculinos, com equipe qualificada e ambiente agradável.',
+  business_hours: DEFAULT_BUSINESS_HOURS
+};
 
 export default function Settings() {
   const { user } = useAuth();
@@ -50,13 +68,11 @@ export default function Settings() {
       if (!user) return;
 
       try {
-        const { data: salonData, error: salonError } = await supabase
-          .from('salons')
-          .select('*')
-          .eq('owner_id', user.id)
-          .single();
-
-        if (salonError) throw salonError;
+        // Simulando delay de rede
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Usando dados mockados
+        const salonData = MOCK_SALON;
 
         setSalon(salonData);
         setFormData(salonData);
@@ -64,8 +80,8 @@ export default function Settings() {
         setPhones(salonData.phones || []);
         setError(null);
       } catch (error) {
-        console.error('Error fetching salon:', error);
-        setError('Error loading salon information');
+        console.error('Erro ao buscar informações do salão:', error);
+        setError('Erro ao carregar informações do salão');
       } finally {
         setLoading(false);
       }
@@ -78,22 +94,29 @@ export default function Settings() {
     if (!salon || !user) return;
 
     try {
-      const { error } = await supabase
-        .from('salons')
-        .update({
-          ...formData,
-          business_hours: businessHours,
-          phones
-        })
-        .eq('id', salon.id);
-
-      if (error) throw error;
-
+      setLoading(true);
+      
+      // Simulando delay de rede
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Simulando atualização de dados
+      console.log('Dados sendo salvos:', {
+        ...formData,
+        business_hours: businessHours,
+        phones
+      });
+      
+      // Atualizando estado local com os novos dados
       setIsEditing(false);
       setSalon({ ...salon, ...formData, business_hours: businessHours, phones });
+      
+      // Feedback ao usuário
+      alert('Configurações salvas com sucesso!');
     } catch (error) {
-      console.error('Error updating salon:', error);
-      setError('Error saving changes');
+      console.error('Erro ao atualizar salão:', error);
+      setError('Erro ao salvar alterações');
+    } finally {
+      setLoading(false);
     }
   };
 

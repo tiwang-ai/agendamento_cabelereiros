@@ -1,14 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import AppointmentForm from '@/components/AppointmentForm';
-import { Database } from '@/lib/database.types';
-
-type Appointment = Database['public']['Tables']['appointments']['Row'] & {
-  client: { name: string };
-  professional: { name: string };
-  service: { name: string };
-};
+import { salonService } from '@/services/salon';
+import { Appointment } from '@/types';
 
 export default function ClientAppointments() {
   const [showForm, setShowForm] = useState(false);
@@ -22,27 +16,9 @@ export default function ClientAppointments() {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (salonData) {
-        const { data } = await supabase
-          .from('appointments')
-          .select(`
-            *,
-            client:clients(name),
-            professional:professionals(name),
-            service:services(name)
-          `)
-          .eq('salon_id', salonData.id)
-          .not('status', 'eq', 'cancelled')
-          .order('start_time', { ascending: true });
-
-        setAppointments(data || []);
-      }
+      setLoading(true);
+      const data = await salonService.getAppointments();
+      setAppointments(data || []);
     } catch (error) {
       console.error('Error fetching appointments:', error);
     } finally {
@@ -63,14 +39,12 @@ export default function ClientAppointments() {
     if (!confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ status: 'cancelled' })
-        .eq('id', appointmentId);
-
-      if (error) throw error;
-
-      fetchAppointments();
+      const success = await salonService.cancelAppointment(appointmentId);
+      if (success) {
+        fetchAppointments();
+      } else {
+        throw new Error('Falha ao cancelar agendamento');
+      }
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       alert('Erro ao cancelar agendamento. Por favor, tente novamente.');

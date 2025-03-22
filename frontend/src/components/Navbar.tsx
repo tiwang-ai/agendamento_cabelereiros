@@ -15,7 +15,7 @@ const navigation = [
     subItems: [
       { name: 'Serviços', href: '/data/services' },
       { name: 'Profissionais', href: '/data/professionals' },
-      { name: 'Estabelecimento', href: '/data/establishment' },
+      { name: 'Salão', href: '/data/salon' },
     ]
   },
   { name: 'WhatsApp', href: '/settings/whatsapp' },

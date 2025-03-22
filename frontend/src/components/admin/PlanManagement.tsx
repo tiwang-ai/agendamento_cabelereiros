@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import SubscriptionPlanForm from './SubscriptionPlanForm';
+import { mockApi } from '@/mocks/data';
 
 interface SubscriptionPlan {
   id: string;
@@ -22,13 +22,11 @@ export default function PlanManagement() {
 
   const fetchPlans = async () => {
     try {
-      const { data, error } = await supabase
-        .from('subscription_plans')
-        .select('*')
-        .eq('active', true)
-        .order('price');
-
-      if (error) throw error;
+      // Simulando delay de rede
+      await mockApi.delay(500);
+      
+      // Usando dados mockados
+      const data = await mockApi.getSubscriptionPlans();
       setPlans(data || []);
     } catch (error) {
       console.error('Error fetching plans:', error);
@@ -48,29 +46,21 @@ export default function PlanManagement() {
 
   const handleDelete = async (id: string) => {
     try {
-      // First check if there are any active subscriptions using this plan
-      const { data: activeSubscriptions, error: checkError } = await supabase
-        .from('subscriptions')
-        .select('id')
-        .eq('plan_id', id)
-        .eq('status', 'active');
-
-      if (checkError) throw checkError;
+      // Simulando delay de rede
+      await mockApi.delay(500);
+      
+      // Verificar assinaturas ativas
+      const activeSubscriptions = await mockApi.getActiveSubscriptions(id);
 
       if (activeSubscriptions && activeSubscriptions.length > 0) {
         alert('Não é possível excluir um plano que possui assinaturas ativas.');
         return;
       }
 
-      // If no active subscriptions, proceed with the deletion
-      const { error: deleteError } = await supabase
-        .from('subscription_plans')
-        .delete()
-        .eq('id', id);
+      // Deletar plano
+      await mockApi.deleteSubscriptionPlan(id);
 
-      if (deleteError) throw deleteError;
-
-      // Refresh the plans list
+      // Atualizar lista
       fetchPlans();
       setShowDeleteConfirm(null);
     } catch (error) {

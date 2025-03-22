@@ -1,35 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database } from '@/lib/database.types';
+import { mockApi } from '@/mocks/data';
+import { Service } from '@/types';
 
-// ... (previous imports and type definitions remain the same)
+interface ProfessionalFormProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
 
 export default function ProfessionalForm({ onClose, onSuccess }: ProfessionalFormProps) {
-  // ... (previous state and hooks remain the same)
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchServices = async () => {
       if (!user) return;
 
       try {
-        const { data: salonData } = await supabase
-          .from('salons')
-          .select('id')
-          .eq('owner_id', user.id)
-          .single();
-
-        if (salonData) {
-          const { data } = await supabase
-            .from('services')
-            .select('*')
-            .eq('salon_id', salonData.id)
-            .eq('active', true)
-            .order('name');
-
-          setServices(data || []);
-        }
+        // Simulando delay de rede
+        await mockApi.delay(500);
+        
+        // Usando dados mockados
+        const salonId = '1'; // ID fixo para teste
+        const data = await mockApi.getServices(salonId);
+        setServices(data || []);
       } catch (error) {
         console.error('Error fetching services:', error);
       } finally {

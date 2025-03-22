@@ -1,19 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Database } from '@/lib/database.types';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppointmentForm from '@/components/AppointmentForm';
+import { mockApi } from '@/lib/mockApi';
 
-type Professional = Database['public']['Tables']['professionals']['Row'];
-type Appointment = Database['public']['Tables']['appointments']['Row'] & {
+interface Professional {
+  id: string;
+  name: string;
+  salon_id: string;
+}
+
+interface Appointment {
+  id: string;
   client: { name: string };
   service: { name: string };
   professional: { name: string };
-};
+  start_time: string;
+  end_time: string;
+  status: 'confirmed' | 'cancelled';
+}
 
 interface ProfessionalScheduleProps {
   professional: Professional;
@@ -112,17 +120,10 @@ export default function ProfessionalSchedule({ professional, onClose }: Professi
 
   const fetchAppointmentDetails = async (appointmentId: string) => {
     try {
-      const { data } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          client:clients(*),
-          professional:professionals(*),
-          service:services(*)
-        `)
-        .eq('id', appointmentId)
-        .single();
-
+      // Simula um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const data = await mockApi.getAppointmentDetails(appointmentId);
       return data;
     } catch (error) {
       console.error('Error fetching appointment details:', error);
@@ -133,15 +134,10 @@ export default function ProfessionalSchedule({ professional, onClose }: Professi
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const { data } = await supabase
-          .from('appointments')
-          .select(`
-            *,
-            client:clients(name),
-            service:services(name)
-          `)
-          .eq('professional_id', professional.id)
-          .eq('status', 'confirmed');
+        // Simula um delay de rede
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const data = await mockApi.getProfessionalAppointments(professional.id);
 
         if (data) {
           const formattedAppointments = data.map((apt: Appointment) => ({
@@ -186,21 +182,15 @@ export default function ProfessionalSchedule({ professional, onClose }: Professi
   };
 
   const handleCancelAppointment = async () => {
-    if (!selectedEvent || !confirm('Are you sure you want to cancel this appointment?')) return;
+    if (!selectedEvent || !confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ status: 'cancelled' })
-        .eq('id', selectedEvent.extendedProps.appointmentId);
-
-      if (error) throw error;
-
-      // Refresh appointments
+      await mockApi.cancelAppointment(selectedEvent.extendedProps.appointmentId);
+      // Atualiza a lista de agendamentos
       window.location.reload();
     } catch (error) {
       console.error('Error cancelling appointment:', error);
-      alert('Error cancelling appointment. Please try again.');
+      alert('Erro ao cancelar o agendamento. Por favor, tente novamente.');
     }
   };
 

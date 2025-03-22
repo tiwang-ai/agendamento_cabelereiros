@@ -1,12 +1,66 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import ServiceForm from '@/components/ServiceForm';
 import ServiceEditForm from '@/components/ServiceEditForm';
-import { Database } from '@/lib/database.types';
+import { Service } from '@/types';
 
-type Service = Database['public']['Tables']['services']['Row'];
+// Dados mockados para simular os serviços do salão
+const MOCK_SERVICES: Service[] = [
+  {
+    id: '1',
+    name: 'Corte Masculino',
+    description: 'Corte de cabelo masculino tradicional',
+    price: 35.0,
+    duration: 30,
+    salon_id: '1',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Corte Feminino',
+    description: 'Corte de cabelo feminino com finalização',
+    price: 70.0,
+    duration: 60,
+    salon_id: '1',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Barba',
+    description: 'Corte e modelagem de barba completo',
+    price: 25.0,
+    duration: 20,
+    salon_id: '1',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    name: 'Coloração',
+    description: 'Serviço completo de coloração de cabelo',
+    price: 120.0,
+    duration: 90,
+    salon_id: '1',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    name: 'Hidratação',
+    description: 'Tratamento de hidratação profunda',
+    price: 80.0,
+    duration: 45,
+    salon_id: '1',
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+];
 
+/**
+ * Componente para gerenciamento de serviços do salão
+ */
 export default function Services() {
   const [showForm, setShowForm] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -15,28 +69,20 @@ export default function Services() {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
 
+  /**
+   * Busca os serviços do salão (simulada com dados mockados)
+   */
   const fetchServices = async () => {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (salonData) {
-        const { data } = await supabase
-          .from('services')
-          .select('*')
-          .eq('salon_id', salonData.id)
-          .eq('active', true)
-          .order('name');
-
-        setServices(data || []);
-      }
+      // Simulando um atraso de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Usando dados mockados
+      setServices(MOCK_SERVICES);
     } catch (error) {
-      console.error('Error fetching services:', error);
+      console.error('Erro ao buscar serviços:', error);
     } finally {
       setLoading(false);
     }
@@ -46,26 +92,35 @@ export default function Services() {
     fetchServices();
   }, [user]);
 
+  /**
+   * Função para editar um serviço
+   */
   const handleEdit = (service: Service) => {
     setSelectedService(service);
     setShowEditForm(true);
   };
 
+  /**
+   * Função para remover um serviço (marcar como inativo)
+   */
   const handleRemove = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to remove this service?')) return;
+    if (!confirm('Tem certeza que deseja remover este serviço?')) return;
 
     try {
-      const { error } = await supabase
-        .from('services')
-        .update({ active: false })
-        .eq('id', serviceId);
-
-      if (error) throw error;
-
-      fetchServices();
+      // Simulando um atraso de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Atualizando os serviços localmente
+      setServices(prevServices => 
+        prevServices.map(service => 
+          service.id === serviceId 
+            ? { ...service, active: false } 
+            : service
+        ).filter(service => service.active)
+      );
     } catch (error) {
-      console.error('Error removing service:', error);
-      alert('Error removing service. Please try again.');
+      console.error('Erro ao remover serviço:', error);
+      alert('Erro ao remover serviço. Por favor, tente novamente.');
     }
   };
 
@@ -80,19 +135,19 @@ export default function Services() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Services</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Serviços</h1>
         <button
           onClick={() => setShowForm(true)}
           className="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700"
         >
-          New Service
+          Novo Serviço
         </button>
       </div>
 
       {showForm && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">New Service</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Novo Serviço</h2>
             <ServiceForm
               onClose={() => setShowForm(false)}
               onSuccess={() => {
@@ -107,7 +162,7 @@ export default function Services() {
       {showEditForm && selectedService && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Edit Service</h2>
+            <h2 className="text-lg font-medium text-gray-900 mb-4">Editar Serviço</h2>
             <ServiceEditForm
               service={selectedService}
               onClose={() => {
@@ -128,20 +183,23 @@ export default function Services() {
         {services.map((service) => (
           <div key={service.id} className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="text-lg font-semibold text-gray-900">{service.name}</h3>
-            <p className="text-gray-500 mt-2">Duration: {service.duration}min</p>
+            {service.description && (
+              <p className="text-gray-600 mt-1">{service.description}</p>
+            )}
+            <p className="text-gray-500 mt-2">Duração: {service.duration} min</p>
             <p className="text-primary-600 font-bold mt-2">R$ {service.price.toFixed(2)}</p>
             <div className="mt-4 flex space-x-4">
               <button
                 onClick={() => handleEdit(service)}
                 className="text-primary-600 hover:text-primary-900"
               >
-                Edit
+                Editar
               </button>
               <button
                 onClick={() => handleRemove(service.id)}
                 className="text-red-600 hover:text-red-900"
               >
-                Remove
+                Remover
               </button>
             </div>
           </div>

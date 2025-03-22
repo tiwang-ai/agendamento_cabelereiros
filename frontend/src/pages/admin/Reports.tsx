@@ -1,7 +1,19 @@
+/**
+ * Relatórios Administrativos
+ * 
+ * Este componente permite aos administradores gerar diferentes tipos de relatórios
+ * sobre o sistema, incluindo dados de salões, assinaturas, agendamentos, etc.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import {
+  getMockSalons,
+  getMockSubscriptions,
+  getMockAppointments,
+  getMockClients,
+  getMockServices
+} from '@/mocks/reports';
 
 type ReportType = 'appointments' | 'clients' | 'revenue' | 'services' | 'subscriptions';
 
@@ -47,13 +59,8 @@ export default function Reports() {
   useEffect(() => {
     const fetchSalons = async () => {
       try {
-        const { data: salonsData, error: salonsError } = await supabase
-          .from('salon_details')
-          .select('id, name, owner_email')
-          .order('name');
-
-        if (salonsError) throw salonsError;
-        setSalons(salonsData || []);
+        const salonsData = await getMockSalons();
+        setSalons(salonsData);
       } catch (error) {
         console.error('Error fetching salons:', error);
         setError('Erro ao carregar estabelecimentos');
@@ -85,30 +92,9 @@ export default function Reports() {
 
       switch (filters.type) {
         case 'subscriptions': {
-          const { data: subscriptions, error: subscriptionsError } = await supabase
-            .from('subscriptions')
-            .select(`
-              id,
-              salon_id,
-              status,
-              current_period_start,
-              current_period_end,
-              canceled_at,
-              salons (
-                name,
-                owner_email
-              ),
-              subscription_plans (
-                name,
-                price
-              )
-            `)
-            .gte('current_period_start', `${filters.startDate}T00:00:00`)
-            .lte('current_period_start', `${filters.endDate}T23:59:59`);
+          const subscriptions = await getMockSubscriptions(filters.startDate, filters.endDate);
 
-          if (subscriptionsError) throw subscriptionsError;
-
-          reportData = (subscriptions || []).map(sub => ({
+          reportData = subscriptions.map(sub => ({
             'Estabelecimento': sub.salons?.name || '-',
             'Email do Proprietário': sub.salons?.owner_email || '-',
             'Plano': sub.subscription_plans?.name || '-',
@@ -127,32 +113,13 @@ export default function Reports() {
         }
 
         case 'appointments': {
-          const { data: appointments, error: appointmentsError } = await supabase
-            .from('appointments')
-            .select(`
-              id,
-              start_time,
-              end_time,
-              status,
-              clients (
-                name
-              ),
-              professionals (
-                name
-              ),
-              services (
-                name,
-                price
-              )
-            `)
-            .eq('salon_id', filters.salonId)
-            .gte('start_time', `${filters.startDate}T00:00:00`)
-            .lte('start_time', `${filters.endDate}T23:59:59`)
-            .order('start_time', { ascending: true });
-
-          if (appointmentsError) throw appointmentsError;
+          const appointments = await getMockAppointments(
+            filters.salonId!,
+            filters.startDate,
+            filters.endDate
+          );
           
-          reportData = (appointments || []).map(appointment => ({
+          reportData = appointments.map(appointment => ({
             'Data': new Date(appointment.start_time).toLocaleDateString('pt-BR'),
             'Horário': new Date(appointment.start_time).toLocaleTimeString('pt-BR', { 
               hour: '2-digit', 
@@ -175,26 +142,13 @@ export default function Reports() {
         }
 
         case 'clients': {
-          const { data: clients, error: clientsError } = await supabase
-            .from('clients')
-            .select(`
-              id,
-              name,
-              email,
-              phone,
-              created_at,
-              appointments (
-                id,
-                status
-              )
-            `)
-            .eq('salon_id', filters.salonId)
-            .gte('created_at', `${filters.startDate}T00:00:00`)
-            .lte('created_at', `${filters.endDate}T23:59:59`);
+          const clients = await getMockClients(
+            filters.salonId!,
+            filters.startDate,
+            filters.endDate
+          );
 
-          if (clientsError) throw clientsError;
-
-          reportData = (clients || []).map(client => ({
+          reportData = clients.map(client => ({
             'Nome': client.name,
             'Email': client.email || '-',
             'Telefone': client.phone || '-',
@@ -207,24 +161,13 @@ export default function Reports() {
         }
 
         case 'revenue': {
-          const { data: appointments, error: revenueError } = await supabase
-            .from('appointments')
-            .select(`
-              start_time,
-              status,
-              services (
-                name,
-                price
-              )
-            `)
-            .eq('salon_id', filters.salonId)
-            .in('status', ['completed', 'confirmed'])
-            .gte('start_time', `${filters.startDate}T00:00:00`)
-            .lte('start_time', `${filters.endDate}T23:59:59`);
+          const appointments = await getMockAppointments(
+            filters.salonId!,
+            filters.startDate,
+            filters.endDate
+          );
 
-          if (revenueError) throw revenueError;
-
-          const dailyRevenue = (appointments || []).reduce((acc: any, curr) => {
+          const dailyRevenue = appointments.reduce((acc: any, curr) => {
             const date = new Date(curr.start_time).toLocaleDateString('pt-BR');
             if (!acc[date]) {
               acc[date] = { 
@@ -268,25 +211,9 @@ export default function Reports() {
         }
 
         case 'services': {
-          const { data: services, error: servicesError } = await supabase
-            .from('services')
-            .select(`
-              id,
-              name,
-              duration,
-              price,
-              appointments (
-                id,
-                status,
-                start_time
-              )
-            `)
-            .eq('salon_id', filters.salonId)
-            .eq('active', true);
+          const services = await getMockServices(filters.salonId!);
 
-          if (servicesError) throw servicesError;
-
-          reportData = (services || []).map(service => {
+          reportData = services.map(service => {
             const appointments = service.appointments || [];
             const filteredAppointments = appointments.filter(apt => {
               const aptDate = new Date(apt.start_time);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { mockApi } from '@/lib/mockApi';
 
 interface ClientFormData {
   name: string;
@@ -22,32 +22,25 @@ export default function ClientForm({ onClose, onSuccess }: ClientFormProps) {
     if (!user) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
+      // Simula um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const salonData = await mockApi.getSalonByOwnerId(user.id);
 
       if (!salonData) throw new Error('Salon not found');
 
-      const { error } = await supabase
-        .from('clients')
-        .insert([
-          {
-            salon_id: salonData.id,
-            name: data.name,
-            email: data.email || null,
-            phone: data.phone || null,
-          }
-        ]);
-
-      if (error) throw error;
+      await mockApi.addClient({
+        salon_id: salonData.id,
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+      });
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error creating client:', error);
-      alert('Error creating client. Please try again.');
+      alert('Erro ao criar cliente. Por favor, tente novamente.');
     }
   };
 

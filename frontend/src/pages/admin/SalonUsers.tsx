@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
 import { TrashIcon, PencilIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import SalonUserForm from '@/components/admin/SalonUserForm';
-
-interface SalonUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  role: 'admin' | 'owner' | 'professional' | 'receptionist';
-  active: boolean;
-}
+import { salonService } from '@/services/salon';
+import { SalonUser } from '@/types';
 
 export default function SalonUsers() {
   const { salonId } = useParams<{ salonId: string }>();
@@ -23,14 +15,11 @@ export default function SalonUsers() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   const fetchUsers = async () => {
+    if (!salonId) return;
+    
     try {
-      const { data, error } = await supabase
-        .from('salon_users')
-        .select('*')
-        .eq('salon_id', salonId)
-        .order('name');
-
-      if (error) throw error;
+      setLoading(true);
+      const data = await salonService.getSalonUsers(salonId);
       setUsers(data || []);
     } catch (error) {
       console.error('Erro ao buscar usuários:', error);
@@ -51,15 +40,16 @@ export default function SalonUsers() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!salonId) return;
+    
     try {
-      const { error } = await supabase
-        .from('salon_users')
-        .update({ active: false })
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchUsers();
-      setShowDeleteConfirm(null);
+      const success = await salonService.deleteSalonUser(salonId, id);
+      if (success) {
+        fetchUsers();
+        setShowDeleteConfirm(null);
+      } else {
+        throw new Error('Falha ao excluir usuário');
+      }
     } catch (error) {
       console.error('Erro ao excluir usuário:', error);
       alert('Erro ao excluir usuário. Por favor, tente novamente.');
@@ -79,7 +69,7 @@ export default function SalonUsers() {
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/admin/establishments')}
+            onClick={() => navigate('/admin/salons')}
             className="flex items-center text-gray-600 hover:text-gray-900"
           >
             <ArrowLeftIcon className="h-5 w-5 mr-1" />

@@ -1,17 +1,14 @@
+/**
+ * Formulário de Agendamento
+ * 
+ * Este componente permite criar e editar agendamentos,
+ * incluindo seleção de cliente, profissional, serviço e horário.
+ */
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Database } from '@/lib/database.types';
-
-type Client = Database['public']['Tables']['clients']['Row'];
-type Professional = Database['public']['Tables']['professionals']['Row'];
-type Service = Database['public']['Tables']['services']['Row'];
-type Appointment = Database['public']['Tables']['appointments']['Row'] & {
-  client: { name: string };
-  professional: { name: string };
-  service: { name: string };
-};
+import { Appointment, Client, Professional, Service } from '@/types';
+import { mockAppointmentService } from '@/mocks/appointments';
 
 interface AppointmentFormData {
   clientId: string;
@@ -121,23 +118,17 @@ export default function AppointmentForm({ appointment, onClose, onSuccess }: App
       if (!user) return;
 
       try {
-        const { data: salonData } = await supabase
-          .from('salons')
-          .select('id')
-          .eq('owner_id', user.id)
-          .single();
+        // Usando dados mockados
+        const salonId = 'salon-1'; // ID fixo para teste
+        const [clientsData, professionalsData, servicesData] = await Promise.all([
+          mockAppointmentService.getClients(salonId),
+          mockAppointmentService.getProfessionals(salonId),
+          mockAppointmentService.getServices(salonId)
+        ]);
 
-        if (salonData) {
-          const [clientsResponse, professionalsResponse, servicesResponse] = await Promise.all([
-            supabase.from('clients').select('*').eq('salon_id', salonData.id),
-            supabase.from('professionals').select('*').eq('salon_id', salonData.id),
-            supabase.from('services').select('*').eq('salon_id', salonData.id).eq('active', true)
-          ]);
-
-          setClients(clientsResponse.data || []);
-          setProfessionals(professionalsResponse.data || []);
-          setServices(servicesResponse.data || []);
-        }
+        setClients(clientsData);
+        setProfessionals(professionalsData);
+        setServices(servicesData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -156,38 +147,23 @@ export default function AppointmentForm({ appointment, onClose, onSuccess }: App
   }, [serviceId, services]);
 
   const checkAvailability = async (startTime: Date, endTime: Date, professionalId: string) => {
-    const query = supabase
-      .from('appointments')
-      .select('*')
-      .eq('professional_id', professionalId)
-      .eq('status', 'confirmed')
-      .or(`start_time.lte.${endTime.toISOString()},end_time.gte.${startTime.toISOString()}`);
-
-    // If editing an existing appointment, exclude it from the check
-    if (appointment) {
-      query.neq('id', appointment.id);
-    }
-
-    const { data: existingAppointments } = await query;
-    return !existingAppointments || existingAppointments.length === 0;
+    return await mockAppointmentService.checkAvailability(
+      startTime,
+      endTime,
+      professionalId,
+      appointment?.id
+    );
   };
 
   const onSubmit = async (data: AppointmentFormData) => {
     if (!user || !selectedService) return;
 
     try {
-      const { data: salonData } = await supabase
-        .from('salons')
-        .select('id')
-        .eq('owner_id', user.id)
-        .single();
-
-      if (!salonData) throw new Error('Salon not found');
-
+      const salonId = 'salon-1'; // ID fixo para teste
       const startTime = new Date(`${data.date}T${data.time}`);
       const endTime = new Date(startTime.getTime() + selectedService.duration * 60000);
 
-      // Check if the time slot is available
+      // Verifica se o horário está disponível
       const isAvailable = await checkAvailability(startTime, endTime, data.professionalId);
 
       if (!isAvailable) {
@@ -196,37 +172,29 @@ export default function AppointmentForm({ appointment, onClose, onSuccess }: App
       }
 
       const appointmentData = {
-        salon_id: salonData.id,
+        salon_id: salonId,
         client_id: data.clientId,
         professional_id: data.professionalId,
         service_id: data.serviceId,
         start_time: startTime.toISOString(),
         end_time: endTime.toISOString(),
-        status: 'confirmed'
+        status: 'CONFIRMED',
+        observations: null
       };
 
       if (appointment) {
-        // Update existing appointment
-        const { error } = await supabase
-          .from('appointments')
-          .update(appointmentData)
-          .eq('id', appointment.id);
-
-        if (error) throw error;
+        // Atualiza agendamento existente
+        await mockAppointmentService.updateAppointment(appointment.id, appointmentData);
       } else {
-        // Create new appointment
-        const { error } = await supabase
-          .from('appointments')
-          .insert([appointmentData]);
-
-        if (error) throw error;
+        // Cria novo agendamento
+        await mockAppointmentService.createAppointment(appointmentData);
       }
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error saving appointment:', error);
-      alert('Error saving appointment. Please try again.');
+      alert('Erro ao salvar agendamento. Por favor, tente novamente.');
     }
   };
 

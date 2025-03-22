@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { mockApi } from '@/mocks/data';
 
 interface SubscriptionPlan {
   id: string;
@@ -27,13 +27,11 @@ export default function SubscriptionPlanForm({ salonId, onClose, onSuccess }: Su
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const { data, error } = await supabase
-          .from('subscription_plans')
-          .select('*')
-          .eq('active', true)
-          .order('price');
-
-        if (error) throw error;
+        // Simulando delay de rede
+        await mockApi.delay(500);
+        
+        // Usando dados mockados
+        const data = await mockApi.getSubscriptionPlans();
         setPlans(data || []);
         if (data && data.length > 0) {
           setSelectedPlanId(data[0].id);
@@ -60,38 +58,27 @@ export default function SubscriptionPlanForm({ salonId, onClose, onSuccess }: Su
     setError(null);
 
     try {
-      // Check for existing active subscription
-      const { data: existingSubscription } = await supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('salon_id', salonId)
-        .eq('status', 'active')
-        .single();
+      // Simulando delay de rede
+      await mockApi.delay(500);
+      
+      // Verificar assinatura existente
+      const existingSubscription = await mockApi.getActiveSubscription(salonId);
 
       if (existingSubscription) {
-        // Update existing subscription
-        const { error: updateError } = await supabase
-          .from('subscriptions')
-          .update({
-            plan_id: selectedPlanId,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', existingSubscription.id);
-
-        if (updateError) throw updateError;
+        // Atualizar assinatura existente
+        await mockApi.updateSubscription(existingSubscription.id, {
+          plan_id: selectedPlanId,
+          updated_at: new Date().toISOString()
+        });
       } else {
-        // Create new subscription
-        const { error: createError } = await supabase
-          .from('subscriptions')
-          .insert([{
-            salon_id: salonId,
-            plan_id: selectedPlanId,
-            status: 'active',
-            current_period_start: new Date().toISOString(),
-            current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-          }]);
-
-        if (createError) throw createError;
+        // Criar nova assinatura
+        await mockApi.createSubscription({
+          salon_id: salonId,
+          plan_id: selectedPlanId,
+          status: 'active',
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        });
       }
 
       onSuccess();

@@ -1,5 +1,10 @@
+/**
+ * Calendário de Agendamentos
+ * 
+ * Este componente exibe um calendário interativo com todos os agendamentos
+ * do salão, permitindo visualizar, editar e cancelar agendamentos.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -7,13 +12,8 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 import AppointmentForm from '@/components/AppointmentForm';
-import { Database } from '@/lib/database.types';
-
-type Appointment = Database['public']['Tables']['appointments']['Row'] & {
-  client: { name: string };
-  professional: { name: string; color: string };
-  service: { name: string };
-};
+import { Appointment } from '@/types';
+import { mockCalendarService } from '@/mocks/calendar';
 
 interface EventModalProps {
   event: any;
@@ -120,42 +120,26 @@ export default function Calendar() {
       if (!user) return;
 
       try {
-        const { data: salonData } = await supabase
-          .from('salons')
-          .select('id')
-          .eq('owner_id', user.id)
-          .single();
+        // Usando dados mockados
+        const data = await mockCalendarService.getAppointments('salon-1'); // ID fixo para teste
 
-        if (salonData) {
-          const { data } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              client:clients(name),
-              professional:professionals(name, color),
-              service:services(name)
-            `)
-            .eq('salon_id', salonData.id)
-            .eq('status', 'confirmed');
-
-          if (data) {
-            const formattedAppointments = data.map((apt: Appointment) => ({
-              id: apt.id,
-              title: `${apt.client.name} - ${apt.service.name}`,
-              start: apt.start_time,
-              end: apt.end_time,
-              backgroundColor: apt.professional.color || '#4F46E5',
-              borderColor: apt.professional.color || '#4F46E5',
-              textColor: '#ffffff',
-              extendedProps: {
-                client: apt.client.name,
-                professional: apt.professional.name,
-                service: apt.service.name,
-                appointmentId: apt.id
-              }
-            }));
-            setAppointments(formattedAppointments);
-          }
+        if (data) {
+          const formattedAppointments = data.map((apt: Appointment) => ({
+            id: apt.id,
+            title: `${apt.client?.name} - ${apt.service?.name}`,
+            start: apt.start_time,
+            end: apt.end_time,
+            backgroundColor: apt.professional?.color || '#4F46E5',
+            borderColor: apt.professional?.color || '#4F46E5',
+            textColor: '#ffffff',
+            extendedProps: {
+              client: apt.client?.name,
+              professional: apt.professional?.name,
+              service: apt.service?.name,
+              appointmentId: apt.id
+            }
+          }));
+          setAppointments(formattedAppointments);
         }
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -175,16 +159,7 @@ export default function Calendar() {
     if (!selectedEvent) return;
 
     try {
-      const { data } = await supabase
-        .from('appointments')
-        .select(`
-          *,
-          client:clients(*),
-          professional:professionals(*),
-          service:services(*)
-        `)
-        .eq('id', selectedEvent.extendedProps.appointmentId)
-        .single();
+      const data = await mockCalendarService.getAppointment(selectedEvent.extendedProps.appointmentId);
 
       if (data) {
         setSelectedAppointment(data);
@@ -200,14 +175,16 @@ export default function Calendar() {
     if (!selectedEvent || !confirm('Tem certeza que deseja cancelar este agendamento?')) return;
 
     try {
-      const { error } = await supabase
-        .from('appointments')
-        .update({ status: 'cancelled' })
-        .eq('id', selectedEvent.extendedProps.appointmentId);
+      const success = await mockCalendarService.updateAppointmentStatus(
+        selectedEvent.extendedProps.appointmentId,
+        'CANCELED'
+      );
 
-      if (error) throw error;
-
-      window.location.reload();
+      if (success) {
+        window.location.reload();
+      } else {
+        throw new Error('Falha ao cancelar agendamento');
+      }
     } catch (error) {
       console.error('Error cancelling appointment:', error);
       alert('Erro ao cancelar agendamento. Por favor, tente novamente.');

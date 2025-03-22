@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { login as loginService, logout as logoutService } from '@/services/auth';
+import { User } from '@/types';
+import api from '@/lib/axios';
 
 interface AdminUser {
   id: string;
@@ -24,73 +26,61 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInAdmin = async (email: string, password: string) => {
     try {
-      // First try to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      // If sign in fails with invalid credentials, try to sign up
-      if (signInError?.message === 'Invalid login credentials') {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              role: 'super_admin'
-            }
-          }
-        });
-
-        if (signUpError) {
-          console.error('Error creating auth user:', signUpError);
-          return { error: 'Erro ao criar usuário. Por favor, tente novamente.' };
-        }
-
-        // Try signing in again after signup
-        const { error: retryError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (retryError) {
-          return { error: 'Credenciais administrativas inválidas' };
-        }
-      } else if (signInError) {
-        return { error: 'Credenciais administrativas inválidas' };
+      // Tentar fazer login usando o backend Django
+      const response = await loginService({ email, password });
+      
+      // Verificar se o usuário tem um papel administrativo
+      if (!response.user || !isAdminRole(response.user.role)) {
+        await logoutService();
+        return { error: 'Credenciais administrativas inválidas ou usuário sem permissão de administração' };
       }
 
-      // Check if user exists in admin_users table
-      const { data: adminData, error: adminError } = await supabase
-        .from('admin_users')
-        .select('id, email, role')
-        .eq('email', email)
-        .eq('active', true)
-        .single();
+      // Converter o usuário para o formato AdminUser
+      const adminUserData: AdminUser = {
+        id: response.user.id,
+        email: response.user.email,
+        role: mapRoleToAdminRole(response.user.role)
+      };
 
-      if (adminError || !adminData) {
-        await supabase.auth.signOut();
-        return { error: 'Credenciais administrativas inválidas' };
+      // Atualizar o último login (se necessário)
+      try {
+        await api.post('/api/admin/login-tracking/');
+      } catch (error) {
+        console.warn('Erro ao registrar rastreamento de login admin:', error);
       }
 
-      // Update last sign in
-      await supabase
-        .from('admin_users')
-        .update({ last_sign_in_at: new Date().toISOString() })
-        .eq('id', adminData.id);
-
-      setAdminUser(adminData);
+      setAdminUser(adminUserData);
       return { error: null };
 
     } catch (error) {
-      console.error('Error during admin login:', error);
+      console.error('Erro durante o login administrativo:', error);
       return { error: 'Erro ao fazer login. Por favor, tente novamente.' };
     }
   };
 
   const signOutAdmin = async () => {
-    await supabase.auth.signOut();
+    await logoutService();
     setAdminUser(null);
+  };
+
+  // Funções auxiliares para verificar/mapear papéis
+  const isAdminRole = (role: string): boolean => {
+    return ['ADMIN', 'admin', 'super_admin', 'support', 'financial', 'technical'].includes(role);
+  };
+
+  const mapRoleToAdminRole = (role: string): 'super_admin' | 'support' | 'financial' | 'technical' => {
+    // Mapeamento simples de roles do backend para roles administrativos
+    switch (role.toLowerCase()) {
+      case 'admin':
+      case 'super_admin':
+        return 'super_admin';
+      case 'support':
+        return 'support';
+      case 'financial':
+        return 'financial';
+      default:
+        return 'technical';
+    }
   };
 
   return (

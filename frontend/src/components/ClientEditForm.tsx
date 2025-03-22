@@ -1,9 +1,19 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { supabase } from '@/lib/supabase';
-import { Database } from '@/lib/database.types';
+import { mockApi } from '@/lib/mockApi';
 
-type Client = Database['public']['Tables']['clients']['Row'];
+interface Client {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+interface ClientFormData {
+  name: string;
+  email: string;
+  phone: string;
+}
 
 interface ClientEditFormProps {
   client: Client;
@@ -12,32 +22,30 @@ interface ClientEditFormProps {
 }
 
 export default function ClientEditForm({ client, onClose, onSuccess }: ClientEditFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm<ClientFormData>({
     defaultValues: {
       name: client.name,
       email: client.email || '',
-      phone: client.phone || ''
-    }
+      phone: client.phone || '',
+    },
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: ClientFormData) => {
     try {
-      const { error } = await supabase
-        .from('clients')
-        .update({
-          name: data.name,
-          email: data.email || null,
-          phone: data.phone || null
-        })
-        .eq('id', client.id);
-
-      if (error) throw error;
+      // Simula um delay de rede
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      await mockApi.updateClient(client.id, {
+        name: data.name,
+        email: data.email || null,
+        phone: data.phone || null,
+      });
 
       onSuccess();
       onClose();
     } catch (error) {
       console.error('Error updating client:', error);
-      alert('Error updating client. Please try again.');
+      alert('Erro ao atualizar cliente. Por favor, tente novamente.');
     }
   };
 

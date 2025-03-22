@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { mockApi } from '@/mocks/data';
 
 interface Subscription {
   id: string;
@@ -47,37 +47,20 @@ export default function SubscriptionDetails({ salonId, onClose }: SubscriptionDe
   useEffect(() => {
     const fetchSubscriptionDetails = async () => {
       try {
-        // Fetch current subscription
-        const { data: subscriptions, error: subscriptionError } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('salon_id', salonId)
-          .eq('status', 'active');
-
-        if (subscriptionError) throw subscriptionError;
-
-        const currentSubscription = subscriptions?.[0] || null;
+        // Simulando delay de rede
+        await mockApi.delay(500);
+        
+        // Buscar assinatura atual
+        const currentSubscription = await mockApi.getActiveSubscription(salonId);
         setSubscription(currentSubscription);
 
         if (currentSubscription) {
-          // Fetch plan details
-          const { data: planData, error: planError } = await supabase
-            .from('subscription_plans')
-            .select('*')
-            .eq('id', currentSubscription.plan_id)
-            .single();
-
-          if (planError) throw planError;
+          // Buscar detalhes do plano
+          const planData = await mockApi.getSubscriptionPlan(currentSubscription.plan_id);
           setPlan(planData);
 
-          // Fetch subscription history
-          const { data: historyData, error: historyError } = await supabase
-            .from('subscription_history')
-            .select('*')
-            .eq('salon_id', salonId)
-            .order('changed_at', { ascending: false });
-
-          if (historyError) throw historyError;
+          // Buscar histórico de assinatura
+          const historyData = await mockApi.getSubscriptionHistory(salonId);
           setHistory(historyData || []);
         }
       } catch (error) {
@@ -210,7 +193,7 @@ export default function SubscriptionDetails({ salonId, onClose }: SubscriptionDe
         </div>
       ) : (
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded relative">
-          No active subscription found for this establishment.
+          Nenhuma assinatura ativa encontrada para este salão.
         </div>
       )}
     </div>

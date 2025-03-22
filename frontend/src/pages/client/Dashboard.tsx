@@ -1,24 +1,72 @@
+/**
+ * Dashboard principal do dono de salão
+ * 
+ * Este componente exibe as informações principais do salão para o proprietário, 
+ * incluindo estatísticas e próximos agendamentos.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
+import { Appointment } from '@/types/appointment';
 
+/**
+ * Estatísticas exibidas no dashboard
+ */
 interface DashboardStats {
   todayAppointments: number;
   activeClients: number;
   todayRevenue: number;
 }
 
-interface Appointment {
-  id: string;
-  start_time: string;
-  client: { name: string };
-  professional: { name: string };
-  service: { name: string; price: number };
-  status: string;
-}
+/**
+ * Dados mockados para simular a resposta da API
+ */
+const MOCK_DATA = {
+  salonData: { id: 'salon-123' },
+  todayAppointments: [
+    {
+      id: 'apt-1',
+      start_time: new Date(new Date().setHours(10, 0, 0)).toISOString(),
+      status: 'confirmed',
+      client: { name: 'Maria Silva' },
+      professional: { name: 'João Cabeleireiro' },
+      service: { name: 'Corte Feminino', price: 80 }
+    },
+    {
+      id: 'apt-2',
+      start_time: new Date(new Date().setHours(14, 30, 0)).toISOString(),
+      status: 'completed',
+      client: { name: 'Ana Souza' },
+      professional: { name: 'Carlos Barbeiro' },
+      service: { name: 'Coloração', price: 150 }
+    },
+    {
+      id: 'apt-3',
+      start_time: new Date(new Date().setHours(16, 0, 0)).toISOString(),
+      status: 'confirmed',
+      client: { name: 'Juliana Costa' },
+      professional: { name: 'Mariana Esteticista' },
+      service: { name: 'Manicure', price: 60 }
+    }
+  ],
+  activeClients: 48,
+  upcomingAppointments: [
+    {
+      id: 'apt-4',
+      start_time: new Date(new Date().setHours(new Date().getHours() + 1, 0, 0)).toISOString(),
+      status: 'confirmed',
+      client: { name: 'Carla Mendes' },
+      professional: { name: 'João Cabeleireiro' },
+      service: { name: 'Escova', price: 70 }
+    }
+  ]
+};
 
+/**
+ * Componente Dashboard do Salão
+ */
 export default function ClientDashboard() {
   const { user } = useAuth();
+  // Inicializa estados com valores padrão
   const [stats, setStats] = useState<DashboardStats>({
     todayAppointments: 0,
     activeClients: 0,
@@ -28,86 +76,49 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    /**
+     * Simula a busca de dados do dashboard na API
+     */
     const fetchDashboardData = async () => {
       if (!user) return;
 
       try {
-        const { data: salonData } = await supabase
-          .from('salons')
-          .select('id')
-          .eq('owner_id', user.id)
-          .single();
+        // Simulando delay de rede
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Usando dados mockados em vez de Supabase
+        const salonData = MOCK_DATA.salonData;
+        const todayAppointments = MOCK_DATA.todayAppointments;
+        const activeClients = MOCK_DATA.activeClients;
+        const upcoming = MOCK_DATA.upcomingAppointments;
 
-        if (salonData) {
-          // Get today's date range
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const tomorrow = new Date(today);
-          tomorrow.setDate(tomorrow.getDate() + 1);
+        // Calcula receita de hoje com base nos agendamentos completados
+        const todayRevenue = todayAppointments
+          .filter(apt => apt.status === 'completed')
+          .reduce((total, apt) => total + (apt.service.price || 0), 0);
 
-          // Get current time and 3 hours ahead
-          const now = new Date();
-          const threeHoursAhead = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+        // Atualiza os estados
+        setStats({
+          todayAppointments: todayAppointments.length,
+          activeClients: activeClients,
+          todayRevenue,
+        });
 
-          // Fetch all today's appointments
-          const { data: todayAppointments } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              client:clients(name),
-              professional:professionals(name),
-              service:services(name, price)
-            `)
-            .eq('salon_id', salonData.id)
-            .gte('start_time', today.toISOString())
-            .lt('start_time', tomorrow.toISOString());
-
-          // Fetch active clients count
-          const { count: activeClients } = await supabase
-            .from('clients')
-            .select('*', { count: 'exact', head: true })
-            .eq('salon_id', salonData.id);
-
-          // Fetch upcoming appointments
-          const { data: upcoming } = await supabase
-            .from('appointments')
-            .select(`
-              *,
-              client:clients(name),
-              professional:professionals(name),
-              service:services(name, price)
-            `)
-            .eq('salon_id', salonData.id)
-            .eq('status', 'confirmed')
-            .gte('start_time', now.toISOString())
-            .lt('start_time', threeHoursAhead.toISOString())
-            .order('start_time');
-
-          // Calculate today's revenue
-          const todayRevenue = (todayAppointments || [])
-            .filter(apt => apt.status === 'completed')
-            .reduce((total, apt) => total + (apt.service.price || 0), 0);
-
-          setStats({
-            todayAppointments: todayAppointments?.length || 0,
-            activeClients: activeClients || 0,
-            todayRevenue,
-          });
-
-          setUpcomingAppointments(upcoming || []);
-        }
+        setUpcomingAppointments(upcoming);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Erro ao buscar dados do dashboard:', error);
       } finally {
         setLoading(false);
       }
     };
 
     fetchDashboardData();
-    const interval = setInterval(fetchDashboardData, 60000); // Refresh every minute
+    // Atualiza os dados a cada minuto
+    const interval = setInterval(fetchDashboardData, 60000);
     return () => clearInterval(interval);
   }, [user]);
 
+  // Exibe loading enquanto os dados estão sendo carregados
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -120,6 +131,7 @@ export default function ClientDashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
       
+      {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-lg font-semibold text-gray-700 mb-4">Agendamentos Hoje</h2>
@@ -139,6 +151,7 @@ export default function ClientDashboard() {
         </div>
       </div>
 
+      {/* Tabela de próximos agendamentos */}
       <div className="bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">
           Próximos Agendamentos (3 horas)

@@ -1,7 +1,15 @@
+/**
+ * Dashboard Administrativo
+ * 
+ * Painel principal para administradores do sistema, exibindo estatísticas
+ * sobre salões, assinaturas e receita, além de um log de atividades recentes.
+ */
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import { CurrencyDollarIcon, BuildingOfficeIcon, CheckBadgeIcon, DocumentCheckIcon } from '@heroicons/react/24/outline';
 
+/**
+ * Estatísticas gerais do sistema para administradores
+ */
 interface DashboardStats {
   totalSalons: number;
   activeSalons: number;
@@ -9,6 +17,9 @@ interface DashboardStats {
   totalRevenue: number;
 }
 
+/**
+ * Entrada no log de auditoria administrativa
+ */
 interface AuditLogEntry {
   id: string;
   created_at: string;
@@ -21,6 +32,57 @@ interface AuditLogEntry {
   };
 }
 
+/**
+ * Dados mockados para simular a resposta da API
+ */
+const MOCK_DATA = {
+  salonsData: [
+    { id: 'salon-1', active: true },
+    { id: 'salon-2', active: true },
+    { id: 'salon-3', active: false },
+    { id: 'salon-4', active: true },
+    { id: 'salon-5', active: true }
+  ],
+  subscriptionsData: [
+    { id: 'sub-1', salon_id: 'salon-1', status: 'active', plan: { price: 99.90 } },
+    { id: 'sub-2', salon_id: 'salon-2', status: 'active', plan: { price: 149.90 } },
+    { id: 'sub-3', salon_id: 'salon-4', status: 'active', plan: { price: 99.90 } },
+    { id: 'sub-4', salon_id: 'salon-5', status: 'active', plan: { price: 249.90 } }
+  ],
+  auditLogs: [
+    {
+      id: 'log-1',
+      created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
+      action: 'INSERT',
+      table_name: 'salons',
+      admin_user_id: 'admin-1',
+      changes: { name: 'Novo Salão' },
+      admin_user: { email: 'admin@example.com' }
+    },
+    {
+      id: 'log-2',
+      created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      action: 'UPDATE',
+      table_name: 'subscriptions',
+      admin_user_id: 'admin-1',
+      changes: { status: 'active' },
+      admin_user: { email: 'admin@example.com' }
+    },
+    {
+      id: 'log-3',
+      created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
+      action: 'UPDATE',
+      table_name: 'salon_users',
+      admin_user_id: 'admin-2',
+      changes: { role: 'admin' },
+      admin_user: { email: 'support@example.com' }
+    }
+  ]
+};
+
+/**
+ * Componente principal do Dashboard Administrativo
+ */
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalSalons: 0,
@@ -32,28 +94,26 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    /**
+     * Simula a busca de dados do dashboard na API
+     */
     const fetchDashboardData = async () => {
       try {
-        // Fetch salons statistics
-        const { data: salonsData } = await supabase
-          .from('salons')
-          .select('id, active');
+        // Simulando delay de rede
+        await new Promise(resolve => setTimeout(resolve, 800));
         
-        const totalSalons = salonsData?.length || 0;
-        const activeSalons = salonsData?.filter(salon => salon.active).length || 0;
+        // Usando dados mockados em vez de Supabase
+        const salonsData = MOCK_DATA.salonsData;
+        const subscriptionsData = MOCK_DATA.subscriptionsData;
+        const logsData = MOCK_DATA.auditLogs;
+        
+        // Calcula estatísticas
+        const totalSalons = salonsData.length;
+        const activeSalons = salonsData.filter(salon => salon.active).length;
+        const activeSubscriptions = subscriptionsData.length;
+        const totalRevenue = subscriptionsData.reduce((sum, sub) => sum + (sub.plan?.price || 0), 0);
 
-        // Fetch subscriptions data
-        const { data: subscriptionsData } = await supabase
-          .from('subscriptions')
-          .select(`
-            *,
-            plan:subscription_plans(price)
-          `)
-          .eq('status', 'active');
-
-        const activeSubscriptions = subscriptionsData?.length || 0;
-        const totalRevenue = subscriptionsData?.reduce((sum, sub) => sum + (sub.plan?.price || 0), 0) || 0;
-
+        // Atualiza os estados
         setStats({
           totalSalons,
           activeSalons,
@@ -61,19 +121,9 @@ export default function AdminDashboard() {
           totalRevenue,
         });
 
-        // Fetch recent audit logs
-        const { data: logsData } = await supabase
-          .from('audit_logs')
-          .select(`
-            *,
-            admin_user:admin_users(email)
-          `)
-          .order('created_at', { ascending: false })
-          .limit(10);
-
-        setAuditLogs(logsData || []);
+        setAuditLogs(logsData);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error('Erro ao buscar dados do dashboard:', error);
       } finally {
         setLoading(false);
       }
@@ -82,6 +132,7 @@ export default function AdminDashboard() {
     fetchDashboardData();
   }, []);
 
+  // Exibe loading enquanto os dados estão sendo carregados
   if (loading) {
     return (
       <div className="flex items-center justify-center h-48">
@@ -90,6 +141,9 @@ export default function AdminDashboard() {
     );
   }
 
+  /**
+   * Formata um valor numérico como moeda brasileira
+   */
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -97,6 +151,9 @@ export default function AdminDashboard() {
     }).format(value);
   };
 
+  /**
+   * Gera uma descrição legível para ações de auditoria
+   */
   const getActionDescription = (action: string, tableName: string) => {
     const tableNames: Record<string, string> = {
       salons: 'Estabelecimento',
@@ -121,7 +178,7 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-gray-900">Painel Administrativo</h1>
 
-      {/* Statistics Cards */}
+      {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-center">
@@ -164,7 +221,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Log de atividades recentes */}
       <div className="bg-white rounded-lg shadow-md">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-medium text-gray-900">Atividades Administrativas Recentes</h2>
