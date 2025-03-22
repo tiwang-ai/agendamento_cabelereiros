@@ -1,4 +1,76 @@
 /**
+ * Tipos relacionados aos salões no sistema
+ */
+
+/**
+ * Enum para os tipos de usuário do salão
+ */
+export enum UserRole {
+  /** Administrador do sistema */
+  ADMIN = 'admin',
+  
+  /** Proprietário do salão */
+  OWNER = 'owner',
+  
+  /** Profissional do salão */
+  PROFESSIONAL = 'professional',
+  
+  /** Recepcionista do salão */
+  RECEPTIONIST = 'receptionist'
+}
+
+/**
+ * Representa um salão no sistema
+ */
+export interface Salon {
+  /** Identificador único do salão */
+  id: string;
+  
+  /** Nome do salão */
+  name: string;
+  
+  /** ID do proprietário do salão */
+  owner_id: string;
+  
+  /** Endereço completo do salão */
+  address: string | null;
+  
+  /** Lista de telefones de contato */
+  phones: string[] | null;
+  
+  /** Indica se o salão está ativo no sistema */
+  active: boolean;
+}
+
+/**
+ * Props do componente SalonForm
+ */
+export interface SalonFormProps {
+  /** Salão existente para edição (opcional) */
+  salon?: Salon | null;
+  
+  /** Callback chamado ao fechar o formulário */
+  onClose: () => void;
+  
+  /** Callback chamado após salvar com sucesso */
+  onSuccess: () => void;
+}
+
+/**
+ * Dados do formulário de salão
+ */
+export interface SalonFormData {
+  /** Nome do salão */
+  name: string;
+  
+  /** Endereço do salão */
+  address: string;
+  
+  /** Email do proprietário (apenas na criação) */
+  ownerEmail?: string;
+}
+
+/**
  * Tipos relacionados a Salões
  */
 
@@ -6,21 +78,6 @@ export enum SalonStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   PENDING = 'pending'
-}
-
-/**
- * Representa um salão de cabeleireiro
- */
-export interface Salon {
-  id: string;
-  name: string;
-  owner_id: string;
-  address: string;
-  phones: string[];
-  active: boolean;
-  created_at: string;
-  status?: SalonStatus;
-  subscription_active?: boolean;
 }
 
 /**
@@ -104,4 +161,38 @@ export interface NotificationSettings {
   sendCancellationNotification: boolean;
   sendFollowUpAfterAppointment: boolean;
   followUpTimeAfterAppointment: number; // Em horas
+}
+
+/**
+ * Props do formulário de usuário do salão
+ */
+export interface SalonUserFormProps {
+  /** Usuário existente para edição (opcional) */
+  user?: SalonUser | null;
+  
+  /** ID do salão ao qual o usuário será vinculado */
+  salonId: string;
+  
+  /** Callback chamado ao fechar o formulário */
+  onClose: () => void;
+  
+  /** Callback chamado após salvar com sucesso */
+  onSuccess: () => void;
+}
+
+/**
+ * Dados do formulário de usuário do salão
+ */
+export interface SalonUserFormData {
+  /** Nome do usuário */
+  name: string;
+  
+  /** Email do usuário */
+  email: string;
+  
+  /** Telefone do usuário (opcional) */
+  phone?: string;
+  
+  /** Tipo de permissão do usuário */
+  role: UserRole;
 } 

@@ -1,10 +1,22 @@
 {
+  // Comando para construir a aplicação em produção
   "buildCommand": "npm run build",
+
+  // Comando para iniciar o servidor de desenvolvimento
   "devCommand": "npm run dev",
+
+  // Comando para instalar as dependências
   "installCommand": "npm install",
+
+  // Framework utilizado (Vite neste caso)
   "framework": "vite",
+
+  // Diretório onde os arquivos de build serão gerados
   "outputDirectory": "dist",
+
+  // Configuração de redirecionamento para SPA (Single Page Application)
   "rewrites": [
+    // Redireciona todas as rotas para o index.html, permitindo que o React Router funcione
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

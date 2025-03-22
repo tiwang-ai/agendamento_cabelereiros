@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<!-- Define o documento como HTML5 -->
+<!-- Define o documento como HTML5 - a versão mais recente do HTML que suporta recursos modernos -->
 <html lang="pt-BR">
-  <!-- Define o idioma da página como Português do Brasil -->
+  <!-- Define o idioma da página como Português do Brasil para acessibilidade e SEO -->
   <head>
-    <!-- A seção head contém metadados e links para recursos externos -->
+    <!-- A seção head contém metadados, configurações e links para recursos externos -->
     <meta charset="UTF-8" />
-    <!-- Define a codificação de caracteres como UTF-8, suportando caracteres especiais e acentuação -->
+    <!-- Define a codificação de caracteres como UTF-8, suportando caracteres especiais, emojis e acentuação -->
     <link rel="icon" type="image/svg+xml" href="/salon-icon.svg" />
-    <!-- Define o ícone (favicon) que aparece na aba do navegador -->
+    <!-- Define o ícone (favicon) que aparece na aba do navegador. Usando SVG para melhor qualidade em diferentes resoluções -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- Configuração de viewport para responsividade em dispositivos móveis:
+    <!-- Configuração essencial de viewport para responsividade em dispositivos móveis:
          - width=device-width: adapta a largura ao dispositivo
-         - initial-scale=1.0: define o zoom inicial -->
+         - initial-scale=1.0: define o zoom inicial
+         Isso garante que o site seja exibido corretamente em smartphones e tablets -->
     <title>Sistema de Agendamento de Cabeleireiros</title>
-    <!-- Título da página que aparece na aba do navegador -->
+    <!-- Título da página que aparece na aba do navegador e nos resultados de busca -->
   </head>
   <body>
     <!-- Corpo do documento onde o conteúdo visível é renderizado -->
     <div id="root"></div>
     <!-- Elemento raiz onde o React montará toda a aplicação.
-         Este é o ponto de entrada para a interface do usuário -->
+         Este é o ponto de entrada para a interface do usuário.
+         O React usará este elemento como container principal para toda a aplicação,
+         substituindo seu conteúdo através do ReactDOM.createRoot() -->
     <script type="module" src="/src/main.tsx"></script>
     <!-- Carrega o arquivo principal da aplicação React (main.tsx).
-         O atributo "type=module" permite usar importações ES6 no JavaScript -->
+         - type="module": permite usar importações/exportações ES6 modernas
+         - O Vite processará este arquivo e suas dependências automaticamente
+         - .tsx indica que é um arquivo TypeScript com suporte a JSX -->
   </body>
 </html>

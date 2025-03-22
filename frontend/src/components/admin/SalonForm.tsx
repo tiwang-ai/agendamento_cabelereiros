@@ -3,52 +3,48 @@
  * 
  * Este componente permite criar e editar salões no sistema.
  * Utiliza dados mockados para simulação enquanto não há backend.
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <SalonForm 
+ *   salon={existingSalon} 
+ *   onClose={() => setShowForm(false)}
+ *   onSuccess={() => handleSuccess()}
+ * />
+ * ```
  */
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { PlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
-
-/**
- * Representa um salão no sistema
- */
-interface Salon {
-  id: string;
-  name: string;
-  owner_id: string;
-  address: string | null;
-  phones: string[] | null;
-  active: boolean;
-}
-
-interface SalonFormProps {
-  salon?: Salon | null;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-interface FormData {
-  name: string;
-  address: string;
-  ownerEmail: string;
-}
+import { Salon, SalonFormProps, SalonFormData } from '@/types/salon';
 
 /**
  * Componente de formulário para criar ou editar salões
+ * 
+ * @param {SalonFormProps} props - Propriedades do componente
+ * @param {Salon | null} props.salon - Salão existente para edição (opcional)
+ * @param {() => void} props.onClose - Callback chamado ao fechar o formulário
+ * @param {() => void} props.onSuccess - Callback chamado após salvar com sucesso
  */
 export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  // Configuração do formulário com react-hook-form
+  const { register, handleSubmit, formState: { errors } } = useForm<SalonFormData>({
     defaultValues: salon ? {
       name: salon.name,
       address: salon.address || '',
     } : undefined
   });
+
+  // Estado local para gerenciar telefones
   const [phones, setPhones] = useState<string[]>(salon?.phones || []);
   const [newPhone, setNewPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   /**
-   * Adiciona um número de telefone à lista
+   * Adiciona um número de telefone à lista se ele for válido e não existir
+   * @todo Adicionar validação de formato do telefone
    */
   const handleAddPhone = () => {
     if (newPhone && !phones.includes(newPhone)) {
@@ -58,7 +54,8 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
   };
 
   /**
-   * Remove um número de telefone da lista
+   * Remove um número de telefone específico da lista
+   * @param {string} phone - Número de telefone a ser removido
    */
   const handleRemovePhone = (phone: string) => {
     setPhones(phones.filter(p => p !== phone));
@@ -66,17 +63,18 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
 
   /**
    * Processa o envio do formulário
+   * @param {SalonFormData} data - Dados do formulário
    */
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: SalonFormData) => {
     setLoading(true);
     setError(null);
 
     try {
-      // Simulando delay de rede
+      // @todo Substituir por chamada real à API
       await new Promise(resolve => setTimeout(resolve, 800));
 
       if (salon) {
-        // Simulando atualização de salão existente
+        // Atualização de salão existente
         console.log('Atualizando salão:', {
           id: salon.id,
           name: data.name,
@@ -84,7 +82,7 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
           phones: phones.length > 0 ? phones : null
         });
       } else {
-        // Simulando criação de novo salão
+        // Criação de novo salão
         console.log('Criando novo salão:', {
           name: data.name,
           ownerEmail: data.ownerEmail,
@@ -94,7 +92,6 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
         });
       }
 
-      // Chamando callback de sucesso
       onSuccess();
     } catch (error: any) {
       console.error('Erro ao salvar salão:', error);
@@ -106,6 +103,7 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Cabeçalho do formulário */}
       <div className="flex justify-between items-start">
         <h2 className="text-lg font-medium text-gray-900">
           {salon ? 'Editar' : 'Novo'} Salão
@@ -114,17 +112,20 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
           type="button"
           onClick={onClose}
           className="text-gray-400 hover:text-gray-500"
+          aria-label="Fechar formulário"
         >
           <XMarkIcon className="h-6 w-6" />
         </button>
       </div>
 
+      {/* Mensagem de erro */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative">
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative">
           {error}
         </div>
       )}
 
+      {/* Campo: Nome do Salão */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
           Nome
@@ -134,12 +135,14 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
           id="name"
           {...register('name', { required: 'Nome é obrigatório' })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          aria-invalid={errors.name ? 'true' : 'false'}
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          <p className="mt-1 text-sm text-red-600" role="alert">{errors.name.message}</p>
         )}
       </div>
 
+      {/* Campo: Email do Proprietário (apenas na criação) */}
       {!salon && (
         <div>
           <label htmlFor="ownerEmail" className="block text-sm font-medium text-gray-700">
@@ -156,13 +159,15 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
               }
             })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            aria-invalid={errors.ownerEmail ? 'true' : 'false'}
           />
           {errors.ownerEmail && (
-            <p className="mt-1 text-sm text-red-600">{errors.ownerEmail.message}</p>
+            <p className="mt-1 text-sm text-red-600" role="alert">{errors.ownerEmail.message}</p>
           )}
         </div>
       )}
 
+      {/* Campo: Endereço */}
       <div>
         <label htmlFor="address" className="block text-sm font-medium text-gray-700">
           Endereço
@@ -175,11 +180,13 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
         />
       </div>
 
+      {/* Seção: Telefones */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Telefones
         </label>
         <div className="space-y-4">
+          {/* Input para adicionar novo telefone */}
           <div className="flex gap-2">
             <input
               type="tel"
@@ -192,10 +199,13 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
               type="button"
               onClick={handleAddPhone}
               className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+              aria-label="Adicionar telefone"
             >
               <PlusIcon className="h-5 w-5" />
             </button>
           </div>
+          
+          {/* Lista de telefones */}
           <div className="space-y-2">
             {phones.map((phone, index) => (
               <div key={index} className="flex items-center gap-2">
@@ -204,6 +214,7 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
                   type="button"
                   onClick={() => handleRemovePhone(phone)}
                   className="text-red-600 hover:text-red-700"
+                  aria-label={`Remover telefone ${phone}`}
                 >
                   <XMarkIcon className="h-5 w-5" />
                 </button>
@@ -213,6 +224,7 @@ export default function SalonForm({ salon, onClose, onSuccess }: SalonFormProps)
         </div>
       </div>
 
+      {/* Botões de ação */}
       <div className="flex justify-end space-x-3">
         <button
           type="button"

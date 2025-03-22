@@ -1,32 +1,48 @@
+/**
+ * Formulário de Usuário do Salão
+ * 
+ * Este componente permite criar e editar usuários vinculados a um salão específico.
+ * Suporta diferentes níveis de acesso (admin, owner, professional, receptionist).
+ * 
+ * @component
+ * @example
+ * ```tsx
+ * <SalonUserForm 
+ *   salonId="123"
+ *   user={existingUser}
+ *   onClose={() => setShowForm(false)}
+ *   onSuccess={() => handleSuccess()}
+ * />
+ * ```
+ */
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { salonService } from '@/services/salon';
-import { SalonUser } from '@/types/index';
+import { SalonUser, SalonUserFormProps, SalonUserFormData, UserRole } from '@/types/salon';
 
-interface SalonUserFormProps {
-  user?: SalonUser | null;
-  salonId: string;
-  onClose: () => void;
-  onSuccess: () => void;
-}
-
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  role: 'admin' | 'owner' | 'professional' | 'receptionist';
-}
-
+/**
+ * Opções de permissões de acesso disponíveis
+ */
 const roleOptions = [
-  { value: 'admin', label: 'Administrador' },
-  { value: 'owner', label: 'Proprietário' },
-  { value: 'professional', label: 'Profissional' },
-  { value: 'receptionist', label: 'Recepcionista' },
+  { value: UserRole.ADMIN, label: 'Administrador' },
+  { value: UserRole.OWNER, label: 'Proprietário' },
+  { value: UserRole.PROFESSIONAL, label: 'Profissional' },
+  { value: UserRole.RECEPTIONIST, label: 'Recepcionista' },
 ];
 
+/**
+ * Componente de formulário para criar e editar usuários do salão
+ * 
+ * @param {SalonUserFormProps} props - Propriedades do componente
+ * @param {SalonUser | null} props.user - Usuário existente para edição (opcional)
+ * @param {string} props.salonId - ID do salão ao qual o usuário será vinculado
+ * @param {() => void} props.onClose - Callback chamado ao fechar o formulário
+ * @param {() => void} props.onSuccess - Callback chamado após salvar com sucesso
+ */
 export default function SalonUserForm({ user, salonId, onClose, onSuccess }: SalonUserFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  // Configuração do formulário com react-hook-form
+  const { register, handleSubmit, formState: { errors } } = useForm<SalonUserFormData>({
     defaultValues: user ? {
       name: user.name,
       email: user.email,
@@ -34,10 +50,16 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
       role: user.role,
     } : undefined
   });
+
+  // Estado local para loading e erros
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = async (data: FormData) => {
+  /**
+   * Processa o envio do formulário
+   * @param {SalonUserFormData} data - Dados do formulário
+   */
+  const onSubmit = async (data: SalonUserFormData) => {
     setLoading(true);
     setError(null);
 
@@ -76,6 +98,7 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {/* Cabeçalho do formulário */}
       <div className="flex justify-between items-start">
         <h2 className="text-lg font-medium text-gray-900">
           {user ? 'Editar' : 'Novo'} Usuário
@@ -84,17 +107,20 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
           type="button"
           onClick={onClose}
           className="text-gray-400 hover:text-gray-500"
+          aria-label="Fechar formulário"
         >
           <XMarkIcon className="h-6 w-6" />
         </button>
       </div>
 
+      {/* Mensagem de erro */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative">
+        <div role="alert" className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded relative">
           {error}
         </div>
       )}
 
+      {/* Campo: Nome do Usuário */}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700">
           Nome
@@ -104,12 +130,14 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
           id="name"
           {...register('name', { required: 'Nome é obrigatório' })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          aria-invalid={errors.name ? 'true' : 'false'}
         />
         {errors.name && (
-          <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+          <p className="mt-1 text-sm text-red-600" role="alert">{errors.name.message}</p>
         )}
       </div>
 
+      {/* Campo: Email do Usuário */}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700">
           Email
@@ -125,12 +153,14 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
             }
           })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          aria-invalid={errors.email ? 'true' : 'false'}
         />
         {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+          <p className="mt-1 text-sm text-red-600" role="alert">{errors.email.message}</p>
         )}
       </div>
 
+      {/* Campo: Telefone do Usuário */}
       <div>
         <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
           Telefone
@@ -140,9 +170,11 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
           id="phone"
           {...register('phone')}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          placeholder="(00) 00000-0000"
         />
       </div>
 
+      {/* Campo: Permissão de Acesso */}
       <div>
         <label htmlFor="role" className="block text-sm font-medium text-gray-700">
           Permissão de Acesso
@@ -151,6 +183,7 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
           id="role"
           {...register('role', { required: 'Permissão é obrigatória' })}
           className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+          aria-invalid={errors.role ? 'true' : 'false'}
         >
           {roleOptions.map(option => (
             <option key={option.value} value={option.value}>
@@ -159,10 +192,11 @@ export default function SalonUserForm({ user, salonId, onClose, onSuccess }: Sal
           ))}
         </select>
         {errors.role && (
-          <p className="mt-1 text-sm text-red-600">{errors.role.message}</p>
+          <p className="mt-1 text-sm text-red-600" role="alert">{errors.role.message}</p>
         )}
       </div>
 
+      {/* Botões de ação */}
       <div className="flex justify-end space-x-3">
         <button
           type="button"
