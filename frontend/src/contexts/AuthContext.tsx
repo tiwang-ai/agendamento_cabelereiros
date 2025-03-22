@@ -9,17 +9,16 @@
  * É um componente central para o sistema de autenticação da aplicação.
  */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@/types';
+import { User, UserRole, AuthContextType } from '@/types/auth';
 import { login as loginService, logout as logoutService, getProfile } from '@/services/auth';
 
-/**
- * Interface do contexto de autenticação
- */
-interface AuthContextType {
-  user: User | null;       // Usuário atual ou null se não autenticado
-  loading: boolean;        // Indica se está carregando dados de autenticação
-  login: (email: string, password: string) => Promise<User>;  // Função para fazer login
-  logout: () => Promise<void>;  // Função para fazer logout
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (credentials: LoginCredentials) => Promise<void>;
+  signOut: () => Promise<void>;
+  register: (data: RegisterData) => Promise<void>;
+  getInitialRoute: () => string;
 }
 
 // Cria o contexto com um valor padrão (será sobrescrito pelo Provider)
@@ -38,24 +37,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Efeito para carregar o usuário no início da aplicação
   useEffect(() => {
-    /**
-     * Carrega o usuário do armazenamento local ou da API
-     */
     const loadUser = async () => {
       try {
         if (localStorage.getItem('access_token')) {
-          console.log('Token encontrado no localStorage, tentando carregar usuário...');
-          const user = await getProfile();
-          console.log('Usuário carregado:', user);
-          setUser(user);
-        } else {
-          console.log('Nenhum token encontrado no localStorage');
+          const userData = await getProfile();
+          setUser(userData);
         }
       } catch (error) {
         console.error('Erro ao carregar usuário:', error);
-        // Limpar tokens em caso de erro para evitar loops
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
       } finally {
@@ -66,58 +56,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
   }, []);
 
-  /**
-   * Realiza o login do usuário
-   * 
-   * @param email - Email do usuário
-   * @param password - Senha do usuário
-   * @returns Dados do usuário autenticado
-   */
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (email: string, password: string) => {
     setLoading(true);
     try {
-      console.log('Iniciando login para:', email);
       const response = await loginService({ email, password });
-      console.log('Login bem-sucedido:', response.user);
       setUser(response.user);
-      return response.user;
-    } catch (error) {
-      console.error('Erro no login:', error);
-      throw error;
+      localStorage.setItem('access_token', response.access);
+      localStorage.setItem('refresh_token', response.refresh);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Realiza o logout do usuário
-   */
   const logout = async () => {
     setLoading(true);
     try {
       await logoutService();
       setUser(null);
-      console.log('Logout realizado com sucesso');
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      localStorage.removeItem('mock_user');
     } finally {
       setLoading(false);
     }
   };
 
-  // Exibe um indicador de carregamento durante a verificação inicial
-  // não durante as operações de login/logout
+  const getInitialRoute = () => {
+    if (!user) return '/login';
+    
+    switch (user.role) {
+      case UserRole.SUPERUSER:
+      case UserRole.ADMIN:
+        return '/admin/dashboard';
+      case UserRole.SALON_OWNER:
+        return '/salon/dashboard';
+      case UserRole.PROFESSIONAL:
+        return '/professional/dashboard';
+      case UserRole.RECEPTIONIST:
+        return '/receptionist/dashboard';
+      default:
+        return '/login';
+    }
+  };
+
   if (loading && !user && !localStorage.getItem('access_token')) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
-  // Fornece o contexto para os componentes filhos
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, getInitialRoute }}>
       {children}
     </AuthContext.Provider>
   );
@@ -125,11 +116,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 /**
  * Hook personalizado para acessar o contexto de autenticação
- * 
- * Exemplo de uso:
- * ```
- * const { user, loading, login, logout } = useAuth();
- * ```
  * 
  * @returns Objeto com o usuário, estado de carregamento e funções de autenticação
  */

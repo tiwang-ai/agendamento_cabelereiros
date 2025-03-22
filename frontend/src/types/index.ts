@@ -51,84 +51,65 @@ export * from './whatsapp';
  */
 
 /**
- * Roles (Papéis/Funções) de usuários no sistema
- */
-export enum UserRole {
-  ADMIN = 'admin',
-  SALON_OWNER = 'salon_owner',
-  PROFESSIONAL = 'professional',
-  RECEPTIONIST = 'receptionist',
-  CLIENT = 'client',
-}
-
-/**
- * Usuário autenticado
- */
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  avatar_url?: string | null;
-  salon_id?: string | null;
-  created_at: string;
-}
-
-/**
  * Dados do Salão
  */
 export interface Salon {
-  id: string;
+  id: number;
   name: string;
-  owner_id: string;
   address: string;
-  phones: string[];
-  logo_url?: string | null;
+  phone: string;
+  email: string;
+  openingHours: WorkingHours[];
+  services: Service[];
+  professionals: Professional[];
   active: boolean;
-  created_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
  * Profissional do salão
  */
 export interface Professional {
-  id: string;
+  id: number;
+  userId: number;
   name: string;
-  email: string | null;
-  phone: string | null;
-  salon_id: string;
+  email: string;
+  phone: string;
   specialties: string[];
-  color: string;
+  workingHours: WorkingHours[];
   active: boolean;
-  created_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
  * Serviço oferecido pelo salão
  */
 export interface Service {
-  id: string;
+  id: number;
   name: string;
-  description: string | null;
-  price: number;
+  description: string;
   duration: number;
-  salon_id: string;
+  price: number;
+  category: string;
   active: boolean;
-  created_at: string;
 }
 
 /**
  * Cliente do salão
  */
 export interface Client {
-  id: string;
+  id: number;
   name: string;
-  email: string | null;
   phone: string;
-  salon_id: string;
-  observations: string | null;
-  active: boolean;
-  created_at: string;
+  email: string;
+  lastVisit: string;
+  totalVisits: number;
+  preferredServices: string[];
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -138,29 +119,28 @@ export enum AppointmentStatus {
   SCHEDULED = 'scheduled',
   CONFIRMED = 'confirmed',
   COMPLETED = 'completed',
-  CANCELED = 'canceled',
-  NO_SHOW = 'no_show',
+  CANCELLED = 'cancelled',
 }
 
 /**
  * Agendamento
  */
 export interface Appointment {
-  id: string;
-  client_id: string;
-  professional_id: string;
-  service_id: string;
-  salon_id: string;
-  start_time: string;
-  end_time: string;
+  id: number;
+  clientName: string;
+  clientId: number;
+  professionalId: number;
+  professionalName: string;
+  service: string;
+  serviceId: number;
+  date: string;
+  time: string;
+  duration: number;
   status: AppointmentStatus;
-  observations: string | null;
-  created_at: string;
-  
-  // Dados relacionados (expansões)
-  client?: Client;
-  professional?: Professional;
-  service?: Service;
+  value: number;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -274,4 +254,12 @@ export interface WhatsAppLog {
   timestamp: string;
   message: string;
   type: 'info' | 'error' | 'warning';
+}
+
+export interface WorkingHours {
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
 } 

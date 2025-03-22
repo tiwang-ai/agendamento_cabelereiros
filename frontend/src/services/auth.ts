@@ -57,29 +57,15 @@ export const login = async (credentials: LoginCredentials): Promise<AuthResponse
     let response: AuthResponse;
     
     if (USE_MOCK_AUTH) {
-      // Usa autenticação mockada
       response = await mockLogin(credentials);
     } else {
-      // Usa API real
       const apiResponse = await api.post<AuthResponse>('/api/auth/login/', credentials);
       response = apiResponse.data;
-      
-      // Normalizar o papel do usuário
-      if (response.user && response.user.role) {
-        response.user.role = normalizeRole(response.user.role);
-      }
-      
-      // Armazena tokens no localStorage
-      localStorage.setItem('access_token', response.access);
-      localStorage.setItem('refresh_token', response.refresh);
     }
     
-    // Verificação adicional para ter certeza que os tokens foram salvos
-    const accessToken = localStorage.getItem('access_token');
-    if (!accessToken) {
-      console.error('[auth] Token não foi armazenado corretamente após login!');
-    } else {
-      console.log('[auth] Token armazenado com sucesso após login');
+    // Garantir que o role está correto antes de salvar
+    if (response.user && response.user.role) {
+      console.log('[auth] Role do usuário:', response.user.role);
     }
     
     return response;

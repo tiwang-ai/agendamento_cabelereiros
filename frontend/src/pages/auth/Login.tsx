@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { UserRole } from '@/types/auth';
 
 interface LoginForm {
   email: string;
@@ -31,12 +32,17 @@ export default function Login() {
   const redirectBasedOnRole = (role: string) => {
     console.log('Login: Redirecionando com base no papel:', role);
     try {
-      if (role === 'admin') {
+      if (role === UserRole.SUPERUSER || role === UserRole.ADMIN) {
         navigate('/admin/dashboard', { replace: true });
-      } else if (role === 'salon_owner') {
+      } else if (role === UserRole.SALON_OWNER) {
         navigate('/salon/dashboard', { replace: true });
+      } else if (role === UserRole.PROFESSIONAL) {
+        navigate('/professional/dashboard', { replace: true });
+      } else if (role === UserRole.RECEPTIONIST) {
+        navigate('/receptionist/dashboard', { replace: true });
       } else {
-        navigate('/client/dashboard', { replace: true });
+        console.error('Papel desconhecido:', role);
+        navigate('/login', { replace: true });
       }
     } catch (e) {
       console.error('Erro durante redirecionamento:', e);

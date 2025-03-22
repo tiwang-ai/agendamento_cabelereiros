@@ -1,34 +1,61 @@
-import { User, AuthResponse, LoginCredentials, RegisterData } from '@/types';
+import { User, AuthResponse, LoginCredentials, RegisterData, UserRole } from '@/types/auth';
 
 // Usuários mockados
 const MOCK_USERS: Record<string, User & { password: string }> = {
+  superuser: {
+    id: 1,
+    email: 'superuser@example.com',
+    name: 'Super Administrador',
+    role: UserRole.SUPERUSER,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    permissions: ['manage:all', 'manage:admins', 'manage:salons', 'manage:plans', 'manage:bot', 'view:metrics', 'manage:support'],
+    password: 'superuser123'
+  },
   admin: {
-    id: '1',
+    id: 2,
     email: 'admin@example.com',
     name: 'Administrador',
-    role: 'admin',
-    password: 'senha123'
+    role: UserRole.ADMIN,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    permissions: ['manage:salons', 'manage:plans', 'view:metrics', 'manage:support'],
+    password: 'admin123'
   },
-  owner: {
-    id: '2',
-    email: 'owner@example.com',
+  salon: {
+    id: 3,
+    email: 'salon@example.com',
     name: 'Dono do Salão',
-    role: 'salon_owner',
-    password: 'senha123'
+    role: UserRole.SALON_OWNER,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    permissions: ['manage:own_salon', 'manage:professionals', 'manage:services', 'view:own_metrics', 'manage:appointments'],
+    password: 'salon123'
   },
   professional: {
-    id: '3',
+    id: 4,
     email: 'professional@example.com',
     name: 'Profissional',
-    role: 'professional',
-    password: 'senha123'
+    role: UserRole.PROFESSIONAL,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    permissions: ['manage:own_schedule', 'view:own_appointments', 'manage:own_clients'],
+    password: 'professional123'
   },
   receptionist: {
-    id: '4',
+    id: 5,
     email: 'receptionist@example.com',
     name: 'Recepcionista',
-    role: 'receptionist',
-    password: 'senha123'
+    role: UserRole.RECEPTIONIST,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    is_active: true,
+    permissions: ['manage:appointments', 'view:salon_schedule', 'manage:clients'],
+    password: 'receptionist123'
   }
 };
 
@@ -63,7 +90,8 @@ export const mockLogin = async (credentials: LoginCredentials): Promise<AuthResp
     id: user.id,
     email: user.email,
     name: user.name,
-    role: user.role
+    role: user.role,
+    created_at: user.created_at
   }));
   
   console.log('[mockAuth] Login bem-sucedido para:', user.email);
@@ -76,7 +104,8 @@ export const mockLogin = async (credentials: LoginCredentials): Promise<AuthResp
       id: user.id,
       email: user.email,
       name: user.name,
-      role: user.role
+      role: user.role,
+      created_at: user.created_at
     }
   };
 };
@@ -142,7 +171,8 @@ export const mockRegister = async (data: RegisterData): Promise<AuthResponse> =>
     id: `${Object.keys(MOCK_USERS).length + 1}`,
     email: data.email,
     name: data.name,
-    role: 'salon_owner'
+    role: UserRole.SALON_OWNER,
+    created_at: new Date().toISOString()
   };
   
   // Adiciona à "base de dados" local

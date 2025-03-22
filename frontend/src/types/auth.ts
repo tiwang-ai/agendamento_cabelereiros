@@ -1,26 +1,32 @@
 /**
- * Tipos relacionados à autenticação e usuários
+ * Tipos relacionados à autenticação e permissões
  */
 
 /**
  * Enum para os tipos de papéis de usuário no sistema
  */
 export enum UserRole {
-  ADMIN = 'admin',
-  SALON_OWNER = 'salon_owner',
-  PROFESSIONAL = 'professional',
-  RECEPTIONIST = 'receptionist'
+  SUPERUSER = 'SUPERUSER',
+  ADMIN = 'ADMIN',
+  SALON_OWNER = 'SALON_OWNER',
+  PROFESSIONAL = 'PROFESSIONAL',
+  RECEPTIONIST = 'RECEPTIONIST',
 }
 
 /**
  * Representa um usuário autenticado no sistema
  */
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  role: string;
-  phone?: string;
+  role: UserRole;
+  avatar_url?: string;
+  created_at: string;
+  updated_at: string;
+  last_login?: string;
+  is_active: boolean;
+  permissions: string[];
 }
 
 /**
@@ -56,5 +62,51 @@ export interface LoginCredentials {
  */
 export interface RegisterData extends LoginCredentials {
   name: string;
+  role?: UserRole;
   phone?: string;
-} 
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  login: (email: string, password: string) => Promise<User>;
+  logout: () => Promise<void>;
+  updateUser: (user: User) => void;
+}
+
+// Permissões específicas para cada role
+export const RolePermissions: Record<UserRole, string[]> = {
+  SUPERUSER: [
+    'manage:all',
+    'manage:admins',
+    'manage:salons',
+    'manage:plans',
+    'manage:bot',
+    'view:metrics',
+    'manage:support'
+  ],
+  ADMIN: [
+    'manage:salons',
+    'manage:plans',
+    'view:metrics',
+    'manage:support'
+  ],
+  SALON_OWNER: [
+    'manage:own_salon',
+    'manage:professionals',
+    'manage:services',
+    'view:own_metrics',
+    'manage:appointments'
+  ],
+  PROFESSIONAL: [
+    'manage:own_schedule',
+    'view:own_appointments',
+    'manage:own_clients'
+  ],
+  RECEPTIONIST: [
+    'manage:appointments',
+    'view:salon_schedule',
+    'manage:clients'
+  ]
+}; 

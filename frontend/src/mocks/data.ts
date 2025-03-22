@@ -5,9 +5,9 @@
  * e testes, permitindo que a aplicação funcione sem um backend real.
  */
 
+import { UserRole } from '@/types/auth';
 import { 
   User, 
-  UserRole, 
   Salon, 
   Professional, 
   Service, 

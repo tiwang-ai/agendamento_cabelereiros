@@ -7,9 +7,12 @@
 import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { UserRole } from '@/types/auth';
+import { PrivateRoute } from '@/components/common/PrivateRoute';
 import Loading from '@/components/common/Loading';
 import AdminLayout from '@/components/layout/AdminLayout';
 import ClientLayout from '@/components/layout/ClientLayout';
+import ProfessionalLayout from '@/components/layout/ProfessionalLayout';
 
 // Importação de páginas da área administrativa
 import AdminDashboard from './pages/admin/Dashboard';
@@ -18,6 +21,10 @@ import SalonUsers from './pages/admin/SalonUsers';
 import Plans from './pages/admin/Plans';
 import Reports from './pages/admin/Reports';
 import Support from './pages/admin/Support';
+import AdminUsers from './pages/admin/users';
+import BotSettings from './pages/admin/bot/settings';
+import BotTemplates from './pages/admin/bot/templates';
+import BotMonitoring from './pages/admin/bot/monitoring';
 
 // Importação de páginas da área de salão (cliente)
 import ClientDashboard from './pages/client/Dashboard';
@@ -25,6 +32,10 @@ import ClientAppointments from './pages/client/Appointments';
 import ClientCalendar from './pages/client/Calendar';
 import ClientServices from './pages/client/Services';
 import ClientSettings from './pages/client/Settings';
+
+// Importação de páginas de perfil e configurações
+import AdminProfile from './pages/admin/Profile';
+import AdminSettings from './pages/admin/Settings';
 
 // Importação de páginas públicas
 import Login from './pages/auth/Login';
@@ -68,7 +79,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
         // Usuário não está autenticado
         console.log('Redirecionando para login (sem usuário)');
         navigate('/login', { replace: true });
-      } else if (user.role !== 'admin') {
+      } else if (user.role !== UserRole.ADMIN) {
         // Usuário não tem perfil admin
         console.log('Redirecionando para login (não é admin)');
         navigate('/login', { replace: true });
@@ -82,7 +93,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   }
   
   // Renderiza os filhos apenas se o usuário for admin
-  return user?.role === 'admin' ? <>{children}</> : null;
+  return user?.role === UserRole.ADMIN ? <>{children}</> : null;
 }
 
 /**
@@ -107,7 +118,7 @@ function SalonRoute({ children }: { children: React.ReactNode }) {
         // Usuário não está autenticado
         console.log('Redirecionando para login (sem usuário)');
         navigate('/login', { replace: true });
-      } else if (user.role !== 'salon_owner') {
+      } else if (user.role !== UserRole.SALON_OWNER) {
         // Usuário não é dono de salão
         console.log('Redirecionando para login (não é salon_owner)');
         navigate('/login', { replace: true });
@@ -119,7 +130,7 @@ function SalonRoute({ children }: { children: React.ReactNode }) {
     return <Loading />;
   }
   
-  return user?.role === 'salon_owner' ? <>{children}</> : null;
+  return user?.role === UserRole.SALON_OWNER ? <>{children}</> : null;
 }
 
 /**
@@ -176,39 +187,90 @@ export default function App() {
           <Route path="/register" element={<Register />} />
 
           {/* Rotas administrativas - acessíveis apenas a usuários admin */}
-          <Route path="/admin" element={
-            <AdminRoute>
-              {/* Layout administrativo compartilhado */}
-              <AdminLayout>
-                {/* Outlet é onde as sub-rotas serão renderizadas */}
-                <Outlet />
-              </AdminLayout>
-            </AdminRoute>
-          }>
-            {/* Definição das sub-rotas administrativas */}
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="salons" element={<SalonsManagement />} />
-            <Route path="salons/:salonId/users" element={<SalonUsers />} />
-            <Route path="plans" element={<Plans />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="support" element={<Support />} />
-          </Route>
+          <Route
+            path="/admin/*"
+            element={
+              <PrivateRoute allowedRoles={[UserRole.SUPERUSER, UserRole.ADMIN]}>
+                <AdminLayout>
+                  <Routes>
+                    <Route path="dashboard" element={<AdminDashboard />} />
+                    <Route path="salons" element={<SalonsManagement />} />
+                    <Route path="salon-users" element={<SalonUsers />} />
+                    <Route path="plans" element={<Plans />} />
+                    <Route path="reports" element={<Reports />} />
+                    <Route path="support" element={<Support />} />
+                    <Route path="profile" element={<AdminProfile />} />
+                    <Route path="settings" element={<AdminSettings />} />
+                    
+                    {/* Rotas exclusivas para SUPERUSER */}
+                    <Route
+                      path="users/*"
+                      element={
+                        <PrivateRoute allowedRoles={[UserRole.SUPERUSER]}>
+                          <AdminUsers />
+                        </PrivateRoute>
+                      }
+                    />
+                    
+                    {/* Rotas do bot (apenas SUPERUSER) */}
+                    <Route
+                      path="bot/*"
+                      element={
+                        <PrivateRoute allowedRoles={[UserRole.SUPERUSER]}>
+                          <Routes>
+                            <Route path="settings" element={<BotSettings />} />
+                            <Route path="templates" element={<BotTemplates />} />
+                            <Route path="monitoring" element={<BotMonitoring />} />
+                          </Routes>
+                        </PrivateRoute>
+                      }
+                    />
+                    
+                    <Route path="*" element={<Navigate to="dashboard" replace />} />
+                  </Routes>
+                </AdminLayout>
+              </PrivateRoute>
+            }
+          />
 
           {/* Rotas de salão - acessíveis apenas a donos de salão */}
           <Route path="/salon" element={
-            <SalonRoute>
-              {/* Layout de salão compartilhado */}
+            <PrivateRoute allowedRoles={[UserRole.SALON_OWNER]}>
               <ClientLayout>
                 <Outlet />
               </ClientLayout>
-            </SalonRoute>
+            </PrivateRoute>
           }>
-            {/* Definição das sub-rotas de salão */}
             <Route path="dashboard" element={<ClientDashboard />} />
             <Route path="appointments" element={<ClientAppointments />} />
             <Route path="calendar" element={<ClientCalendar />} />
             <Route path="services" element={<ClientServices />} />
             <Route path="settings" element={<ClientSettings />} />
+          </Route>
+
+          {/* Rotas de profissional */}
+          <Route path="/professional" element={
+            <PrivateRoute allowedRoles={[UserRole.PROFESSIONAL]}>
+              <ProfessionalLayout>
+                <Outlet />
+              </ProfessionalLayout>
+            </PrivateRoute>
+          }>
+            <Route path="dashboard" element={<div>Professional Dashboard</div>} />
+          </Route>
+
+          {/* Rotas de recepcionista */}
+          <Route path="/receptionist" element={
+            <PrivateRoute allowedRoles={[UserRole.RECEPTIONIST]}>
+              <ClientLayout>
+                <Outlet />
+              </ClientLayout>
+            </PrivateRoute>
+          }>
+            <Route path="dashboard" element={<ClientDashboard />} />
+            <Route path="appointments" element={<ClientAppointments />} />
+            <Route path="calendar" element={<ClientCalendar />} />
+            <Route path="clients" element={<ClientDashboard />} />
           </Route>
 
           {/* Redirecionamentos padrão */}
